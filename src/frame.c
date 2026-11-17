@@ -271,8 +271,27 @@ _FR_UpdateResults(App_State* app_state) {
       app_state->results_query = PushStr8Copy(app_state->results_arena, query);
       app_state->results_library_gen = app_state->library->generation;
       app_state->results_search_gen = SRCH_Generation(app_state->search);
+      U64 begin_us = NowTimeUS();
       app_state->results =
           SRCH_Run(app_state->results_arena, app_state->search, app_state->library, app_state->results_query);
+
+      // Each search by the frames, with its best three, for seeing from the
+      // log how well and how quickly it finds things.
+      SRCH_Results* results = &app_state->results;
+      if (!same_query && query.size != 0 && !results->by_name) {
+         Temp        scratch = ScratchBegin(0, 0);
+         String8List best = {0};
+         for (U64 i = 0; i < Min(results->count, 3); i += 1) {
+            SRCH_Hit* hit = &results->v[i];
+            Str8ListPushF(scratch.arena, &best, "%S at %.0f s (%.3f)", app_state->library->videos[hit->video_idx].name,
+                          hit->start_s, hit->score);
+         }
+         StringJoin join = {0};
+         join.sep = Str8Lit(", ");
+         LogInfoF("Searched \"%S\" in %.1f ms: %S\n", query, (F64)(NowTimeUS() - begin_us) / 1000.0,
+                  Str8ListJoin(scratch.arena, &best, &join));
+         ScratchEnd(scratch);
+      }
       // More frames found while the query stays the same keep the list where
       // it was scrolled to.
       if (!same_query || !same_library) {
