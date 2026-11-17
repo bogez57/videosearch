@@ -30,9 +30,10 @@ LIB_NameIsVideo(String8 name) {
 
 internal LIB_Library*
 LIB_Alloc(void) {
-   Arena*       folders_arena = ArenaAlloc();
-   LIB_Library* library = PushArray(folders_arena, LIB_Library, 1);
-   library->folders_arena = folders_arena;
+   // On an arena of its own: the folders' is emptied when one is taken out.
+   Arena*       arena = ArenaAlloc();
+   LIB_Library* library = PushArray(arena, LIB_Library, 1);
+   library->folders_arena = ArenaAlloc();
    library->videos_arena = ArenaAlloc();
    return library;
 }
