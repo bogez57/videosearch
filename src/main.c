@@ -7,6 +7,7 @@
 //
 //    bin\videosearch.exe                the folders of videos searched last time
 //    bin\videosearch.exe <folder> ...   adds those folders to them
+//    bin\videosearch.exe --cpu          runs the models on the processor, not the graphics card
 //
 // Folders are added and taken out in the Folders panel (the button beside
 // the search bar; it is up by itself when there are none). A folder dropped
@@ -180,7 +181,8 @@ _EntryPoint(CmdLine* cmdline) {
       String8 data = PushStr8F(scratch.arena, "%S\\..\\data", GetProcessInfo()->binary_path);
       String8 model_name = Str8Lit("clip-vit-base-patch32");
       app_state.model = EMB_Open(PushStr8F(scratch.arena, "%S\\models\\%S", data, model_name),
-                                 PushStr8F(scratch.arena, "%S\\clip\\bpe_merges.txt", data));
+                                 PushStr8F(scratch.arena, "%S\\clip\\bpe_merges.txt", data),
+                                 !CmdLineHasFlag(cmdline, Str8Lit("cpu")));
       String8 sound_model_name = Str8Lit("clap-htsat-unfused");
       EMB_OpenSound(app_state.model, PushStr8F(scratch.arena, "%S\\models\\%S", data, sound_model_name),
                     PushStr8F(scratch.arena, "%S\\clap\\vocab.json", data),

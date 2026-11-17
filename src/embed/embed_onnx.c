@@ -4,14 +4,19 @@
 // The functions of embed.h that run the model. This is the only file in the
 // program that includes ONNX Runtime's header or calls it.
 //
-// ONNX Runtime is src\third_party\onnxruntime (1.23.2, Microsoft's build for
-// x64 Windows): its C headers, the import library the program links against,
-// and onnxruntime.dll, which build.bat copies next to the exe. It runs the
-// model on the processor, on as many threads as it has cores. Its memory is
-// its own, let go of in EMB_Close.
+// ONNX Runtime is src\third_party\onnxruntime (1.23.0, Microsoft's DirectML
+// build for x64 Windows): its C headers, the import library the program
+// links against, and onnxruntime.dll and DirectML.dll, which build.bat
+// copies next to the exe. Its memory is its own, let go of in EMB_Close.
+//
+// The halves that indexing runs - pictures and sound - are run on the
+// graphics card, through DirectML (any card that does Direct3D 12), and on
+// the processor if that can't be had or was not asked for. The text halves
+// are always on the processor: a query is a few milliseconds there, and the
+// card would add its own start-up to each new length of one.
 //
 // Every call of ONNX Runtime's returns an OrtStatus: 0, or what went wrong.
-// A session (one half of the model) may be run from more than one thread.
+// One half is run by one thread at a time, which DirectML needs.
 
 #if defined(__clang__)
 # pragma clang diagnostic push
@@ -41,6 +46,7 @@ struct EMB_Model {
    _EMB_Half      image;  // input pixel_values; output image_embeds
    _EMB_Half      text;   // inputs input_ids and maybe attention_mask; output text_embeds
    U64            loaded; // set once both halves are, read with an atomic
+   B32            use_gpu;
 
    // CLAP. No folder: it was not opened, and sound is not searched.
    String8        sound_folder;
@@ -75,12 +81,13 @@ EMB_Close(EMB_Model* model) {
 }
 
 internal EMB_Model*
-EMB_Open(String8 folder, String8 merges_path) {
+EMB_Open(String8 folder, String8 merges_path, B32 use_gpu) {
    Temp       scratch = ScratchBegin(0, 0);
    Arena*     arena = ArenaAlloc();
    EMB_Model* model = PushArray(arena, EMB_Model, 1);
    model->arena = arena;
    model->folder = PushStr8Copy(arena, folder);
+   model->use_gpu = use_gpu;
    B32 ok = 1;
 
    String8 merges = DataFromFilePath(scratch.arena, merges_path);
@@ -116,10 +123,39 @@ EMB_Open(String8 folder, String8 merges_path) {
    return model;
 }
 
-// Loads file from folder into half, with the names of its inputs and of the
-// output named output.
+// A session for the model file at path. With gpu, one that runs on the
+// graphics card: 0 if it can't, and why is logged as something to know.
 internal B32
-_EMB_LoadHalf(EMB_Model* model, _EMB_Half* half, String8 folder, char* file, char* output) {
+_EMB_CreateSession(EMB_Model* model, wchar_t* path, char* file, B32 gpu, OrtSession** session_out) {
+   OrtSessionOptions* options = 0;
+   B32                ok = _EMB_Ok(model, model->ort->CreateSessionOptions(&options), "starting");
+   ok = ok && _EMB_Ok(model, model->ort->SetSessionGraphOptimizationLevel(options, ORT_ENABLE_ALL), "starting");
+   if (ok && gpu) {
+      // The card that is fastest, if there are two. DirectML wants the two
+      // settings after it.
+      const char* keys[] = {"performance_preference"};
+      const char* values[] = {"high_performance"};
+      OrtStatus*  status = model->ort->SessionOptionsAppendExecutionProvider(options, "DML", keys, values, 1);
+      if (status == 0) status = model->ort->DisableMemPattern(options);
+      if (status == 0) status = model->ort->SetSessionExecutionMode(options, ORT_SEQUENTIAL);
+      if (status == 0) status = model->ort->CreateSession(model->env, path, options, session_out);
+      if (status != 0) {
+         LogInfoF("%s can't run on the graphics card, so it runs on the processor: %s\n", file,
+                  model->ort->GetErrorMessage(status));
+         model->ort->ReleaseStatus(status);
+         ok = 0;
+      }
+   } else if (ok) {
+      ok = _EMB_Ok(model, model->ort->CreateSession(model->env, path, options, session_out), file);
+   }
+   if (options != 0) model->ort->ReleaseSessionOptions(options);
+   return ok;
+}
+
+// Loads file from folder into half, with the names of its inputs and of the
+// output named output. With gpu it runs on the graphics card if it can.
+internal B32
+_EMB_LoadHalf(EMB_Model* model, _EMB_Half* half, String8 folder, char* file, char* output, B32 gpu) {
    Temp    scratch = ScratchBegin(0, 0);
    String8 path = PushStr8F(scratch.arena, "%S\\%s", folder, file);
    B32     ok = 1;
@@ -129,10 +165,6 @@ _EMB_LoadHalf(EMB_Model* model, _EMB_Half* half, String8 folder, char* file, cha
    }
 
    if (ok) {
-      OrtSessionOptions* options = 0;
-      ok = _EMB_Ok(model, model->ort->CreateSessionOptions(&options), "starting");
-      ok = ok && _EMB_Ok(model, model->ort->SetSessionGraphOptimizationLevel(options, ORT_ENABLE_ALL), "starting");
-
       // Its paths are UTF-16 on Windows.
       String32 path32 = Str32From8(scratch.arena, path);
       wchar_t* wide = PushArray(scratch.arena, wchar_t, path32.size * 2 + 1);
@@ -147,8 +179,11 @@ _EMB_LoadHalf(EMB_Model* model, _EMB_Half* half, String8 folder, char* file, cha
             wide[wide_size++] = (wchar_t)c;
          }
       }
-      ok = ok && _EMB_Ok(model, model->ort->CreateSession(model->env, wide, options, &half->session), file);
-      if (options != 0) model->ort->ReleaseSessionOptions(options);
+      B32 on_gpu = (gpu && _EMB_CreateSession(model, wide, file, 1, &half->session));
+      ok = on_gpu || _EMB_CreateSession(model, wide, file, 0, &half->session);
+      if (on_gpu) {
+         LogInfoF("%s runs on the graphics card\n", file);
+      }
    }
 
    if (ok) {
@@ -199,8 +234,8 @@ _EMB_LoadHalf(EMB_Model* model, _EMB_Half* half, String8 folder, char* file, cha
 
 internal B32
 EMB_Load(EMB_Model* model) {
-   B32 ok = _EMB_LoadHalf(model, &model->image, model->folder, "vision_model.onnx", "image_embeds");
-   ok = ok && _EMB_LoadHalf(model, &model->text, model->folder, "text_model.onnx", "text_embeds");
+   B32 ok = _EMB_LoadHalf(model, &model->image, model->folder, "vision_model.onnx", "image_embeds", model->use_gpu);
+   ok = ok && _EMB_LoadHalf(model, &model->text, model->folder, "text_model.onnx", "text_embeds", 0);
    if (ok) {
       InsAtomicU64EvalAssign(&model->loaded, 1);
    }
@@ -358,8 +393,8 @@ EMB_OpenSound(EMB_Model* model, String8 folder, String8 vocab_path, String8 merg
 internal B32
 EMB_LoadSound(EMB_Model* model) {
    B32 ok = (model != 0 && model->sound_folder.size != 0);
-   ok = ok && _EMB_LoadHalf(model, &model->sound, model->sound_folder, "audio_model.onnx", "audio_embeds");
-   ok = ok && _EMB_LoadHalf(model, &model->sound_text, model->sound_folder, "text_model.onnx", "text_embeds");
+   ok = ok && _EMB_LoadHalf(model, &model->sound, model->sound_folder, "audio_model.onnx", "audio_embeds", model->use_gpu);
+   ok = ok && _EMB_LoadHalf(model, &model->sound_text, model->sound_folder, "text_model.onnx", "text_embeds", 0);
    if (ok && model->sound.input_count != 1) {
       LogUserErrorF("The sound model has %llu inputs, not the one known here\n", (unsigned long long)model->sound.input_count);
       ok = 0;

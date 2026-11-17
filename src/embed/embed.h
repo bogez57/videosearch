@@ -81,12 +81,14 @@ internal EMB_Tokenizer* EMB_SoundTokenizerFromVocab(Arena* arena, String8 vocab_
 internal U64            EMB_SoundTokenize(EMB_Tokenizer* tok, String8 text, S32 ids_out[EMB_TEXT_TOKENS]);
 
 // embed_onnx.c. EMB_Open is quick: it reads the tokenizer's merges and
-// starts ONNX Runtime. 0 if it could not, and why is logged. EMB_Load then
+// starts ONNX Runtime. 0 if it could not, and why is logged. With use_gpu
+// pictures and sound are run on the graphics card if it can do it, and on
+// the processor if not. EMB_Load then
 // loads the two halves, which takes a second or so - the indexer's thread
 // does it. Until it has, EMB_IsLoaded is 0 and nothing can be encoded; if
 // it failed, why is logged and it stays 0. The model's memory is its own
 // and ONNX Runtime's, let go of in EMB_Close.
-internal EMB_Model* EMB_Open(String8 folder, String8 merges_path);
+internal EMB_Model* EMB_Open(String8 folder, String8 merges_path, B32 use_gpu);
 internal B32        EMB_Load(EMB_Model* model);
 internal B32        EMB_IsLoaded(EMB_Model* model);
 internal void       EMB_Close(EMB_Model* model);
