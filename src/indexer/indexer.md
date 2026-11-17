@@ -38,7 +38,8 @@ the sound model and into the video's sound index file.
   changed. When a run has gone through every video, logs how many frames,
   how long it took, how many were up to date and how many failed.
 - `IDX_GetStatus`: how many videos, done, failed, frames indexed, whether
-  there is a model, and the name of the one under way. The status line shows
+  there is a model, how long the run has taken (or took), and the name of
+  the one under way. The status line shows
   it.
 - `IDX_IsIndexed(indexer, library_gen, video_idx)`,
   `IDX_SoundIsIndexed(...)`: the search asks them which files to load.

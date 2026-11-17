@@ -762,11 +762,11 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
          if (idx.no_model) {
             reading = Str8Lit(" No image model, so nothing is indexed: see data\\models\\README.md.");
          } else if (idx.videos_done < idx.video_count) {
-            reading = PushStr8F(scratch.arena, " Indexing: %llu of %llu videos, %llu frames (%S).",
+            reading = PushStr8F(scratch.arena, " Indexing: %llu of %llu videos, %llu frames (%S). %.0f s so far.",
                                 (unsigned long long)idx.videos_done, (unsigned long long)idx.video_count,
-                                (unsigned long long)idx.frames, idx.current);
+                                (unsigned long long)idx.frames, idx.current, idx.seconds);
          } else if (idx.video_count != 0) {
-            reading = PushStr8F(scratch.arena, " %llu frames indexed.", (unsigned long long)idx.frames);
+            reading = PushStr8F(scratch.arena, " %llu frames indexed in %.1f s.", (unsigned long long)idx.frames, idx.seconds);
          }
          String8 failed = {0};
          if (idx.videos_failed != 0) {

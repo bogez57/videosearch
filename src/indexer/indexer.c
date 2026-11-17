@@ -19,6 +19,7 @@ struct IDX_Indexer {
    B32      running; // a thread was started and not joined yet
    U64      library_gen;
    U64      started_us;
+   U64      ended_us; // 0 until the run is over
    B32      reported; // the run's end has been logged
 
    String8* paths;
@@ -347,7 +348,8 @@ IDX_Update(IDX_Indexer* indexer, LIB_Library* library) {
    // The end of a run, logged once.
    if (indexer->running && !indexer->reported && done == indexer->count) {
       indexer->reported = 1;
-      F64 seconds = (F64)(NowTimeUS() - indexer->started_us) / 1000000.0;
+      indexer->ended_us = NowTimeUS();
+      F64 seconds = (F64)(indexer->ended_us - indexer->started_us) / 1000000.0;
       LogInfoF("%llu frames in the index of %llu videos, %.1f s (%llu were up to date, %llu could not be read)\n",
                (unsigned long long)InsAtomicU64Eval(&indexer->frames), (unsigned long long)indexer->count, seconds,
                (unsigned long long)InsAtomicU64Eval(&indexer->up_to_date),
@@ -378,6 +380,7 @@ IDX_Update(IDX_Indexer* indexer, LIB_Library* library) {
    indexer->frames = 0;
    indexer->current = 0;
    indexer->started_us = NowTimeUS();
+   indexer->ended_us = 0;
    indexer->reported = 0;
 
    if (indexer->count != 0) {
@@ -394,6 +397,7 @@ IDX_GetStatus(IDX_Indexer* indexer) {
    result.videos_failed = InsAtomicU64Eval(&indexer->failed);
    result.frames = InsAtomicU64Eval(&indexer->frames);
    result.no_model = (B32)InsAtomicU64Eval(&indexer->no_model);
+   result.seconds = (F64)((indexer->ended_us != 0 ? indexer->ended_us : NowTimeUS()) - indexer->started_us) / 1000000.0;
 
    U64 current = InsAtomicU64Eval(&indexer->current);
    if (current != 0 && current <= indexer->count) {
