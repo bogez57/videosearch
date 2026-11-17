@@ -245,6 +245,7 @@ _FR_StopPlaying(App_State* app_state) {
 internal void
 _FR_PlayHit(App_State* app_state, SRCH_Hit* hit) {
    _FR_StopPlaying(app_state);
+   app_state->search_focused = 0;
    LIB_Video* video = &app_state->library->videos[hit->video_idx];
    app_state->play_video = VID_Open(video->path);
    if (app_state->play_video == 0) {
@@ -307,6 +308,8 @@ _FR_Input(App_State* app_state) {
             app_state->query_size += text.size;
          }
          app_state->folders_open = 0; // typing is searching: back to the hits
+         app_state->search_focused = 1;
+         app_state->search_caret_us = NowTimeUS();
          ScratchEnd(scratch);
       }
    }
@@ -333,6 +336,8 @@ _FR_Input(App_State* app_state) {
    // Backspace takes off a whole character: the bytes after its first are
    // 10xxxxxx in UTF-8.
    while (Core_WM_KeyPress(events, window, 0, WM_Key_Backspace) && app_state->query_size != 0) {
+      app_state->search_focused = 1;
+      app_state->search_caret_us = NowTimeUS();
       app_state->query_size -= 1;
       while (app_state->query_size != 0 && (app_state->query[app_state->query_size] & 0xC0) == 0x80) {
          app_state->query_size -= 1;
@@ -708,8 +713,9 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
    UI_Box* panel = UI_BuildBoxFromStringf(UI_BoxFlag_DrawBackground | UI_BoxFlag_Clip, "###screen");
 
    UI_Parent(panel) {
-      //- bgz: the search bar: what is typed, with a caret after it - or, with
-      // nothing typed, what can be.
+      //- bgz: the search bar: what is typed, then a caret that blinks while
+      // the bar is where the user is, then - with nothing typed - what can
+      // be. A click on it puts the user there.
       UI_SetNextPrefWidth(UI_Px(window_dim.x, 1));
       UI_SetNextPrefHeight(UI_Px(search_h, 1));
       UI_SetNextChildLayoutAxis(Axis2_X);
@@ -721,20 +727,37 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
          UI_SetNextPrefHeight(UI_Px(search_h - pad, 1));
          UI_SetNextChildLayoutAxis(Axis2_X);
          UI_SetNextColorTag(Str8Lit("search"));
-         UI_Box* field = UI_BuildBoxFromStringf(UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawBorder | UI_BoxFlag_Clip,
+         UI_Box* field = UI_BuildBoxFromStringf(UI_BoxFlag_Clickable | UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawBorder |
+                                                    UI_BoxFlag_Clip,
                                                 "###search field");
          UI_Parent(field) UI_PrefHeight(UI_Pct(1, 1)) UI_FontSize(FR_UIFontSize((F32)(S32)(20.0f * ui))) {
             UI_Spacer(UI_Px(12.0f * ui, 1));
-            UI_SetNextPrefWidth(UI_Pct(1, 0));
             if (app_state->query_size != 0) {
-               UI_Label(PushStr8F(scratch.arena, "%S|", Str8(app_state->query, app_state->query_size)));
+               UI_SetNextPrefWidth(UI_TextDim(0, 1));
+               UI_Label(Str8(app_state->query, app_state->query_size));
+            }
+            // Half a second on, half a second off.
+            B32 caret_on = (app_state->search_focused && ((NowTimeUS() - app_state->search_caret_us) / 500000) % 2 == 0);
+            F32 caret_w = (F32)(S32)(8.0f * ui);
+            if (caret_on) {
+               UI_SetNextPrefWidth(UI_Px(caret_w, 1));
+               UI_Label(Str8Lit("|"));
             } else {
+               UI_Spacer(UI_Px(caret_w, 1));
+            }
+            if (app_state->query_size == 0) {
+               UI_SetNextPrefWidth(UI_Pct(1, 0));
                UI_SetNextColorTag(Str8Lit("dim"));
                UI_Label(Str8Lit("Search your videos: a man screaming, a car driving down a highway..."));
             }
          }
+         if (UI_Clicked(UI_SignalFromBox(field))) {
+            app_state->search_focused = 1;
+            app_state->search_caret_us = NowTimeUS();
+         }
          UI_Spacer(UI_Px(pad, 1));
          if (_FR_Button(Str8Lit("Folders"), folders_w, search_h - pad, "###folders button")) {
+            app_state->search_focused = 0;
             app_state->folders_open = !app_state->folders_open;
             _FR_StopPlaying(app_state);
          }

@@ -145,6 +145,7 @@ _EntryPoint(CmdLine* cmdline) {
    App_State app_state = {0};
    app_state.frame_arena = ArenaAlloc();
    app_state.results_arena = ArenaAlloc();
+   app_state.search_focused = 1; // typing goes to the search bar from the start
 
    // The log, before anything that can have something to say. What is
    // logged before the first frame is written just ahead of it, and after

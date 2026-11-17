@@ -44,6 +44,10 @@ layer's state.
 
 ## Not done yet
 
+- The search bar shows a blinking caret after the text while it is where
+  the user is (`search_focused`: set by a click on it or by typing, and from
+  the start; cleared by playing a hit or the Folders button). Typing goes to
+  it either way.
 - The search bar has no cursor to move, no selection and no paste: typing
   adds at the end, Backspace takes off the last character.
 - The player has no bar to seek with and no volume.

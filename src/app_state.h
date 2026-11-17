@@ -60,6 +60,12 @@ struct App_State {
    U8  query[APP_QUERY_CAP];
    U64 query_size;
 
+   // The search bar is where the user is: it was clicked or typed into last,
+   // and shows a blinking caret. Typing goes to it either way. caret_us is
+   // when the caret last started a blink, so it is on just after a key.
+   B32 search_focused;
+   U64 search_caret_us;
+
    // What the list shows: the search's hits, for the query they were found
    // for. Searched again when the query or the library changes (FrameWork).
    Arena*        results_arena;
