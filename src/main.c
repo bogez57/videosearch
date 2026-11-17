@@ -12,8 +12,10 @@
 // folder). What is typed is the search: the list under it is what matches,
 // best first. Esc empties the search bar.
 //
-// For now a match is by file name only (search\search.md). How it is to find
-// clips by what is in them is in Claude outputs\clip_search_plan.md.
+// For now a match is by file name only (search\search.md). Meanwhile the
+// indexer reads a frame a second from every video (indexer\indexer.md). How
+// it is to find clips by what is in them is in
+// Claude outputs\clip_search_plan.md.
 
 #define _CRT_SECURE_NO_WARNINGS
 
@@ -34,6 +36,8 @@
 
 #include "text/text.h"
 #include "library/library.h"
+#include "video/video_decoder.h"
+#include "indexer/indexer.h"
 #include "search/search.h"
 #include "app_state.h"
 #include "frame.h"
@@ -63,6 +67,17 @@
 # pragma clang diagnostic pop
 #endif
 #include "library/library.c"
+// The decoder as the slideshow has it. Sound and seeking are not used yet:
+// the indexer only reads each video through, picture only.
+#if defined(__clang__)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wunused-function"
+#endif
+#include "video/video_ffmpeg.c" // the decoder: the one file to change for another (video_decoder.h)
+#if defined(__clang__)
+# pragma clang diagnostic pop
+#endif
+#include "indexer/indexer.c"
 #include "search/search.c"
 #include "frame.c"
 
@@ -160,6 +175,7 @@ _EntryPoint(CmdLine* cmdline) {
 
    // The videos: the folders searched last time, and any on the command line.
    app_state.library = LIB_Alloc();
+   app_state.indexer = IDX_Alloc();
    FR_LoadFolders(&app_state);
    for (String8Node* node = cmdline->inputs.first; node != 0; node = node->next) {
       FR_AddFolder(&app_state, node->string);
@@ -194,6 +210,7 @@ _EntryPoint(CmdLine* cmdline) {
    }
 
    g_repaint_app_state = 0;
+   IDX_Stop(app_state.indexer);
    FileClose(app_state.log_file);
 
    Core_R_Shutdown();

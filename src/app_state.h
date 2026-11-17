@@ -41,6 +41,9 @@ struct App_State {
    // The folders of videos, and the videos in them (src\library).
    LIB_Library* library;
 
+   // Reads the videos' frames on a thread of its own (src\indexer).
+   IDX_Indexer* indexer;
+
    // The search bar: what is typed, as UTF-8.
    U8  query[APP_QUERY_CAP];
    U64 query_size;

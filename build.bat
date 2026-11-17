@@ -45,6 +45,16 @@ if not exist %bin%\bgz.lib (
 )
 ::--- (end) bgz --------------------------------------------
 
+::--- (begin) ffmpeg ---------------------------------------
+:: What decodes video (src\video\video_ffmpeg.c, and only that file). It is
+:: in the repo as it comes: headers, the import libraries linked below, and
+:: the DLLs, which are copied next to the exe - only if they are not there
+:: yet or are older, since they are large.
+set "ffmpeg=src\third_party\ffmpeg"
+set "ffmpeg_libs=%ffmpeg%\lib\avformat.lib %ffmpeg%\lib\avcodec.lib %ffmpeg%\lib\avutil.lib %ffmpeg%\lib\swscale.lib %ffmpeg%\lib\swresample.lib"
+xcopy /D /Y /Q %ffmpeg%\bin\*.dll %bin%\ >NUL || echo Failed to copy FFmpeg's DLLs
+::--- (end) ffmpeg -----------------------------------------
+
 ::--- (begin) flags ----------------------------------------
 set "opt=/Od"
 if "%o2%"=="1" set "opt=/O2"
@@ -55,7 +65,7 @@ set "compile=clang-cl /nologo /Z7 %opt% /W4 /arch:AVX /diagnostics:caret /clang:
 :: there ("base/...", "win32/..."); then src\bgz\bgz, the same for bgz's;
 :: src\bgz so that main.c's "rad/..." and "bgz/..." are found; src for the
 :: program's own layers.
-set "includes=-Isrc\bgz\rad -Isrc\bgz\bgz -Isrc\bgz -Isrc"
+set "includes=-Isrc\bgz\rad -Isrc\bgz\bgz -Isrc\bgz -Isrc -I%ffmpeg%\include"
 :: The defines raddebugger's headers expect - see src\bgz\build.bat.
 set "defines=-D_USE_MATH_DEFINES -Dstrdup=_strdup -Dgnu_printf=printf"
 :: The one warning turned off: an initializer that leaves out trailing fields,
@@ -65,7 +75,7 @@ set "warnings=-Wno-missing-field-initializers"
 
 ::--- (begin) videosearch ----------------------------------
 echo [---building videosearch]
-%compile% %warnings% %defines% %includes% src\main.c %bin%\bgz.lib /Fo%bin%\ /Fe%bin%\videosearch.exe /link /DEBUG:FULL /INCREMENTAL:NO /PDB:%bin%\videosearch.pdb
+%compile% %warnings% %defines% %includes% src\main.c %bin%\bgz.lib %ffmpeg_libs% /Fo%bin%\ /Fe%bin%\videosearch.exe /link /DEBUG:FULL /INCREMENTAL:NO /PDB:%bin%\videosearch.pdb
 if errorlevel 1 exit /b 1
 ::--- (end) videosearch ------------------------------------
 

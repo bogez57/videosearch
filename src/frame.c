@@ -597,8 +597,23 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
          String8 hits = (app_state->results_query.size == 0)
                             ? Str8Lit("")
                             : PushStr8F(scratch.arena, "%llu hits. ", (unsigned long long)results->count);
-         status = PushStr8F(scratch.arena, "%S%llu videos in %llu folders. Searching by file name for now.", hits,
-                            (unsigned long long)library->video_count, (unsigned long long)library->folders.node_count);
+         // How far the indexer has got: the video under way, or all done.
+         IDX_Status idx = IDX_GetStatus(app_state->indexer);
+         String8    reading = {0};
+         if (idx.videos_done < idx.video_count) {
+            reading = PushStr8F(scratch.arena, " Reading frames: %llu of %llu videos, %llu frames (%S).",
+                                (unsigned long long)idx.videos_done, (unsigned long long)idx.video_count,
+                                (unsigned long long)idx.frames, idx.current);
+         } else if (idx.video_count != 0) {
+            reading = PushStr8F(scratch.arena, " %llu frames read.", (unsigned long long)idx.frames);
+         }
+         String8 failed = {0};
+         if (idx.videos_failed != 0) {
+            failed = PushStr8F(scratch.arena, " %llu could not be decoded.", (unsigned long long)idx.videos_failed);
+         }
+         status = PushStr8F(scratch.arena, "%S%llu videos in %llu folders.%S%S Searching by file name for now.", hits,
+                            (unsigned long long)library->video_count, (unsigned long long)library->folders.node_count,
+                            reading, failed);
       }
       _FR_BuildBar(R2F32P(0, 0, window_dim.x, bar_h), pad, (notice.size != 0) ? Str8Lit("notice") : Str8Lit("dim"), status,
                    "status");
@@ -683,6 +698,7 @@ FrameWork(App_State* app_state) {
 
    _FR_BeginText(app_state, window_dim);
    _FR_Input(app_state);
+   IDX_Update(app_state->indexer, app_state->library);
    _FR_UpdateResults(app_state);
 
    // The UI tree, built after the input. UI_EndBuild lays it out; it is

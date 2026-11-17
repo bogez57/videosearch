@@ -16,7 +16,9 @@ through ONNX Runtime, vectors on disk) in five steps.
 
 ## How J works
 
-- Don't run git commands in this repo. Give J the commands to run.
+- Claude works on a branch per step and opens a pull request on GitHub
+  (`bogez57/videosearch`); J pulls it, builds, runs, and merges. Claude
+  doesn't push to `main`.
 - J builds and runs: `build` from the repo root (an MSVC prompt, clang-cl),
   then `bin\videosearch.exe [folder ...]`. Plan larger features first, then
   small, clearly explained steps.
@@ -52,4 +54,7 @@ through ONNX Runtime, vectors on disk) in five steps.
 - The skeleton: the window, the search bar, the library of folders (from the
   command line, dropped on the window, remembered in
   `bin\local\folders.txt`), and the stand-in search by file name.
-- Next: step 1 of the plan, frames.
+- Step 1 of the plan, frames: the indexer (`src/indexer`) reads a frame a
+  second from every video with the slideshow's decoder (`src/video`) and
+  counts them; the status line shows how far it has got.
+- Next: step 2, image vectors (ONNX Runtime and the image model).
