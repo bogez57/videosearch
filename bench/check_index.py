@@ -1,8 +1,10 @@
 # The program's own index against the bench's vectors for the same frames: do the program's way of
-# getting a frame ready (its decoder, embed.c) and the model's own way give the same vectors?
+# getting a frame ready (its decoder, embed.c, the indexer's average of the views) and the model's
+# own way give the same vectors?
 #   python check_index.py [index folder]      (default: the repo's bin\local\index)
-# Needs BENCH/emb/clip-b32 (embed_images.py clip-b32). Prints, for each video, how alike the two
-# vectors of each second are (their dot product: 1 is the same).
+# Needs the bench's vectors of the model the index was made with (embed_images.py mobileclip-b).
+# Prints, for each video, how alike the two vectors of each second are (their dot product: 1 is the
+# same): the program's against what the bench makes the program's way, and against each view alone.
 import json
 import os
 import struct
@@ -11,7 +13,10 @@ import sys
 import numpy as np
 
 from common import BENCH, REPO
-from models import VIEWS
+from models import VIEW_SETS, VIEWS
+
+# The bench's name for the model an index file names, and the views the program averages for it.
+MODELS = {"mobileclip_blt": ("mobileclip-b", "sq+crop3"), "clip-vit-base-patch32": ("clip-b32", "center")}
 
 
 def read_index(path):
@@ -29,14 +34,11 @@ def read_index(path):
 
 def main():
     folder = sys.argv[1] if len(sys.argv) > 1 else os.path.join(REPO, "bin", "local", "index")
-    d = os.path.join(BENCH, "emb", "clip-b32")
-    keys = [tuple(k) for k in json.load(open(os.path.join(d, "frames.json")))]
-    V = np.load(os.path.join(d, "views.npy")).astype(np.float32)
-    at = {k: i for i, k in enumerate(keys)}
     names = {}
     for line in open(os.path.join(BENCH, "videos.txt"), encoding="utf-8"):
         v, name = line.rstrip("\n").split("\t")
         names[os.path.basename(name).lower()] = int(v)
+    loaded = {}
     for f in sorted(os.listdir(folder)):
         if not f.endswith(".vsi"):
             continue
@@ -44,15 +46,26 @@ def main():
         v = names.get(os.path.basename(video.replace("\\", "/")).lower())
         if v is None or len(times) < 20:
             continue
-        rows = []
+        if model not in MODELS:
+            print("%s: made with %s, which the bench has no vectors for" % (f, model))
+            continue
+        bench_name, views = MODELS[model]
+        if bench_name not in loaded:
+            d = os.path.join(BENCH, "emb", bench_name)
+            keys = [tuple(k) for k in json.load(open(os.path.join(d, "frames.json")))]
+            loaded[bench_name] = ({k: i for i, k in enumerate(keys)}, np.load(os.path.join(d, "views.npy")).astype(np.float32))
+        at, V = loaded[bench_name]
+        rows, same = [], []
         for t, x in zip(times, vecs):
             k = int(round(float(t)))
             if (v, k) in at:
                 rows.append(V[at[(v, k)]] @ x)
-        rows = np.array(rows)  # [seconds, views]
-        print("v%d %s (%s, %d frames): %s" % (v, f, model, len(times), "  ".join("%s %.3f" % (n, rows[:, j].mean()) for j, n in enumerate(VIEWS))))
-        c = rows[:, VIEWS.index("center")]
-        print("    center: least %.3f, a tenth under %.3f, half under %.3f" % (c.min(), np.percentile(c, 10), np.median(c)))
+                mean = V[at[(v, k)]][VIEW_SETS[views]].mean(0)
+                same.append(mean / np.linalg.norm(mean) @ x)
+        rows, same = np.array(rows), np.array(same)  # [seconds, views], [seconds]
+        print("v%d %s (%s, %d frames)" % (v, f, model, len(times)))
+        print("    the program's way (%s): least %.3f, a tenth under %.3f, half under %.3f" % (views, same.min(), np.percentile(same, 10), np.median(same)))
+        print("    each view alone: " + "  ".join("%s %.3f" % (n, rows[:, j].mean()) for j, n in enumerate(VIEWS)))
 
 
 if __name__ == "__main__":
