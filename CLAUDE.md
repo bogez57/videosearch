@@ -64,5 +64,6 @@ through ONNX Runtime, vectors on disk) in five steps.
 - Step 3, real search: CLIP's tokenizer (`src/embed/embed_tokenizer.c`,
   merges in `data/clip`) and text half put the query into a vector;
   `src/search` loads the index files and ranks every frame by its dot
-  product with it. Each hit is one frame, shown with its time and score.
-- Next: step 4, runs of frames as clips, thumbnails, playing a hit.
+  product with it.
+- Step 4, under way: runs of frames that score nearly as well as their best
+  are one clip (`src/search`). Next: thumbnails, playing a hit.

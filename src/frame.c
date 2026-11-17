@@ -11,7 +11,7 @@
 //    +--------------------------------------------------------+
 //    |  [ a car driving down a highway|                    ]  |
 //    |  3 hits. 120 videos in 2 folders.                      |
-//    |    highway_trip.mp4      at 1:23   0.31   D:\videos\2024  |
+//    |    highway_trip.mp4   1:22 to 1:31   0.31   D:\videos\2024 |
 //    |    ...                                                 |
 //    |  Type to search. Drop a folder of videos to add it.    |
 //    +--------------------------------------------------------+
@@ -283,8 +283,8 @@ _FR_UpdateResults(App_State* app_state) {
          String8List best = {0};
          for (U64 i = 0; i < Min(results->count, 3); i += 1) {
             SRCH_Hit* hit = &results->v[i];
-            Str8ListPushF(scratch.arena, &best, "%S at %.0f s (%.3f)", app_state->library->videos[hit->video_idx].name,
-                          hit->start_s, hit->score);
+            Str8ListPushF(scratch.arena, &best, "%S %.0f-%.0f s (%.3f)", app_state->library->videos[hit->video_idx].name,
+                          hit->start_s, hit->end_s, hit->score);
          }
          StringJoin join = {0};
          join.sep = Str8Lit(", ");
@@ -661,13 +661,14 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
 
             UI_Box* row_box = UI_ListRow(row_h, 0, UI_BoxFlag_Clickable | UI_BoxFlag_DrawBackground, "###hit %lld", row_idx);
 
-            // A frame's hit says how well it matched, for telling a good match
-            // from a poor one: CLIP's scores are about 0.2 to 0.35.
+            // A clip says how well it matched, for telling a good match from
+            // a poor one: CLIP's scores are about 0.2 to 0.35.
             String8 when = Str8Lit("whole video");
             if (hit->end_s > hit->start_s) {
-               U64 s = (U64)hit->start_s;
-               when = PushStr8F(scratch.arena, "at %llu:%02llu   %.2f", (unsigned long long)(s / 60), (unsigned long long)(s % 60),
-                                hit->score);
+               U64 a = (U64)hit->start_s;
+               U64 b = (U64)(hit->end_s + 0.5);
+               when = PushStr8F(scratch.arena, "%llu:%02llu to %llu:%02llu   %.2f", (unsigned long long)(a / 60),
+                                (unsigned long long)(a % 60), (unsigned long long)(b / 60), (unsigned long long)(b % 60), hit->score);
             }
 
             UI_Parent(row_box) UI_PrefHeight(UI_Pct(1, 1)) {

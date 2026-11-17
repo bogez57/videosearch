@@ -6,8 +6,9 @@
 //
 // The search holds the index files of the library's videos, loaded as the
 // indexer finishes them. A query is put through the text model (embed.h),
-// and each frame scores the dot product of its vector and the query's: the
-// frames that score highest are the hits, for now each a frame on its own.
+// and each frame scores the dot product of its vector and the query's. A run
+// of neighbouring frames that score nearly as well as the best of them is a
+// clip, and the clips that score highest are the hits.
 // Until there are frames to search, or if there is no model, it matches
 // file names instead (search.md).
 //
@@ -19,13 +20,19 @@
 // The most hits a search gives.
 #define SRCH_MAX_HITS 500
 
+// How far below a clip's best frame its other frames may score. CLIP's
+// scores are about 0.2 to 0.35, a match about 0.1 above what doesn't match.
+#define SRCH_CLIP_MARGIN 0.02f
+
 // A clip that matches: a stretch of one of the library's videos. start_s and
 // end_s are seconds from the video's start; both 0 is the whole video.
+// best_s is when the frame that matched best is.
 typedef struct SRCH_Hit SRCH_Hit;
 struct SRCH_Hit {
    U64 video_idx; // in the library's videos
    F64 start_s;
    F64 end_s;
+   F64 best_s;
    F32 score; // higher is a better match. Only for comparing hits of one search
 };
 

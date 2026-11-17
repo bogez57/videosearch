@@ -26,15 +26,22 @@ and shows the `SRCH_Hit`s, and knows nothing of how they were found.
 - `SRCH_Generation`
 - `SRCH_Run(arena, search, library, query)`: up to `SRCH_MAX_HITS` hits,
   best first. A hit is a video (`video_idx`), a stretch of it in seconds
-  (`start_s`, `end_s`; both 0 is the whole video) and a `score`.
+  (`start_s`, `end_s`; both 0 is the whole video), when its best frame is
+  (`best_s`) and a `score`.
 
 ## How it searches
 
 The query goes through CLIP's text model (`EMB_TextVector`, on the main
 thread: a few milliseconds), and every loaded frame scores the dot product
 of its vector and the query's - their cosine, about 0.2 to 0.35 for CLIP.
-Each hit is one frame for now, standing for the second from it to the next
-frame. Brute force over every frame: see the plan for why that is enough.
+Brute force over every frame: see the plan for why that is enough.
+
+Then, per video, the frames become clips: the best frame not yet in a clip
+starts one, which takes in its neighbours each side for as long as they
+score within `SRCH_CLIP_MARGIN` (0.02) of it. Every frame ends up in one
+clip, and a clip scores as its best frame. A clip runs from its first
+frame to the end of its last (the next frame's time), padded by a second
+each side.
 
 Until there are frames loaded, or if the model could not be loaded, it
 matches file names instead (`by_name` in the results): a video is a hit
@@ -42,7 +49,6 @@ when a word of the query is in its name, and the hit is the whole video.
 
 ## Not done yet
 
-- Runs of neighbouring good frames as one clip (step 4).
 - A score below which a frame is not a hit at all: for now the best 500
   are shown, however poor.
 

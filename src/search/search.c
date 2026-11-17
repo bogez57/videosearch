@@ -85,6 +85,18 @@ SRCH_Generation(SRCH_Search* search) {
    return search->generation;
 }
 
+// A frame of a video and how well it matched, for sorting best first.
+typedef struct _SRCH_Frame _SRCH_Frame;
+struct _SRCH_Frame {
+   U64 idx;
+   F32 score;
+};
+
+internal int
+_SRCH_FrameIsWorse(_SRCH_Frame* a, _SRCH_Frame* b) {
+   return (a->score < b->score) ? 1 : (a->score > b->score) ? -1 : 0;
+}
+
 // Into its place in hits, best first. With the hits full, one no better than
 // the last of them is left out.
 internal void
@@ -165,22 +177,66 @@ SRCH_Run(Arena* arena, SRCH_Search* search, LIB_Library* library, String8 query)
       F32*      table = search->f32_from_f16;
       for (U64 video_idx = 0; video_idx < search->video_count; video_idx += 1) {
          _SRCH_Video* video = &search->videos[video_idx];
+         if (video->count == 0) {
+            continue;
+         }
+         Temp scratch = ScratchBegin(&arena, 1);
+
+         _SRCH_Frame* frames = PushArrayNoZero(scratch.arena, _SRCH_Frame, video->count);
+         S64*         clip_of = PushArrayNoZero(scratch.arena, S64, video->count);
          for (U64 i = 0; i < video->count; i += 1) {
             U16* v = video->vectors + i * EMB_DIM;
             F32  score = 0;
             for (U64 j = 0; j < EMB_DIM; j += 1) score += q[j] * table[v[j]];
-
-            if (count < SRCH_MAX_HITS || score > hits[count - 1].score) {
-               // A frame on its own, until runs of them are clips (step 4):
-               // it stands for the second from it to the next.
-               SRCH_Hit hit = {0};
-               hit.video_idx = video_idx;
-               hit.start_s = video->times[i];
-               hit.end_s = (i + 1 < video->count) ? video->times[i + 1] : video->times[i] + IDX_SAMPLE_SECONDS;
-               hit.score = score;
-               _SRCH_Insert(hits, &count, hit);
-            }
+            frames[i].idx = i;
+            frames[i].score = score;
+            clip_of[i] = -1;
          }
+
+         // The clips: the best frame not yet in one starts one, which takes
+         // in its neighbours on each side for as long as they score nearly
+         // as well as it does. So each frame is in one clip, and a clip's
+         // score is its best frame's.
+         quick_sort(frames, video->count, sizeof(_SRCH_Frame), _SRCH_FrameIsWorse);
+         F32* scores = PushArrayNoZero(scratch.arena, F32, video->count);
+         for (U64 i = 0; i < video->count; i += 1) scores[frames[i].idx] = frames[i].score;
+
+         for (U64 k = 0; k < video->count; k += 1) {
+            U64 best = frames[k].idx;
+            F32 score = frames[k].score;
+            if (clip_of[best] != -1) {
+               continue;
+            }
+            if (count == SRCH_MAX_HITS && score <= hits[count - 1].score) {
+               break; // the rest are worse still
+            }
+            U64 first = best;
+            U64 last = best;
+            clip_of[best] = (S64)k;
+            while (first > 0 && clip_of[first - 1] == -1 && scores[first - 1] >= score - SRCH_CLIP_MARGIN) {
+               first -= 1;
+               clip_of[first] = (S64)k;
+            }
+            while (last + 1 < video->count && clip_of[last + 1] == -1 && scores[last + 1] >= score - SRCH_CLIP_MARGIN) {
+               last += 1;
+               clip_of[last] = (S64)k;
+            }
+
+            // From its first frame to the end of its last (the next frame's
+            // time), padded by a second each side so the clip shows what led
+            // up to it and what came after.
+            F64 end = (last + 1 < video->count) ? video->times[last + 1] : video->times[last] + IDX_SAMPLE_SECONDS;
+            F64 video_end = video->times[video->count - 1] + IDX_SAMPLE_SECONDS;
+
+            SRCH_Hit hit = {0};
+            hit.video_idx = video_idx;
+            hit.start_s = Max(0.0, (F64)video->times[first] - 1.0);
+            hit.end_s = Min(video_end, end + 1.0);
+            hit.best_s = video->times[best];
+            hit.score = score;
+            _SRCH_Insert(hits, &count, hit);
+         }
+         ScratchEnd(scratch);
       }
       result.v = hits;
       result.count = count;
