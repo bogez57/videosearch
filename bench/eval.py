@@ -7,6 +7,7 @@
 #
 # A CONFIG is model|views|agg|template|norm|smooth, each part a comma-separated list (every
 # combination is run), e.g.   clip-b32,siglip-b16|center,squash|max|plain,photo|raw|0
+#   model:    a name from models.py, or two with a + between (their scores added)
 #   views:    a name from models.VIEW_SETS
 #   agg:      max (a frame scores as its best view), mean (of its views' scores), vec (its views'
 #             vectors averaged into one)
@@ -215,6 +216,9 @@ def load_queries(frame_keys, labels, partial=False):
 def frame_scores(config, queries, bank, frame_keys, use):
     """Every query's score for every frame [Q, N], the way the config says."""
     name, views, agg, template, norm, sm = config
+    if "+" in name:  # two models' scores added, each in units of its own spread
+        parts = [frame_scores((n,) + tuple(config[1:]), queries, bank, frame_keys, use) for n in name.split("+")]
+        return sum(p / p.std() for p in parts) / len(parts)
     m, allV = model(name)
     V = allV[use][:, VIEW_SETS[views]]
     words = [q[0] for q in queries]
@@ -293,7 +297,7 @@ _set_up = {}
 def frames_and_queries(name, labels, only):
     """The model's frames that have labels (and are of the videos in only, if given): their keys,
     their places in the model's vectors, and the queries against them."""
-    keys = tuple(tuple(k) for k in json.load(open(os.path.join(BENCH, "emb", name, "frames.json"))))
+    keys = tuple(tuple(k) for k in json.load(open(os.path.join(BENCH, "emb", name.split("+")[0], "frames.json"))))
     if keys not in _set_up:
         use = [i for i, k in enumerate(keys) if k in labels and (only is None or k[0] in only)]
         frame_keys = [keys[i] for i in use]

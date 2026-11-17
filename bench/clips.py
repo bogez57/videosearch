@@ -1,12 +1,13 @@
 # What the program would list for each search, built from the frames' scores as search.c builds
 # it, and judged row by row against the labels.
 #
-#   python clips.py CONFIG... [--videos=0,1,2] [--bank=FILE] [--low=X --high=X] [--margin=0.25]
-#                             [--keep=0.5] [--floor=0] [--scan] [--show "words of a query"]
+#   python clips.py CONFIG... [--videos=0,1,2] [--bank=FILE] [--low=X --high=X] [--quiet=95]
+#                             [--margin=0.25] [--keep=0.5] [--floor=0] [--scan] [--show "words of a query"]
 #
 # CONFIG as eval.py's. A frame's score is put on the scale the program shows, 0 for --low and 1 for
-# --high; left out, low is what 95% of the searches with nothing to find stay under at best, and
-# high the middle one of the right frames' best scores, so every CONFIG is set up the same way.
+# --high; left out, low is what --quiet percent of the searches with nothing to find stay under at
+# best, and high the middle one of the right frames' best scores, so every CONFIG is set up the
+# same way. --scan tries other values of --quiet, --margin and --keep.
 # Clips are made as in _SRCH_Clips: the best frame not yet in a clip starts one, and it takes in
 # its neighbours for as long as they score within --margin of it. A clip is listed if it scores at
 # least --floor, and at least --keep of what the best clip does (of 1, if that is more).
@@ -124,6 +125,7 @@ def main():
     margin = float(opt.get("margin", 0.25))
     keep_share = float(opt.get("keep", 0.5))
     floor = float(opt.get("floor", 0.0))
+    quiet = float(opt.get("quiet", 95))
     labels = load_labels()
     bank = read_lines(opt.get("bank") or os.path.join(HERE, "bank.txt"))
     configs = []
@@ -137,20 +139,20 @@ def main():
         videos = np.array([k[0] for k in frame_keys])
         neg_best = [S[qi][q[2]].max() for qi, q in enumerate(queries) if q[3]]
         pos_best = [S[qi][q[1]].max() for qi, q in enumerate(queries) if not q[3]]
-        low = float(opt["low"]) if "low" in opt else float(np.percentile(neg_best, 95))
         high = float(opt["high"]) if "high" in opt else float(np.median(pos_best))
-        high = max(high, low + 1e-6)
 
-        def line(label, m, k, f):
+        def line(label, m, k, f, quiet):
+            low = float(opt["low"]) if "low" in opt else float(np.percentile(neg_best, quiet))
+            low = min(low, high - 1e-6)
             p, n, lists = judge(S, queries, videos, low, high, m, k, f)
             print("%-46s %7.3f %7.3f | %5.1f %.3f %.3f %.3f %.3f %.3f | %.3f %.1f" % (
                 label, low, high, p["rows"], p["right"], p["found"], p["first"], p["order"], p["none"], n["quiet"], n["rows"]), flush=True)
             return lists
 
-        lists = line("|".join(c), margin, keep_share, floor)
+        lists = line("|".join(c), margin, keep_share, floor, quiet)
         if "scan" in opt:
-            for m, k, f in itertools.product((0.15, 0.25, 0.4), (0.0, 0.3, 0.5, 0.7), (-0.25, 0.0, 0.15, 0.3)):
-                line("    margin %.2f keep %.1f floor %5.2f" % (m, k, f), m, k, f)
+            for q, m, k in itertools.product((95, 85, 75, 60), (0.15, 0.3, 0.5), (0.0, 0.3, 0.5)):
+                line("    quiet %d margin %.2f keep %.1f" % (q, m, k), m, k, floor, q)
         if "show" in opt:
             for qi, q in enumerate(queries):
                 if q[0] == opt["show"]:
