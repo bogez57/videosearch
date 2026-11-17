@@ -380,7 +380,7 @@ _FR_UpdateResults(App_State* app_state) {
          for (U64 i = 0; i < Min(results->count, 3); i += 1) {
             SRCH_Hit* hit = &results->v[i];
             Str8ListPushF(scratch.arena, &best, "%S %.0f-%.0f s (%s%.2f)", app_state->library->videos[hit->video_idx].name,
-                          hit->start_s, hit->end_s, hit->by_sound ? "sound " : "", hit->score);
+                          hit->start_s, hit->end_s, hit->by_both ? "picture and sound " : hit->by_sound ? "sound " : "", hit->score);
          }
          StringJoin join = {0};
          join.sep = Str8Lit(", ");
@@ -940,12 +940,13 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
                UI_Box* row_box = UI_ListRow(row_h, 0, UI_BoxFlag_Clickable | UI_BoxFlag_DrawBackground, "###hit %lld", row_idx);
 
                // How well a clip matched, as 1 to 100, and whether it was
-               // by its sound.
+               // by its sound, or by both.
                String8 when = Str8Lit("whole video");
                if (hit->end_s > hit->start_s) {
                   F32 match = Clamp(1.0f, hit->score * 100.0f, 100.0f);
                   when = PushStr8F(scratch.arena, "%S to %S   %smatch %d", _FR_Clock(scratch.arena, hit->start_s),
-                                   _FR_Clock(scratch.arena, hit->end_s + 0.5), hit->by_sound ? "sound " : "",
+                                   _FR_Clock(scratch.arena, hit->end_s + 0.5),
+                                   hit->by_both ? "picture and sound " : hit->by_sound ? "sound " : "",
                                    (int)(match + 0.5f));
                }
 
@@ -1053,16 +1054,6 @@ FrameWork(App_State* app_state) {
    THM_Update(app_state->thumbs);
    IDX_Update(app_state->indexer, app_state->library);
    SRCH_Update(app_state->search, app_state->library, app_state->indexer);
-   if (app_state->score_queries_path.size != 0) {
-      IDX_Status idx = IDX_GetStatus(app_state->indexer);
-      if (idx.video_count != 0 && idx.videos_done == idx.video_count) {
-         Temp scratch = ScratchBegin(0, 0);
-         SRCH_DumpScores(app_state->search, app_state->library, app_state->score_queries_path,
-                         PushStr8F(scratch.arena, "%S\\scores.txt", FR_LocalFolder(scratch.arena)));
-         ScratchEnd(scratch);
-         app_state->quit = 1;
-      }
-   }
    _FR_UpdateResults(app_state);
 
    // The UI tree, built after the input. UI_EndBuild lays it out; it is

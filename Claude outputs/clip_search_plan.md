@@ -143,8 +143,15 @@ they are wanted:
   sound are found as clips of frames are, and both go in one list. Each
   model's score is stretched over its own band so they compare; a row found
   by sound says "sound match".
-- Still to do: set the sound's band (`SRCH_SOUND_LOW`, `SRCH_SOUND_HIGH`)
-  from real videos; maybe one hit where a clip matches by both.
+- Ranking: what a stretch of sound scores for words that say nothing ("a
+  sound", "something", ...) is taken from its score, since CLAP gives some
+  stretches a good score for any words; the sound's band is set from 58
+  test searches on five trailers. A clip of frames and a clip of sound that
+  both match well at the same time are one hit ("picture and sound match").
+- What the test searches showed: CLAP scores words about something seen
+  ("a soldier in a trench", "fire") nearly as high as words about something
+  heard, so its scores alone can't keep sound rows out of a search for a
+  picture; the band only puts them below good picture rows.
 
 ## The GPU, as built
 

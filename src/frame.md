@@ -21,7 +21,8 @@ layer's state.
   (`_FR_BuildScreen`) and its drawing (`_FR_DrawUITree`).
 - The rows: each hit with a thumbnail of its best frame (`THM_Get`), its
   name, its stretch, how well it matched as 1 to 100 (the hit's score
-  times 100; "sound match" when it was found by its sound), its folder. A click plays it.
+  times 100; "sound match" when it was found by its sound, "picture and
+  sound match" when by both), its folder. A click plays it.
 - Playing: `_FR_PlayHit` opens the hit's video with the player (`src/video`)
   in the list's place, from the clip's start; `_FR_UpdatePlaying` stops it
   at the clip's end, once; `_FR_StopPlaying`. While a clip is open the keys

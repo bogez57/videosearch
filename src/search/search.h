@@ -10,7 +10,8 @@
 // of neighbouring frames that score nearly as well as the best of them is a
 // clip, and the clips that score highest are the hits. The videos' sound is
 // searched the same way with the sound model, where there is one, and its
-// clips are hits in the same list.
+// clips are hits in the same list. A clip of frames and a clip of sound that
+// both match well, at the same time in the same video, are one hit.
 // Until there are frames to search, or if there is no model, it matches
 // file names instead (search.md).
 //
@@ -26,18 +27,30 @@
 // band: CLIP's is about 0.18 when they have nothing to do with each other
 // and about 0.33 when they match well. A hit's score is that band stretched
 // so its low end is 0 and its high end 1 - CLIP's and the sound model's each
-// by its own, which is what makes the two comparable. The sound model's
-// band is from a handful of test searches (a tone scored 0.48 for "a beep",
-// sound that had nothing to do with the words up to about 0.4).
+// by its own, which is what makes the two comparable.
+//
+// The sound model gives some stretches of sound a good score for any words
+// at all, so a stretch's score has taken from it what it scores for words
+// that say nothing ("a sound", "something", ...: search.c). The sound's band
+// is for what is left, and is from 58 test searches on five film trailers:
+// sound that matched the words was left with 0.3 to 0.5, and sound for words
+// about something seen, not heard, mostly with under 0.3 - though up to 0.4:
+// the sound model can't tell them apart well.
 #define SRCH_PICTURE_LOW  0.18f
 #define SRCH_PICTURE_HIGH 0.33f
 #define SRCH_SOUND_LOW    0.20f
-#define SRCH_SOUND_HIGH   0.55f
+#define SRCH_SOUND_HIGH   0.50f
 
 // How far below a clip's best frame its other frames may score, in the
 // model's own score.
 #define SRCH_CLIP_MARGIN  0.02f
 #define SRCH_SOUND_MARGIN 0.05f
+
+// A clip of frames and a clip of sound become one hit when both score at
+// least this. The hit scores as the better of the two, and this much of the
+// other on top.
+#define SRCH_BOTH_FLOOR 0.35f
+#define SRCH_BOTH_SHARE 0.25f
 
 // A clip that matches: a stretch of one of the library's videos. start_s and
 // end_s are seconds from the video's start; both 0 is the whole video.
@@ -50,6 +63,7 @@ struct SRCH_Hit {
    F64 best_s;
    F32 score;    // about 0 for no match to 1 for a good one; it can be under or over
    B32 by_sound; // found by what is heard in it, not what is seen
+   B32 by_both;  // found by what is seen and by what is heard
 };
 
 typedef struct SRCH_Results SRCH_Results;
@@ -78,10 +92,5 @@ internal void SRCH_Forget(SRCH_Search* search);
 // The hits for query, best first, pushed on arena. No hits for an empty
 // query.
 internal SRCH_Results SRCH_Run(Arena* arena, SRCH_Search* search, LIB_Library* library, String8 query);
-
-// For working out the ranking, to be taken out again: each line of the file
-// at queries_path as a query, and to out_path every stretch of sound's own
-// score for it, and what the frames' scores are like.
-internal void SRCH_DumpScores(SRCH_Search* search, LIB_Library* library, String8 queries_path, String8 out_path);
 
 #endif // SEARCH_H

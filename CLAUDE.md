@@ -79,8 +79,14 @@ through ONNX Runtime, vectors on disk) in five steps.
   (`embed_sound.c`, `embed_sound_tokenizer.c`); the indexer reads the sound
   five seconds at a time in the same pass, into a second index file per
   video (`.vsa`); the search finds clips of sound as it does clips of
-  frames, in one list ("sound match"). The sound's score band in `search.h`
-  is a first guess.
+  frames, in one list ("sound match").
+- Ranking: a stretch of sound's score has taken from it what it scores for
+  words that say nothing, and the sound's band in `search.h` is set from 58
+  test searches on J's five trailers; a clip that matches by picture and by
+  sound at once is one row ("picture and sound match"). The sound model
+  still can't tell words about something seen from words about something
+  heard, so a weak "sound match" under a search for a picture is to be
+  expected.
 - The GPU: the picture and sound models run on the graphics card through
   DirectML (ONNX Runtime's DirectML build), and the indexer decodes on the
   card too (`VID_DecoderOpenOnCard`, `VID_DecoderNextFrameFrom`: added to

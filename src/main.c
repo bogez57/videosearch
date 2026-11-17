@@ -193,7 +193,6 @@ _EntryPoint(CmdLine* cmdline) {
       app_state.search = SRCH_Alloc(index_folder, app_state.model);
       ScratchEnd(scratch);
    }
-   app_state.score_queries_path = CmdLineString(cmdline, Str8Lit("score-queries"));
    FR_LoadFolders(&app_state);
    for (String8Node* node = cmdline->inputs.first; node != 0; node = node->next) {
       FR_AddFolder(&app_state, node->string);
