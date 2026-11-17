@@ -12,10 +12,11 @@
 // folder). What is typed is the search: the list under it is what matches,
 // best first. Esc empties the search bar.
 //
-// For now a match is by file name only (search\search.md). Meanwhile the
-// indexer runs a frame a second of every video through the image model and
-// keeps what it makes of them on disk (indexer\indexer.md). How it is to
-// find clips by what is in them is in Claude outputs\clip_search_plan.md.
+// The indexer runs a frame a second of every video through CLIP's image
+// model and keeps what it makes of them on disk (indexer\indexer.md); a
+// search puts what is typed through the text model and finds the frames
+// that match it best (search\search.md). Where it is going is in
+// Claude outputs\clip_search_plan.md.
 
 #define _CRT_SECURE_NO_WARNINGS
 
@@ -80,6 +81,7 @@
 # pragma clang diagnostic pop
 #endif
 #include "embed/embed.c"
+#include "embed/embed_tokenizer.c"
 #include "embed/embed_onnx.c" // the model: the one file to change to run it with something else (embed.h)
 #include "index/index.c"
 #include "indexer/indexer.c"
@@ -183,10 +185,13 @@ _EntryPoint(CmdLine* cmdline) {
    app_state.library = LIB_Alloc();
    {
       Temp    scratch = ScratchBegin(0, 0);
+      String8 data = PushStr8F(scratch.arena, "%S\\..\\data", GetProcessInfo()->binary_path);
+      String8 model_name = Str8Lit("clip-vit-base-patch32");
+      app_state.model = EMB_Open(PushStr8F(scratch.arena, "%S\\models\\%S", data, model_name),
+                                 PushStr8F(scratch.arena, "%S\\clip\\bpe_merges.txt", data));
       String8 index_folder = PushStr8F(scratch.arena, "%S\\index", FR_LocalFolder(scratch.arena));
-      String8 model_folder =
-          PushStr8F(scratch.arena, "%S\\..\\data\\models\\clip-vit-base-patch32", GetProcessInfo()->binary_path);
-      app_state.indexer = IDX_Alloc(index_folder, model_folder);
+      app_state.indexer = IDX_Alloc(index_folder, model_name, app_state.model);
+      app_state.search = SRCH_Alloc(index_folder, app_state.model);
       ScratchEnd(scratch);
    }
    FR_LoadFolders(&app_state);
@@ -224,6 +229,7 @@ _EntryPoint(CmdLine* cmdline) {
 
    g_repaint_app_state = 0;
    IDX_Stop(app_state.indexer);
+   EMB_Close(app_state.model);
    FileClose(app_state.log_file);
 
    Core_R_Shutdown();

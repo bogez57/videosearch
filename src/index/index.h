@@ -3,8 +3,7 @@
 //
 // One file per video in bin\local\index, named by a hash of the video's
 // path: what the image model made of each frame the indexer took, with the
-// frame's time. The indexer writes them (step 2 of the plan); the search will
-// read them (step 3).
+// frame's time. The indexer writes them; the search reads them.
 //
 // A file is the INX_Header, then the video's path (path_size bytes), then a
 // F32 time in seconds for each frame, then each frame's vector as EMB_DIM
@@ -44,7 +43,14 @@ internal B32 INX_IsUpToDate(String8 file_path, INX_Header* want, U64* count_out)
 // beside it first and then moved over it, so a file is whole or not there.
 internal B32 INX_Write(String8 file_path, INX_Header header, String8 video_path, String8List times, String8List vectors);
 
-// F32 into F16, rounded to the nearest.
+// A file's frames, as INX_Write wrote them: count_out of them, their times
+// and their vectors (EMB_DIM F16s each) pushed on arena. 0 if it is not
+// there or not a whole index file of this version. Whether it is up to date
+// is not checked: that is INX_IsUpToDate's.
+internal B32 INX_Read(Arena* arena, String8 file_path, U64* count_out, F32** times_out, U16** vectors_out);
+
+// F32 into F16, rounded to the nearest, and back.
 internal U16 INX_F16FromF32(F32 f);
+internal F32 INX_F32FromF16(U16 h);
 
 #endif // INDEX_H

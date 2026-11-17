@@ -6,30 +6,46 @@ and shows the `SRCH_Hit`s, and knows nothing of how they were found.
 
 ## State
 
-None of its own. `SRCH_Run` reads the library and pushes its results on the
-arena it is given; `App_State` keeps the last results and the query they were
-for (`results_arena`, `results_query`, `results`).
+`SRCH_Search` (search.c), one, made in `_EntryPoint` and kept in
+`App_State.search`.
+
+- Per library video, for the library's generation: its index file's frames
+  (times and F16 vectors), loaded once the indexer says the file is up to
+  date (`IDX_IsIndexed`). A new library generation empties them all.
+- `generation`: goes up when a file is loaded or the model finishes
+  loading, so `_FR_UpdateResults` searches again.
+- A table from every F16 to its F32, for the dot products.
+
+`App_State` keeps the last results and what they were for (`results_query`,
+`results_library_gen`, `results_search_gen`).
 
 ## Functions
 
-- `SRCH_Run(arena, library, query)`: up to `SRCH_MAX_HITS` hits, best first.
-  A hit is a video (`video_idx` in `library->videos`), a stretch of it in
-  seconds (`start_s`, `end_s`; both 0 is the whole video) and a `score` that
-  only means something next to the other hits of the same search.
+- `SRCH_Alloc(index_folder, model)`
+- `SRCH_Update(search, library, indexer)`: once a frame, after `IDX_Update`.
+- `SRCH_Generation`
+- `SRCH_Run(arena, search, library, query)`: up to `SRCH_MAX_HITS` hits,
+  best first. A hit is a video (`video_idx`), a stretch of it in seconds
+  (`start_s`, `end_s`; both 0 is the whole video) and a `score`.
 
-## What it does now
+## How it searches
 
-A stand-in, so that the rest of the program can be built against the seam:
-a video is a hit when any word of the query is in its file name, scored by
-how many of the words are. Every hit is the whole video.
+The query goes through CLIP's text model (`EMB_TextVector`, on the main
+thread: a few milliseconds), and every loaded frame scores the dot product
+of its vector and the query's - their cosine, about 0.2 to 0.35 for CLIP.
+Each hit is one frame for now, standing for the second from it to the next
+frame. Brute force over every frame: see the plan for why that is enough.
 
-## What it is to become
+Until there are frames loaded, or if the model could not be loaded, it
+matches file names instead (`by_name` in the results): a video is a hit
+when a word of the query is in its name, and the hit is the whole video.
 
-The search by what is in the frames: `Claude outputs/clip_search_plan.md`.
-The query is turned into a vector by a text encoder, compared with the
-vectors of frames sampled from each video, and runs of close frames become
-the hits' stretches. `search.h` stays as it is.
+## Not done yet
+
+- Runs of neighbouring good frames as one clip (step 4).
+- A score below which a frame is not a hit at all: for now the best 500
+  are shown, however poor.
 
 ## Used by
 
-- `frame.c`: `_FR_UpdateResults`, whenever the query or the library changes.
+- `frame.c`: `SRCH_Update` in `FrameWork`, `SRCH_Run` in `_FR_UpdateResults`.

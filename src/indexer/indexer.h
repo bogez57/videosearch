@@ -33,12 +33,13 @@ struct IDX_Status {
    U64     videos_done; // gone through, whether or not they could be decoded
    U64     videos_failed;
    U64     frames;      // indexed, in all the videos done and the one under way
-   B32     no_model;    // the model could not be loaded, so nothing is indexed
+   B32     no_model;    // the model could not be opened or loaded, so nothing is indexed
    String8 current;     // the name of the video under way. Empty when none is. Good until the next IDX_Update
 };
 
-// index_folder is where the index files go, model_folder the model's.
-internal IDX_Indexer* IDX_Alloc(String8 index_folder, String8 model_folder);
+// index_folder is where the index files go. model may be 0 (it could not be
+// opened); model_name goes in the files, to say which model made them.
+internal IDX_Indexer* IDX_Alloc(String8 index_folder, String8 model_name, EMB_Model* model);
 
 // Once a frame: logs what the thread has logged, and starts again from the
 // first video whenever the library's videos have changed (its generation).
@@ -46,7 +47,11 @@ internal void IDX_Update(IDX_Indexer* indexer, LIB_Library* library);
 
 internal IDX_Status IDX_GetStatus(IDX_Indexer* indexer);
 
-// Stops the thread and lets go of the model, at the end of the program.
+// Whether the video's index file is up to date, as of this run: the
+// library's video_idx'th video at library_gen.
+internal B32 IDX_IsIndexed(IDX_Indexer* indexer, U64 library_gen, U64 video_idx);
+
+// Stops the thread, at the end of the program.
 internal void IDX_Stop(IDX_Indexer* indexer);
 
 #endif // INDEXER_H

@@ -11,7 +11,7 @@
 //    +--------------------------------------------------------+
 //    |  [ a car driving down a highway|                    ]  |
 //    |  3 hits. 120 videos in 2 folders.                      |
-//    |    highway_trip.mp4      whole video   D:\videos\2024   |
+//    |    highway_trip.mp4      at 1:23   0.31   D:\videos\2024  |
 //    |    ...                                                 |
 //    |  Type to search. Drop a folder of videos to add it.    |
 //    +--------------------------------------------------------+
@@ -264,13 +264,20 @@ _FR_UpdateResults(App_State* app_state) {
    String8 query = Str8SkipChopWhitespace(Str8(app_state->query, app_state->query_size));
    B32     same_query = Str8Match(query, app_state->results_query, 0);
    B32     same_library = (app_state->results_library_gen == app_state->library->generation);
+   B32     same_search = (app_state->results_search_gen == SRCH_Generation(app_state->search));
 
-   if (!same_query || !same_library) {
+   if (!same_query || !same_library || !same_search) {
       ArenaClear(app_state->results_arena);
       app_state->results_query = PushStr8Copy(app_state->results_arena, query);
       app_state->results_library_gen = app_state->library->generation;
-      app_state->results = SRCH_Run(app_state->results_arena, app_state->library, app_state->results_query);
-      MemoryZeroStruct(&app_state->results_scroll);
+      app_state->results_search_gen = SRCH_Generation(app_state->search);
+      app_state->results =
+          SRCH_Run(app_state->results_arena, app_state->search, app_state->library, app_state->results_query);
+      // More frames found while the query stays the same keep the list where
+      // it was scrolled to.
+      if (!same_query || !same_library) {
+         MemoryZeroStruct(&app_state->results_scroll);
+      }
    }
 }
 
@@ -613,9 +620,10 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
          if (idx.videos_failed != 0) {
             failed = PushStr8F(scratch.arena, " %llu could not be indexed.", (unsigned long long)idx.videos_failed);
          }
-         status = PushStr8F(scratch.arena, "%S%llu videos in %llu folders.%S%S Searching by file name for now.", hits,
+         String8 by_name = results->by_name ? Str8Lit(" Matched by file name: no frames to search yet.") : Str8Lit("");
+         status = PushStr8F(scratch.arena, "%S%llu videos in %llu folders.%S%S%S", hits,
                             (unsigned long long)library->video_count, (unsigned long long)library->folders.node_count,
-                            reading, failed);
+                            reading, failed, by_name);
       }
       _FR_BuildBar(R2F32P(0, 0, window_dim.x, bar_h), pad, (notice.size != 0) ? Str8Lit("notice") : Str8Lit("dim"), status,
                    "status");
@@ -634,9 +642,13 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
 
             UI_Box* row_box = UI_ListRow(row_h, 0, UI_BoxFlag_Clickable | UI_BoxFlag_DrawBackground, "###hit %lld", row_idx);
 
+            // A frame's hit says how well it matched, for telling a good match
+            // from a poor one: CLIP's scores are about 0.2 to 0.35.
             String8 when = Str8Lit("whole video");
             if (hit->end_s > hit->start_s) {
-               when = PushStr8F(scratch.arena, "%.1fs to %.1fs", hit->start_s, hit->end_s);
+               U64 s = (U64)hit->start_s;
+               when = PushStr8F(scratch.arena, "at %llu:%02llu   %.2f", (unsigned long long)(s / 60), (unsigned long long)(s % 60),
+                                hit->score);
             }
 
             UI_Parent(row_box) UI_PrefHeight(UI_Pct(1, 1)) {
@@ -701,6 +713,7 @@ FrameWork(App_State* app_state) {
    _FR_BeginText(app_state, window_dim);
    _FR_Input(app_state);
    IDX_Update(app_state->indexer, app_state->library);
+   SRCH_Update(app_state->search, app_state->library, app_state->indexer);
    _FR_UpdateResults(app_state);
 
    // The UI tree, built after the input. UI_EndBuild lays it out; it is

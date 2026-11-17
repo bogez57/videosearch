@@ -10,23 +10,24 @@ index file is up to date is not read again.
 ## State
 
 `IDX_Indexer` (indexer.c), one, made in `_EntryPoint` and kept in
-`App_State.indexer`, with the index folder (`bin\local\index`) and the model
-folder (`data\models\clip-vit-base-patch32`).
+`App_State.indexer`, with the index folder (`bin\local\index`), the model
+(`App_State.model`) and its name, which goes in the index files.
 
 - A run: one pass over the videos as they were when it started. Their paths
   are copied onto the indexer's arena, so the library can change under it.
 - `library_gen`: the library's generation the run is for. A different one
   stops the run (`cancel`, then the thread is joined) and starts another.
-- `model`: loaded by the first run's thread and kept for the runs after.
-  None means nothing is indexed (`no_model`).
-- `done`, `failed`, `up_to_date`, `frames`, `current`: written by the
-  thread, read by the main thread with atomics.
+- `model`: its halves loaded (`EMB_Load`) by the first run's thread. None,
+  or one that failed to load, means nothing is indexed (`no_model`).
+- `done`, `failed`, `up_to_date`, `frames`, `current`, and `indexed` (one a
+  video, set when its file is up to date): written by the thread, read by
+  the main thread with atomics.
 - `logs`: what the thread logged (on `thread_log`), under `log_mutex`, for
   `IDX_Update` to log on the main thread.
 
 ## Functions
 
-- `IDX_Alloc(index_folder, model_folder)`
+- `IDX_Alloc(index_folder, model_name, model)`
 - `IDX_Update(indexer, library)`: once a frame, from `FrameWork`. Logs what
   the thread has logged; starts a run when the library's generation has
   changed. When a run has gone through every video, logs how many frames,
@@ -34,8 +35,9 @@ folder (`data\models\clip-vit-base-patch32`).
 - `IDX_GetStatus`: how many videos, done, failed, frames indexed, whether
   there is a model, and the name of the one under way. The status line shows
   it.
-- `IDX_Stop`: cancels and joins, and closes the model, at the end of the
-  program.
+- `IDX_IsIndexed(indexer, library_gen, video_idx)`: the search asks it
+  which files to load.
+- `IDX_Stop`: cancels and joins, at the end of the program.
 
 ## How a video is read
 

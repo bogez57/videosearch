@@ -68,6 +68,61 @@ INX_Write(String8 file_path, INX_Header header, String8 video_path, String8List 
    return result;
 }
 
+internal B32
+INX_Read(Arena* arena, String8 file_path, U64* count_out, F32** times_out, U16** vectors_out) {
+   Temp    scratch = ScratchBegin(&arena, 1);
+   String8 data = DataFromFilePath(scratch.arena, file_path);
+   B32     result = 0;
+   if (data.size >= sizeof(INX_Header)) {
+      INX_Header header;
+      MemoryCopy(&header, data.str, sizeof(header));
+      U64 times_at = sizeof(header) + header.path_size;
+      U64 vectors_at = times_at + header.count * sizeof(F32);
+      U64 end = vectors_at + header.count * EMB_DIM * sizeof(U16);
+      result = (MemoryMatch(header.magic, INX_MAGIC, sizeof(header.magic)) && header.version == INX_VERSION &&
+                header.dim == EMB_DIM && end == data.size);
+      if (result) {
+         // Copied out, since after the path they may not be aligned.
+         F32* times = PushArrayNoZero(arena, F32, header.count);
+         U16* vectors = PushArrayNoZero(arena, U16, header.count * EMB_DIM);
+         MemoryCopy(times, data.str + times_at, header.count * sizeof(F32));
+         MemoryCopy(vectors, data.str + vectors_at, header.count * EMB_DIM * sizeof(U16));
+         *count_out = header.count;
+         *times_out = times;
+         *vectors_out = vectors;
+      }
+   }
+   ScratchEnd(scratch);
+   return result;
+}
+
+internal F32
+INX_F32FromF16(U16 h) {
+   U32 sign = (U32)(h & 0x8000) << 16;
+   U32 exp = (h >> 10) & 0x1F;
+   U32 mant = h & 0x3FF;
+   U32 x = 0;
+   if (exp == 0x1F) {
+      x = sign | 0x7F800000 | (mant << 13); // infinity, or not a number
+   } else if (exp != 0) {
+      x = sign | ((exp + 127 - 15) << 23) | (mant << 13);
+   } else if (mant != 0) {
+      // A subnormal F16 is a normal F32: shift it up until its top bit is
+      // the hidden one.
+      S32 e = 127 - 15 + 1;
+      while ((mant & 0x400) == 0) {
+         mant <<= 1;
+         e -= 1;
+      }
+      x = sign | ((U32)e << 23) | ((mant & 0x3FF) << 13);
+   } else {
+      x = sign;
+   }
+   F32 result;
+   MemoryCopy(&result, &x, 4);
+   return result;
+}
+
 internal U16
 INX_F16FromF32(F32 f) {
    U32 x;

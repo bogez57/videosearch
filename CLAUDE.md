@@ -61,6 +61,8 @@ through ONNX Runtime, vectors on disk) in five steps.
   CLIP ViT-B/32's image half (`src/embed`, the model in `data/models`, see
   its README) on each frame, and the vectors go to one file per video in
   `bin\local\index` (`src/index`).
-- Next: step 3, text vectors and real search. CLIP's tokenizer is written
-  (`src/embed/embed_tokenizer.c`, not compiled in yet); it needs the merges
-  file in `data/clip`.
+- Step 3, real search: CLIP's tokenizer (`src/embed/embed_tokenizer.c`,
+  merges in `data/clip`) and text half put the query into a vector;
+  `src/search` loads the index files and ranks every frame by its dot
+  product with it. Each hit is one frame, shown with its time and score.
+- Next: step 4, runs of frames as clips, thumbnails, playing a hit.

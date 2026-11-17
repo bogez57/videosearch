@@ -21,14 +21,16 @@ they are now. One that is not is written again whole.
 - `INX_IsUpToDate(file_path, want, count_out)`
 - `INX_Write(file_path, header, video_path, times, vectors)`: to
   `<file>.part`, then moved over the file, so a file is whole or not there.
+- `INX_Read(arena, file_path, ...)`: a file's times and vectors. Checks it
+  is whole and of this version, not that it is up to date.
 - `INX_F16FromF32`: rounds to the nearest, as a cast to `float16` does
-  (checked against numpy on 200,000 numbers).
+  (checked against numpy on 200,000 numbers). `INX_F32FromF16`: checked on
+  all 65,536.
 
 ## Not done yet
 
-- Reading the vectors back, for the search (step 3).
 - Index files of videos no longer in the library are not deleted.
 
 ## Used by
 
-- `indexer.c`, which writes them.
+- `indexer.c`, which writes them; `search.c`, which reads them.

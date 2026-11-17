@@ -41,8 +41,16 @@ struct App_State {
    // The folders of videos, and the videos in them (src\library).
    LIB_Library* library;
 
-   // Reads the videos' frames on a thread of its own (src\indexer).
+   // CLIP, run by the indexer on frames and by the search on what is typed
+   // (src\embed). 0 if it could not be opened.
+   EMB_Model* model;
+
+   // Runs the videos' frames through the model on a thread of its own
+   // (src\indexer).
    IDX_Indexer* indexer;
+
+   // The frames indexed so far, and the search through them (src\search).
+   SRCH_Search* search;
 
    // The search bar: what is typed, as UTF-8.
    U8  query[APP_QUERY_CAP];
@@ -53,6 +61,7 @@ struct App_State {
    Arena*        results_arena;
    String8       results_query;       // on results_arena
    U64           results_library_gen; // the library's generation they were found in
+   U64           results_search_gen;  // the search's
    SRCH_Results  results;
    UI_ScrollRows results_scroll;
 

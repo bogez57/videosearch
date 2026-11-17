@@ -15,7 +15,7 @@ the UI layer's state.
 
 - `FrameWork`: the frame. `_FR_Input` (typing, Backspace, Esc, a folder
   dropped, the window closed), `_FR_UpdateResults` (calls `SRCH_Run` when the
-  query or the library's generation changed), then the UI build
+  query, the library's generation or the search's changed), then the UI build
   (`_FR_BuildScreen`) and its drawing (`_FR_DrawUITree`).
 - `FR_AddFolder`, `FR_LoadFolders`: the library's folders, kept a line each
   in `bin\local\folders.txt`.

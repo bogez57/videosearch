@@ -11,7 +11,7 @@
 // do not change while it runs.
 //
 // The model is loaded by the first run's thread, since that takes a second
-// or two, and kept for the runs after it.
+// or so, and kept for the runs after it.
 
 struct IDX_Indexer {
    Arena*   arena; // the run's: emptied for each
@@ -26,10 +26,9 @@ struct IDX_Indexer {
    U64      count;
 
    String8    index_folder;
-   String8    model_folder;
-   Arena*     model_arena;
-   EMB_Model* model;
-   B32        model_tried; // only the thread reads or writes these two, and one runs at a time
+   String8    model_name;
+   EMB_Model* model;       // 0: none could be opened
+   B32        model_tried; // only the thread reads or writes it, and one runs at a time
 
    // What the thread has logged and the main thread has not yet. thread_log
    // is the thread's log, kept for every run's thread: there is no letting
@@ -47,7 +46,8 @@ struct IDX_Indexer {
    U64 up_to_date;
    U64 frames;
    U64 no_model;
-   U64 current; // the video under way, plus one. 0: none
+   U64  current; // the video under way, plus one. 0: none
+   U64* indexed; // one a video, set when its index file is up to date
 };
 
 internal void
@@ -90,34 +90,34 @@ _IDX_ThreadEntry(void* p) {
    Arena* arena = ArenaAlloc();
    LogSelect(indexer->thread_log);
 
-   if (!indexer->model_tried) {
+   if (indexer->model != 0 && !indexer->model_tried) {
       indexer->model_tried = 1;
       LogScopeBegin();
       U64 begin_us = NowTimeUS();
-      indexer->model = EMB_Open(indexer->model_arena, indexer->model_folder);
-      if (indexer->model != 0) {
-         LogInfoF("Loaded the image model in %.1f s\n", (F64)(NowTimeUS() - begin_us) / 1000000.0);
+      if (EMB_Load(indexer->model)) {
+         LogInfoF("Loaded the model in %.1f s\n", (F64)(NowTimeUS() - begin_us) / 1000000.0);
       }
       _IDX_PassOnLogs(indexer, LogScopeEnd(arena));
       ArenaClear(arena);
    }
-   if (indexer->model == 0) {
+   B32 loaded = EMB_IsLoaded(indexer->model);
+   if (!loaded) {
       InsAtomicU64EvalAssign(&indexer->no_model, 1);
    }
 
-   String8 model_name = Str8SkipLastSlash(indexer->model_folder);
-   for (U64 idx = 0; indexer->model != 0 && idx < indexer->count && !InsAtomicU64Eval(&indexer->cancel); idx += 1) {
+   for (U64 idx = 0; loaded && idx < indexer->count && !InsAtomicU64Eval(&indexer->cancel); idx += 1) {
       InsAtomicU64EvalAssign(&indexer->current, idx + 1);
       Temp temp = TempBegin(arena);
       LogScopeBegin();
 
       String8    path = indexer->paths[idx];
-      INX_Header header = INX_HeaderFor(path, PropertiesFromFilePath(path), model_name, IDX_SAMPLE_SECONDS);
+      INX_Header header = INX_HeaderFor(path, PropertiesFromFilePath(path), indexer->model_name, IDX_SAMPLE_SECONDS);
       String8    file_path = INX_FilePath(arena, indexer->index_folder, path);
       U64        have = 0;
       if (INX_IsUpToDate(file_path, &header, &have)) {
          InsAtomicU64EvalAssign(&indexer->frames, InsAtomicU64Eval(&indexer->frames) + have);
          InsAtomicU64IncEval(&indexer->up_to_date);
+         InsAtomicU64EvalAssign(&indexer->indexed[idx], 1);
       } else {
          U64 begin_us = NowTimeUS();
 
@@ -160,6 +160,7 @@ _IDX_ThreadEntry(void* p) {
             if (ok && !InsAtomicU64Eval(&indexer->cancel)) {
                U64 frames = times.total_size / sizeof(F32);
                if (INX_Write(file_path, header, path, times, vector_list)) {
+                  InsAtomicU64EvalAssign(&indexer->indexed[idx], 1);
                   LogInfoF("Indexed %S: %llu frames in %.1f s\n", indexer->names[idx], (unsigned long long)frames,
                            (F64)(NowTimeUS() - begin_us) / 1000000.0);
                } else {
@@ -181,16 +182,16 @@ _IDX_ThreadEntry(void* p) {
 }
 
 internal IDX_Indexer*
-IDX_Alloc(String8 index_folder, String8 model_folder) {
+IDX_Alloc(String8 index_folder, String8 model_name, EMB_Model* model) {
    Arena*       arena = ArenaAlloc();
    IDX_Indexer* indexer = PushArray(arena, IDX_Indexer, 1);
    indexer->arena = ArenaAlloc();
-   indexer->model_arena = ArenaAlloc();
+   indexer->model = model;
    indexer->log_arena = ArenaAlloc();
    indexer->log_mutex = MutexAlloc();
    indexer->thread_log = LogAlloc();
    indexer->index_folder = PushStr8Copy(arena, index_folder);
-   indexer->model_folder = PushStr8Copy(arena, model_folder);
+   indexer->model_name = PushStr8Copy(arena, model_name);
    if (!FilePathExists(index_folder)) {
       MakeDirectory(index_folder);
    }
@@ -209,8 +210,6 @@ _IDX_StopThread(IDX_Indexer* indexer) {
 internal void
 IDX_Stop(IDX_Indexer* indexer) {
    _IDX_StopThread(indexer);
-   EMB_Close(indexer->model);
-   indexer->model = 0;
 }
 
 internal void
@@ -250,6 +249,7 @@ IDX_Update(IDX_Indexer* indexer, LIB_Library* library) {
    indexer->count = library->video_count;
    indexer->paths = PushArray(indexer->arena, String8, indexer->count);
    indexer->names = PushArray(indexer->arena, String8, indexer->count);
+   indexer->indexed = PushArray(indexer->arena, U64, indexer->count);
    for (U64 i = 0; i < indexer->count; i += 1) {
       indexer->paths[i] = PushStr8Copy(indexer->arena, library->videos[i].path);
       indexer->names[i] = Str8SkipLastSlash(indexer->paths[i]);
@@ -283,4 +283,10 @@ IDX_GetStatus(IDX_Indexer* indexer) {
       result.current = indexer->names[current - 1];
    }
    return result;
+}
+
+internal B32
+IDX_IsIndexed(IDX_Indexer* indexer, U64 library_gen, U64 video_idx) {
+   return (indexer->library_gen == library_gen && video_idx < indexer->count &&
+           InsAtomicU64Eval(&indexer->indexed[video_idx]) != 0);
 }
