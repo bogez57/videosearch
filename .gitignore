@@ -25,5 +25,8 @@
 *.ogv
 *.vob
 
+# The test videos: small, made with FFmpeg's test sources (data/test/README.md)
+!/data/test/*.mp4
+
 # Models: downloaded, not kept in the repo (see Claude outputs/clip_search_plan.md)
 /data/models/
