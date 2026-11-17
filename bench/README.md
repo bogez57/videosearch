@@ -17,3 +17,6 @@ a frame a second of each test video (`frames`), their vectors (`emb`), and `labe
 - `bank.txt`: words that could be about anything, for taking out what a frame scores for any words.
 - `eval.py CONFIG...`: scores each way of searching against the labels (the top of the file says
   how to write a config and what the numbers mean).
+- `sound.py`: the sound model against sound whose content is known: ESC-50 (2000 labeled clips),
+  and ESC-50 sounds mixed into the test videos' own sound. `bank_sound.txt`: words about sounds of
+  every kind, as `bank.txt` is for pictures.
