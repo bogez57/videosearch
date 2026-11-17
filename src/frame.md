@@ -20,7 +20,8 @@ layer's state.
   search by the frames with its best three hits), then the UI build
   (`_FR_BuildScreen`) and its drawing (`_FR_DrawUITree`).
 - The rows: each hit with a thumbnail of its best frame (`THM_Get`), its
-  name, its stretch and score, its folder. A click plays it.
+  name, its stretch, how well it matched as 1 to 100 (CLIP's score from
+  0.18 to 0.33, stretched), its folder. A click plays it.
 - Playing: `_FR_PlayHit` opens the hit's video with the player (`src/video`)
   in the list's place, from the clip's start; `_FR_UpdatePlaying` stops it
   at the clip's end, once; `_FR_StopPlaying`. While a clip is open the keys

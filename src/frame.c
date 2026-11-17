@@ -11,7 +11,7 @@
 //    +--------------------------------------------------------+
 //    |  [ a car driving down a highway|                    ]  |
 //    |  3 hits. 120 videos in 2 folders.                      |
-//    |    highway_trip.mp4   1:22 to 1:31   0.31   D:\videos\2024 |
+//    |  [] highway_trip.mp4  1:22 to 1:31  match 87  D:\videos\2024 |
 //    |    ...                                                 |
 //    |  Type to search. Drop a folder of videos to add it.    |
 //    +--------------------------------------------------------+
@@ -904,17 +904,18 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
 
                UI_Box* row_box = UI_ListRow(row_h, 0, UI_BoxFlag_Clickable | UI_BoxFlag_DrawBackground, "###hit %lld", row_idx);
 
-               // A clip says how well it matched, for telling a good match from
-               // a poor one: CLIP's scores are about 0.2 to 0.35.
-               String8 when = Str8Lit("whole video");
-               if (hit->end_s > hit->start_s) {
-                  U64 a = (U64)hit->start_s;
-                  U64 b = (U64)(hit->end_s + 0.5);
-                  when = PushStr8F(scratch.arena, "%llu:%02llu to %llu:%02llu   %.2f", (unsigned long long)(a / 60),
-                                   (unsigned long long)(a % 60), (unsigned long long)(b / 60), (unsigned long long)(b % 60), hit->score);
-               }
+               // How well a clip matched, as 1 to 100. CLIP's own score for a
+            // picture and words is in a narrow band - about 0.18 when they
+            // have nothing to do with each other, about 0.33 when they
+            // match well - so that band is stretched over the hundred.
+            String8 when = Str8Lit("whole video");
+            if (hit->end_s > hit->start_s) {
+               F32 match = Clamp(1.0f, (hit->score - 0.18f) / (0.33f - 0.18f) * 100.0f, 100.0f);
+               when = PushStr8F(scratch.arena, "%S to %S   match %d", _FR_Clock(scratch.arena, hit->start_s),
+                                _FR_Clock(scratch.arena, hit->end_s + 0.5), (int)(match + 0.5f));
+            }
 
-               // The picture of its best moment, in a place 16 wide and 9
+            // The picture of its best moment, in a place 16 wide and 9
                // high: a wider one has its sides cut off, a narrower one is in
                // the middle.
                F32       thumb_h = row_h - (F32)(S32)(8.0f * ui);
