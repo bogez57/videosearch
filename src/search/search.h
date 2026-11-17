@@ -24,10 +24,16 @@
 #define SRCH_MAX_HITS 500
 
 // A model's own score for a picture (or a sound) and words is in a narrow
-// band: CLIP's is about 0.18 when they have nothing to do with each other
-// and about 0.33 when they match well. A hit's score is that band stretched
-// so its low end is 0 and its high end 1 - CLIP's and the sound model's each
-// by its own, which is what makes the two comparable.
+// band, and where the band is depends on the words: CLIP gives a frame
+// about 0.19 to 0.23 for words it has nothing to do with, and only some
+// 0.03 to 0.10 more than that for words it matches. So a frame's score has
+// taken from it what the library's frames score for the query on average,
+// and a hit's score is what is left, stretched so the band's low end is 0
+// and its high end 1 - CLIP's and the sound model's each by its own, which
+// is what makes the two comparable. The picture's band is from the same 58
+// test searches as the sound's: the best frame for words that were in no
+// video ("a cat", "something") was left with about 0.04, for words that
+// were ("a desert", "a soldier in a trench") with 0.07 to 0.11.
 //
 // The sound model gives some stretches of sound a good score for any words
 // at all, so a stretch's score has taken from it what it scores for words
@@ -36,8 +42,8 @@
 // sound that matched the words was left with 0.3 to 0.5, and sound for words
 // about something seen, not heard, mostly with under 0.3 - though up to 0.4:
 // the sound model can't tell them apart well.
-#define SRCH_PICTURE_LOW  0.18f
-#define SRCH_PICTURE_HIGH 0.33f
+#define SRCH_PICTURE_LOW  0.03f
+#define SRCH_PICTURE_HIGH 0.10f
 #define SRCH_SOUND_LOW    0.20f
 #define SRCH_SOUND_HIGH   0.50f
 
@@ -51,6 +57,10 @@
 // other on top.
 #define SRCH_BOTH_FLOOR 0.35f
 #define SRCH_BOTH_SHARE 0.25f
+
+// A clip is a hit only if it scores at least this much of what the best
+// clip does (of 1, if the best scores more than that).
+#define SRCH_KEEP 0.5f
 
 // A clip that matches: a stretch of one of the library's videos. start_s and
 // end_s are seconds from the video's start; both 0 is the whole video.

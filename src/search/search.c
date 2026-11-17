@@ -56,6 +56,7 @@ struct SRCH_Search {
    U64          video_count;
    U64          frame_count;
    U64          sound_count; // stretches of sound
+   F64          picture_sum[EMB_DIM]; // of every loaded frame's vector
    U64          generation;
 
    F32 f32_from_f16[1 << 16];
@@ -83,6 +84,7 @@ SRCH_Update(SRCH_Search* search, LIB_Library* library, IDX_Indexer* indexer) {
       search->video_count = library->video_count;
       search->videos = PushArray(search->arena, _SRCH_Video, search->video_count);
       search->frame_count = 0;
+      MemoryZeroArray(search->picture_sum);
       search->sound_count = 0;
       search->generation += 1;
    }
@@ -119,6 +121,9 @@ SRCH_Update(SRCH_Search* search, LIB_Library* library, IDX_Indexer* indexer) {
             track->loaded = 1;
             if (INX_Read(search->arena, path, &track->count, &track->times, &track->vectors)) {
                *(is_sound ? &search->sound_count : &search->frame_count) += track->count;
+               for (U64 i = 0; !is_sound && i < track->count * EMB_DIM; i += 1) {
+                  search->picture_sum[i % EMB_DIM] += search->f32_from_f16[track->vectors[i]];
+               }
                search->generation += 1;
             } else {
                LogUserErrorF("Could not read %S, the index of %S\n", path, library->videos[idx].path);
@@ -217,7 +222,8 @@ _SRCH_ByName(Arena* arena, LIB_Library* library, String8 query) {
 }
 
 // The clips of one video's frames, or of its stretches of sound, that match
-// q (for sound, the query's vector less sound_base), into hits. A score is the dot product stretched so that 0 is no match
+// q (the query's vector less the frames' mean; for sound, less sound_base),
+// into hits. A score is the dot product stretched so that 0 is no match
 // and 1 a good one (search.h), which is what lets clips found by picture and
 // by sound go in one list.
 internal void
@@ -310,6 +316,7 @@ SRCH_Run(Arena* arena, SRCH_Search* search, LIB_Library* library, String8 query)
       SRCH_Hit* found = PushArray(scratch.arena, SRCH_Hit, SRCH_MAX_HITS);
       U64       found_count = 0;
       for (U64 j = 0; j < EMB_DIM; j += 1) sound_q[j] -= search->sound_base[j];
+      for (U64 j = 0; by_pictures && j < EMB_DIM; j += 1) q[j] -= (F32)(search->picture_sum[j] / (F64)search->frame_count);
       for (U64 video_idx = 0; video_idx < search->video_count; video_idx += 1) {
          _SRCH_Video* video = &search->videos[video_idx];
          if (by_pictures && video->pictures.count != 0) {
@@ -350,6 +357,9 @@ SRCH_Run(Arena* arena, SRCH_Search* search, LIB_Library* library, String8 query)
          _SRCH_Insert(hits, &count, hit);
       }
       ScratchEnd(scratch);
+
+      // The clips far below the best are not hits.
+      while (count > 1 && hits[count - 1].score < SRCH_KEEP * Min(hits[0].score, 1.0f)) count -= 1;
       result.v = hits;
       result.count = count;
    }

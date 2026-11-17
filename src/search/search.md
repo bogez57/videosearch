@@ -16,6 +16,8 @@ and shows the `SRCH_Hit`s, and knows nothing of how they were found.
   them all.
 - `generation`: goes up when a file is loaded or a model finishes
   loading, so `_FR_UpdateResults` searches again.
+- `picture_sum`: the sum of every loaded frame's vector, so the mean frame
+  is at hand for each search.
 - `sound_base`: the mean of the sound model's vectors for ten texts that
   say nothing about a sound (`_srch_sound_base_texts`), worked out when the
   sound model has loaded.
@@ -45,6 +47,13 @@ thread: a few milliseconds), and every loaded frame scores the dot product
 of its vector and the query's - their cosine, about 0.2 to 0.35 for CLIP.
 Brute force over every frame: see the plan for why that is enough.
 
+Where in that range the scores are depends on the words more than on the
+frames ("a man screaming" averaged 0.229 over the test library, "a city
+skyline" 0.182), so the mean frame's vector is taken from the query's first:
+a frame's score is then how far above the library's average for those words
+it is. In a library whose frames nearly all match the words, that makes
+them all score low.
+
 The sound is searched the same way (`_SRCH_Clips` does both): the query
 through the sound model's text half (`EMB_SoundTextVector`), a dot product
 with every stretch of sound. The sound model gives some stretches a good
@@ -54,9 +63,11 @@ scores for words that say nothing.
 
 So that clips found by picture and by sound can be in one list, a score is
 the model's own stretched over its band: `SRCH_PICTURE_LOW` to
-`SRCH_PICTURE_HIGH` (0.18 to 0.33) becomes 0 to 1, and `SRCH_SOUND_LOW` to
-`SRCH_SOUND_HIGH` (0.20 to 0.50) likewise. The sound's band is from 58 test
-searches on five film trailers: sound that matched the words was left with
+`SRCH_PICTURE_HIGH` (0.03 to 0.10 above the average) becomes 0 to 1, and
+`SRCH_SOUND_LOW` to `SRCH_SOUND_HIGH` (0.20 to 0.50) likewise. Both bands
+are from 58 test searches on five film trailers. The best frame for words
+in none of them was about 0.04 above the average, for words that were in
+them 0.07 to 0.11. For the sound: sound that matched the words was left with
 0.3 to 0.5 ("music", "gunfire and explosions", "people cheering"), sound
 under words about something seen mostly with less than 0.3, but up to 0.4
 ("a soldier in a trench", "fire", "a monkey"). The sound model's scores
@@ -78,14 +89,17 @@ kind it overlaps. It runs from the start of the first to the end of the
 last, its best moment is the frames', and it scores as the better of the
 two plus `SRCH_BOTH_SHARE` (a quarter) of the other.
 
+A clip that scores under `SRCH_KEEP` (half) of what the best does is left
+out; the best always stays.
+
 Until there are frames or sound loaded, or if no model could be loaded, it
 matches file names instead (`by_name` in the results): a video is a hit
 when a word of the query is in its name, and the hit is the whole video.
 
 ## Not done yet
 
-- A score below which a frame is not a hit at all: for now the best 500
-  are shown, however poor.
+- A score below which nothing is a hit at all: the best clip is always
+  shown, however poor.
 
 ## Used by
 
