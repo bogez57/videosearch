@@ -358,8 +358,23 @@ SRCH_Run(Arena* arena, SRCH_Search* search, LIB_Library* library, String8 query)
       }
       ScratchEnd(scratch);
 
-      // The clips far below the best are not hits.
-      while (count > 1 && hits[count - 1].score < SRCH_KEEP * Min(hits[0].score, 1.0f)) count -= 1;
+      // The clips far below the best found the way they were are not hits:
+      // by its frames, by its sound and by both are each their own way, so a
+      // good clip of sound does not put out the best of the frames.
+      F32 best[3] = {0};
+      B32 has_best[3] = {0};
+      U64 kept = 0;
+      for (U64 i = 0; i < count; i += 1) {
+         U64 way = hits[i].by_both ? 2 : hits[i].by_sound ? 1 : 0;
+         if (!has_best[way]) {
+            has_best[way] = 1;
+            best[way] = hits[i].score;
+         }
+         if (hits[i].score >= SRCH_KEEP * Min(best[way], 1.0f)) {
+            hits[kept++] = hits[i];
+         }
+      }
+      count = kept;
       result.v = hits;
       result.count = count;
    }

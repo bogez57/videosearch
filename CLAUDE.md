@@ -85,7 +85,8 @@ through ONNX Runtime, vectors on disk) in five steps.
   test searches on J's five trailers; a clip that matches by picture and by
   sound at once is one row ("picture and sound match"). A frame scores by
   how far it is above the library's average for the query, and clips under
-  half the best's score are left out. The sound model
+  half the score of the best of their kind (picture, sound, both) are left
+  out. The sound model
   still can't tell words about something seen from words about something
   heard, so a weak "sound match" under a search for a picture is to be
   expected.

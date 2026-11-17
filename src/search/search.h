@@ -59,7 +59,8 @@
 #define SRCH_BOTH_SHARE 0.25f
 
 // A clip is a hit only if it scores at least this much of what the best
-// clip does (of 1, if the best scores more than that).
+// clip found the same way does (of 1, if the best scores more than that):
+// by its frames, by its sound, or by both.
 #define SRCH_KEEP 0.5f
 
 // A clip that matches: a stretch of one of the library's videos. start_s and

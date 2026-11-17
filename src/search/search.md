@@ -89,8 +89,9 @@ kind it overlaps. It runs from the start of the first to the end of the
 last, its best moment is the frames', and it scores as the better of the
 two plus `SRCH_BOTH_SHARE` (a quarter) of the other.
 
-A clip that scores under `SRCH_KEEP` (half) of what the best does is left
-out; the best always stays.
+A clip that scores under `SRCH_KEEP` (half) of what the best found the same
+way does is left out - by frames, by sound and by both each against their
+own best, so a good clip of sound does not put out the best of the frames.
 
 Until there are frames or sound loaded, or if no model could be loaded, it
 matches file names instead (`by_name` in the results): a video is a hit
