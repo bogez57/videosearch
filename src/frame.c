@@ -205,7 +205,7 @@ FR_AddFolder(App_State* app_state, String8 path) {
    } else if (PropertiesFromFilePath(folder).flags & FilePropertyFlag_IsFolder) {
       FR_Notice(app_state, Str8Lit("That folder is already being searched."));
    } else {
-      LogUserErrorF("Not a folder: %S", folder);
+      LogUserErrorF("Not a folder: %S\n", folder);
       FR_Notice(app_state, Str8Lit("Not a folder, so not added."));
    }
 

@@ -91,7 +91,7 @@ IDX_Update(IDX_Indexer* indexer, LIB_Library* library) {
    if (indexer->running && !indexer->reported && InsAtomicU64Eval(&indexer->done) == indexer->count) {
       indexer->reported = 1;
       F64 seconds = (F64)(NowTimeUS() - indexer->started_us) / 1000000.0;
-      LogInfoF("Read %llu frames from %llu videos in %.1f s (%llu could not be decoded)",
+      LogInfoF("Read %llu frames from %llu videos in %.1f s (%llu could not be decoded)\n",
                (unsigned long long)InsAtomicU64Eval(&indexer->frames), (unsigned long long)indexer->count, seconds,
                (unsigned long long)InsAtomicU64Eval(&indexer->failed));
    }

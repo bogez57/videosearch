@@ -158,7 +158,7 @@ _EntryPoint(CmdLine* cmdline) {
    LogSelect(app_state.log);
    LogScopeBegin();
    FR_OpenLogFile(&app_state);
-   LogInfoF("Video Search started");
+   LogInfoF("Video Search started\n");
 
    app_state.fonts = TXT_OpenFonts();
 

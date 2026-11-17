@@ -114,7 +114,7 @@ LIB_Rescan(LIB_Library* library) {
    }
    library->generation += 1;
 
-   LogInfoF("%llu videos in %llu folders", (unsigned long long)library->video_count,
+   LogInfoF("%llu videos in %llu folders\n", (unsigned long long)library->video_count,
             (unsigned long long)library->folders.node_count);
 
    ScratchEnd(scratch);
