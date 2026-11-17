@@ -374,8 +374,8 @@ _FR_UpdateResults(App_State* app_state) {
          String8List best = {0};
          for (U64 i = 0; i < Min(results->count, 3); i += 1) {
             SRCH_Hit* hit = &results->v[i];
-            Str8ListPushF(scratch.arena, &best, "%S %.0f-%.0f s (%.3f)", app_state->library->videos[hit->video_idx].name,
-                          hit->start_s, hit->end_s, hit->score);
+            Str8ListPushF(scratch.arena, &best, "%S %.0f-%.0f s (%s%.2f)", app_state->library->videos[hit->video_idx].name,
+                          hit->start_s, hit->end_s, hit->by_sound ? "sound " : "", hit->score);
          }
          StringJoin join = {0};
          join.sep = Str8Lit(", ");
@@ -904,18 +904,17 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
 
                UI_Box* row_box = UI_ListRow(row_h, 0, UI_BoxFlag_Clickable | UI_BoxFlag_DrawBackground, "###hit %lld", row_idx);
 
-               // How well a clip matched, as 1 to 100. CLIP's own score for a
-            // picture and words is in a narrow band - about 0.18 when they
-            // have nothing to do with each other, about 0.33 when they
-            // match well - so that band is stretched over the hundred.
-            String8 when = Str8Lit("whole video");
-            if (hit->end_s > hit->start_s) {
-               F32 match = Clamp(1.0f, (hit->score - 0.18f) / (0.33f - 0.18f) * 100.0f, 100.0f);
-               when = PushStr8F(scratch.arena, "%S to %S   match %d", _FR_Clock(scratch.arena, hit->start_s),
-                                _FR_Clock(scratch.arena, hit->end_s + 0.5), (int)(match + 0.5f));
-            }
+               // How well a clip matched, as 1 to 100, and whether it was
+               // by its sound.
+               String8 when = Str8Lit("whole video");
+               if (hit->end_s > hit->start_s) {
+                  F32 match = Clamp(1.0f, hit->score * 100.0f, 100.0f);
+                  when = PushStr8F(scratch.arena, "%S to %S   %smatch %d", _FR_Clock(scratch.arena, hit->start_s),
+                                   _FR_Clock(scratch.arena, hit->end_s + 0.5), hit->by_sound ? "sound " : "",
+                                   (int)(match + 0.5f));
+               }
 
-            // The picture of its best moment, in a place 16 wide and 9
+               // The picture of its best moment, in a place 16 wide and 9
                // high: a wider one has its sides cut off, a narrower one is in
                // the middle.
                F32       thumb_h = row_h - (F32)(S32)(8.0f * ui);

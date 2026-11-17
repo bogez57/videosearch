@@ -1,7 +1,9 @@
 # index
 
 The vectors of each video, on disk: one file per video in `bin\local\index`,
-named by a hash of the video's path (`<16 hex digits>.vsi`).
+named by a hash of the video's path (`<16 hex digits>.vsi`). Its sound has
+a second file of the same kind beside it (`.vsa`), where a "frame" is a
+stretch of sound and its time is when the stretch starts.
 
 ## The file
 
@@ -17,7 +19,8 @@ they are now. One that is not is written again whole.
 
 - `INX_HeaderFor(video_path, props, model, sample_seconds)`: what a file for
   the video should say.
-- `INX_FilePath(arena, folder, video_path)`
+- `INX_FilePath(arena, folder, video_path, ext)`: `INX_PICTURES` or
+  `INX_SOUND`.
 - `INX_IsUpToDate(file_path, want, count_out)`
 - `INX_Write(file_path, header, video_path, times, vectors)`: to
   `<file>.part`, then moved over the file, so a file is whole or not there.

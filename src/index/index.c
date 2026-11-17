@@ -18,8 +18,8 @@ INX_HeaderFor(String8 video_path, FileProperties video, String8 model, F64 sampl
 }
 
 internal String8
-INX_FilePath(Arena* arena, String8 folder, String8 video_path) {
-   return PushStr8F(arena, "%S\\%016llx.vsi", folder, (unsigned long long)U64HashFromStr8(video_path));
+INX_FilePath(Arena* arena, String8 folder, String8 video_path, char* ext) {
+   return PushStr8F(arena, "%S\\%016llx.%s", folder, (unsigned long long)U64HashFromStr8(video_path), ext);
 }
 
 internal B32

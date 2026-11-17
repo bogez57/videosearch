@@ -5,6 +5,11 @@
 // path: what the image model made of each frame the indexer took, with the
 // frame's time. The indexer writes them; the search reads them.
 //
+// A video's sound has a second file of the same kind beside it: what the
+// sound model made of each stretch of sound, with the time it starts. There
+// "frame" below is a stretch of sound, and a video with no sound has a file
+// with none.
+//
 // A file is the INX_Header, then the video's path (path_size bytes), then a
 // F32 time in seconds for each frame, then each frame's vector as EMB_DIM
 // F16s. It is up to date while the video's size and time written are the
@@ -32,8 +37,11 @@ struct INX_Header {
 // What a file is for, all but count.
 internal INX_Header INX_HeaderFor(String8 video_path, FileProperties video, String8 model, F64 sample_seconds);
 
-// The file for a video, in folder.
-internal String8 INX_FilePath(Arena* arena, String8 folder, String8 video_path);
+// The file for a video, in folder: its pictures' (INX_PICTURES) or its
+// sound's (INX_SOUND).
+#define INX_PICTURES "vsi"
+#define INX_SOUND    "vsa"
+internal String8 INX_FilePath(Arena* arena, String8 folder, String8 video_path, char* ext);
 
 // The file is there and was made from the video as it is now, by this model.
 // Its frame count goes to count_out.

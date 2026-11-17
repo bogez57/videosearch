@@ -59,6 +59,7 @@ _EMB_MapGet(_EMB_Map* map, String8 key) {
 
 struct EMB_Tokenizer {
    String8  byte_chars[256]; // each byte as the character that stands for it, in UTF-8
+   B32      marks_word_ends; // the last piece of a word has </w> after it (CLIP's does, CLAP's not)
    _EMB_Map ids;             // a piece of a word to its number
    _EMB_Map ranks;           // "a b" to how early the merge of a and b comes
 };
@@ -83,6 +84,31 @@ _EMB_Utf8FromCodepoint(Arena* arena, U32 c) {
    return Str8(s, size);
 }
 
+// The bytes' characters, and the bytes in the Python's order: the printable
+// ones stand for themselves and come first, the rest for 256 and up.
+internal void
+_EMB_SetByteChars(Arena* arena, EMB_Tokenizer* tok, U8 order_out[256]) {
+   U64 order_count = 0;
+   B32 is_printable[256] = {0};
+   for (U32 b = '!'; b <= '~'; b += 1) is_printable[b] = 1;
+   for (U32 b = 0xA1; b <= 0xAC; b += 1) is_printable[b] = 1;
+   for (U32 b = 0xAE; b <= 0xFF; b += 1) is_printable[b] = 1;
+   for (U32 b = 0; b < 256; b += 1) {
+      if (is_printable[b]) {
+         tok->byte_chars[b] = _EMB_Utf8FromCodepoint(arena, b);
+         order_out[order_count++] = (U8)b;
+      }
+   }
+   U32 n = 0;
+   for (U32 b = 0; b < 256; b += 1) {
+      if (!is_printable[b]) {
+         tok->byte_chars[b] = _EMB_Utf8FromCodepoint(arena, 256 + n);
+         order_out[order_count++] = (U8)b;
+         n += 1;
+      }
+   }
+}
+
 internal EMB_Tokenizer*
 EMB_TokenizerFromMerges(Arena* arena, String8 merges_text) {
    EMB_Tokenizer* tok = PushArray(arena, EMB_Tokenizer, 1);
@@ -91,30 +117,9 @@ EMB_TokenizerFromMerges(Arena* arena, String8 merges_text) {
    tok->ranks.cap = 1 << 17;
    tok->ranks.slots = PushArray(arena, _EMB_Slot, tok->ranks.cap);
 
-   //- bgz: the bytes' characters, in the Python's order: the printable ones
-   // stand for themselves, the rest for 256 and up.
-   U8  order[256];
-   U64 order_count = 0;
-   {
-      B32 is_printable[256] = {0};
-      for (U32 b = '!'; b <= '~'; b += 1) is_printable[b] = 1;
-      for (U32 b = 0xA1; b <= 0xAC; b += 1) is_printable[b] = 1;
-      for (U32 b = 0xAE; b <= 0xFF; b += 1) is_printable[b] = 1;
-      for (U32 b = 0; b < 256; b += 1) {
-         if (is_printable[b]) {
-            tok->byte_chars[b] = _EMB_Utf8FromCodepoint(arena, b);
-            order[order_count++] = (U8)b;
-         }
-      }
-      U32 n = 0;
-      for (U32 b = 0; b < 256; b += 1) {
-         if (!is_printable[b]) {
-            tok->byte_chars[b] = _EMB_Utf8FromCodepoint(arena, 256 + n);
-            order[order_count++] = (U8)b;
-            n += 1;
-         }
-      }
-   }
+   U8 order[256];
+   _EMB_SetByteChars(arena, tok, order);
+   tok->marks_word_ends = 1;
 
    //- bgz: the vocabulary: each byte, each byte ending a word, each merge,
    // and the start and end of the text.
@@ -207,13 +212,16 @@ internal void
 _EMB_EncodePiece(EMB_Tokenizer* tok, String8 piece, S32* ids, U64* count, U64 cap) {
    Temp scratch = ScratchBegin(0, 0);
 
-   // The piece as symbols, one a byte, the last marked as a word's end.
+   // The piece as symbols, one a byte, the last marked as a word's end if
+   // this tokenizer does.
    U64      symbol_count = piece.size;
    String8* symbols = PushArray(scratch.arena, String8, symbol_count);
    for (U64 i = 0; i < piece.size; i += 1) {
       symbols[i] = tok->byte_chars[piece.str[i]];
    }
-   symbols[symbol_count - 1] = PushStr8F(scratch.arena, "%S</w>", symbols[symbol_count - 1]);
+   if (tok->marks_word_ends) {
+      symbols[symbol_count - 1] = PushStr8F(scratch.arena, "%S</w>", symbols[symbol_count - 1]);
+   }
 
    // The pair whose merge comes first is merged wherever it is, until no
    // pair has a merge.

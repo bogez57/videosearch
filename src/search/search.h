@@ -8,7 +8,9 @@
 // indexer finishes them. A query is put through the text model (embed.h),
 // and each frame scores the dot product of its vector and the query's. A run
 // of neighbouring frames that score nearly as well as the best of them is a
-// clip, and the clips that score highest are the hits.
+// clip, and the clips that score highest are the hits. The videos' sound is
+// searched the same way with the sound model, where there is one, and its
+// clips are hits in the same list.
 // Until there are frames to search, or if there is no model, it matches
 // file names instead (search.md).
 //
@@ -20,9 +22,20 @@
 // The most hits a search gives.
 #define SRCH_MAX_HITS 500
 
-// How far below a clip's best frame its other frames may score. CLIP's
-// scores are about 0.2 to 0.35, a match about 0.1 above what doesn't match.
-#define SRCH_CLIP_MARGIN 0.02f
+// A model's own score for a picture (or a sound) and words is in a narrow
+// band: CLIP's is about 0.18 when they have nothing to do with each other
+// and about 0.33 when they match well. A hit's score is that band stretched
+// so its low end is 0 and its high end 1 - CLIP's and the sound model's each
+// by its own, which is what makes the two comparable.
+#define SRCH_PICTURE_LOW  0.18f
+#define SRCH_PICTURE_HIGH 0.33f
+#define SRCH_SOUND_LOW    0.10f
+#define SRCH_SOUND_HIGH   0.50f
+
+// How far below a clip's best frame its other frames may score, in the
+// model's own score.
+#define SRCH_CLIP_MARGIN  0.02f
+#define SRCH_SOUND_MARGIN 0.05f
 
 // A clip that matches: a stretch of one of the library's videos. start_s and
 // end_s are seconds from the video's start; both 0 is the whole video.
@@ -33,7 +46,8 @@ struct SRCH_Hit {
    F64 start_s;
    F64 end_s;
    F64 best_s;
-   F32 score; // higher is a better match. Only for comparing hits of one search
+   F32 score;    // about 0 for no match to 1 for a good one; it can be under or over
+   B32 by_sound; // found by what is heard in it, not what is seen
 };
 
 typedef struct SRCH_Results SRCH_Results;

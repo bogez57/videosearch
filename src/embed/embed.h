@@ -15,6 +15,14 @@
 // The model is a folder holding vision_model.onnx and text_model.onnx: the
 // ONNX export of openai/clip-vit-base-patch32 (Xenova's on Hugging Face). It
 // is not in the repo: see data\models\README.md.
+//
+// Sound is a second model beside it, CLAP, which does for a few seconds of
+// sound what CLIP does for a picture: sound and words that describe it come
+// out close. Its vectors are EMB_DIM numbers too, but its own: a sound's
+// vector is only compared with the vector CLAP's text half makes of the
+// words, never with CLIP's. It is a folder holding audio_model.onnx and
+// text_model.onnx (Xenova's export of laion/clap-htsat-unfused), and the
+// program runs without it: then sound is not searched.
 
 #ifndef EMBED_H
 #define EMBED_H
@@ -32,6 +40,20 @@
 #define EMB_TOKEN_START  49406
 #define EMB_TOKEN_END    49407
 
+// A sound as CLAP reads it: EMB_SOUND_SAMPLES of it (ten seconds, one
+// channel, EMB_SOUND_RATE samples a second) as EMB_SOUND_FRAMES rows of
+// EMB_SOUND_MELS numbers - how loud each band of pitch is, a hundredth of a
+// second a row.
+#define EMB_SOUND_RATE    48000
+#define EMB_SOUND_SAMPLES 480000
+#define EMB_SOUND_MELS    64
+#define EMB_SOUND_FRAMES  1001
+#define EMB_SOUND_FLOATS  (EMB_SOUND_FRAMES * EMB_SOUND_MELS)
+
+// What CLAP's text half reads starts and ends with these.
+#define EMB_SOUND_TOKEN_START 0
+#define EMB_SOUND_TOKEN_END   2
+
 typedef struct EMB_Model     EMB_Model;
 typedef struct EMB_Tokenizer EMB_Tokenizer;
 
@@ -45,6 +67,18 @@ internal void EMB_ImageFromFrame(U8* pixels, Vec2S32 size, F32* image_out);
 // words' numbers, EMB_TOKEN_END, then zeros. Too long a text is cut.
 internal EMB_Tokenizer* EMB_TokenizerFromMerges(Arena* arena, String8 merges_text);
 internal void           EMB_Tokenize(EMB_Tokenizer* tok, String8 text, S32 ids_out[EMB_TEXT_TOKENS]);
+
+// embed_sound.c. count samples of sound, one channel at EMB_SOUND_RATE, into
+// features_out, EMB_SOUND_FLOATS of them. Less than ten seconds is repeated
+// to fill them, as CLAP was trained; more is cut. One thread at a time.
+internal void EMB_SoundFeatures(F32* samples, U64 count, F32* features_out);
+
+// embed_sound_tokenizer.c. CLAP's tokenizer, from its vocabulary
+// (data\clap\vocab.json) and merges (data\clap\merges.txt), and text into
+// ids_out: EMB_SOUND_TOKEN_START, the words' numbers, EMB_SOUND_TOKEN_END.
+// Returns how many. Too long a text is cut.
+internal EMB_Tokenizer* EMB_SoundTokenizerFromVocab(Arena* arena, String8 vocab_json, String8 merges_text);
+internal U64            EMB_SoundTokenize(EMB_Tokenizer* tok, String8 text, S32 ids_out[EMB_TEXT_TOKENS]);
 
 // embed_onnx.c. EMB_Open is quick: it reads the tokenizer's merges and
 // starts ONNX Runtime. 0 if it could not, and why is logged. EMB_Load then
@@ -66,5 +100,18 @@ internal B32 EMB_ImageVectors(EMB_Model* model, F32* images, U64 count, F32* vec
 // loaded or failed. One thread at a time - another than the one encoding
 // images may.
 internal B32 EMB_TextVector(EMB_Model* model, String8 text, F32* vector_out);
+
+// The sound model, as the four above are for CLIP: EMB_OpenSound is quick
+// (the tokenizer's files) and EMB_LoadSound loads the two halves, on the
+// indexer's thread. model may be 0. If the model's folder is not there, that
+// is logged once as something to know, not as an error.
+internal B32 EMB_OpenSound(EMB_Model* model, String8 folder, String8 vocab_path, String8 merges_path);
+internal B32 EMB_LoadSound(EMB_Model* model);
+internal B32 EMB_SoundIsLoaded(EMB_Model* model);
+
+// The vector of one sound, made by EMB_SoundFeatures, and of text as words
+// about a sound. As EMB_ImageVectors and EMB_TextVector.
+internal B32 EMB_SoundVector(EMB_Model* model, F32* features, F32* vector_out);
+internal B32 EMB_SoundTextVector(EMB_Model* model, String8 text, F32* vector_out);
 
 #endif // EMBED_H

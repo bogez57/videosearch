@@ -7,13 +7,24 @@
 // one empties them and they are loaded again as the indexer says each
 // video's file is up to date. The vectors stay F16, as on disk; a table
 // turns each into F32 as it is multiplied.
+//
+// A video's sound is kept the same way beside its frames, and searched the
+// same way with the sound model's vector of the query: there a "frame" is a
+// stretch of sound.
 
-typedef struct _SRCH_Video _SRCH_Video;
-struct _SRCH_Video {
+// One index file, loaded: a video's frames, or its stretches of sound.
+typedef struct _SRCH_Track _SRCH_Track;
+struct _SRCH_Track {
    B32  loaded;
    U64  count;
    F32* times;
    U16* vectors; // count by EMB_DIM
+};
+
+typedef struct _SRCH_Video _SRCH_Video;
+struct _SRCH_Video {
+   _SRCH_Track pictures;
+   _SRCH_Track sound;
 };
 
 struct SRCH_Search {
@@ -21,11 +32,13 @@ struct SRCH_Search {
    String8    index_folder;
    EMB_Model* model;
    B32        model_loaded;
+   B32        sound_model_loaded;
 
    U64          library_gen;
    _SRCH_Video* videos;
    U64          video_count;
    U64          frame_count;
+   U64          sound_count; // stretches of sound
    U64          generation;
 
    F32 f32_from_f16[1 << 16];
@@ -53,6 +66,7 @@ SRCH_Update(SRCH_Search* search, LIB_Library* library, IDX_Indexer* indexer) {
       search->video_count = library->video_count;
       search->videos = PushArray(search->arena, _SRCH_Video, search->video_count);
       search->frame_count = 0;
+      search->sound_count = 0;
       search->generation += 1;
    }
 
@@ -61,21 +75,32 @@ SRCH_Update(SRCH_Search* search, LIB_Library* library, IDX_Indexer* indexer) {
       search->generation += 1;
    }
 
+   if (!search->sound_model_loaded && EMB_SoundIsLoaded(search->model)) {
+      search->sound_model_loaded = 1;
+      search->generation += 1;
+   }
+
    for (U64 idx = 0; idx < search->video_count; idx += 1) {
       _SRCH_Video* video = &search->videos[idx];
-      if (!video->loaded && IDX_IsIndexed(indexer, library->generation, idx)) {
-         Temp    scratch = ScratchBegin(0, 0);
-         String8 path = INX_FilePath(scratch.arena, search->index_folder, library->videos[idx].path);
-         // Loaded or not, it is not tried again: a file the indexer has just
-         // written that can't be read would only fail again.
-         video->loaded = 1;
-         if (INX_Read(search->arena, path, &video->count, &video->times, &video->vectors)) {
-            search->frame_count += video->count;
-            search->generation += 1;
-         } else {
-            LogUserErrorF("Could not read %S, the index of %S\n", path, library->videos[idx].path);
+      for (U64 is_sound = 0; is_sound < 2; is_sound += 1) {
+         _SRCH_Track* track = is_sound ? &video->sound : &video->pictures;
+         B32          indexed = is_sound ? IDX_SoundIsIndexed(indexer, library->generation, idx)
+                                         : IDX_IsIndexed(indexer, library->generation, idx);
+         if (!track->loaded && indexed) {
+            Temp    scratch = ScratchBegin(0, 0);
+            String8 path = INX_FilePath(scratch.arena, search->index_folder, library->videos[idx].path,
+                                        is_sound ? INX_SOUND : INX_PICTURES);
+            // Loaded or not, it is not tried again: a file the indexer has just
+            // written that can't be read would only fail again.
+            track->loaded = 1;
+            if (INX_Read(search->arena, path, &track->count, &track->times, &track->vectors)) {
+               *(is_sound ? &search->sound_count : &search->frame_count) += track->count;
+               search->generation += 1;
+            } else {
+               LogUserErrorF("Could not read %S, the index of %S\n", path, library->videos[idx].path);
+            }
+            ScratchEnd(scratch);
          }
-         ScratchEnd(scratch);
       }
    }
 }
@@ -162,81 +187,106 @@ _SRCH_ByName(Arena* arena, LIB_Library* library, String8 query) {
    return result;
 }
 
+// The clips of one video's frames, or of its stretches of sound, that match
+// q, into hits. A score is the dot product stretched so that 0 is no match
+// and 1 a good one (search.h), which is what lets clips found by picture and
+// by sound go in one list.
+internal void
+_SRCH_Clips(SRCH_Search* search, SRCH_Hit* hits, U64* count, U64 video_idx, _SRCH_Track* track, F32* q, B32 is_sound) {
+   Temp scratch = ScratchBegin(0, 0);
+   F32* table = search->f32_from_f16;
+   F32  low = is_sound ? SRCH_SOUND_LOW : SRCH_PICTURE_LOW;
+   F32  high = is_sound ? SRCH_SOUND_HIGH : SRCH_PICTURE_HIGH;
+   F32  margin = (is_sound ? SRCH_SOUND_MARGIN : SRCH_CLIP_MARGIN) / (high - low);
+   F64  step = is_sound ? IDX_SOUND_SECONDS : IDX_SAMPLE_SECONDS;
+
+   _SRCH_Frame* frames = PushArrayNoZero(scratch.arena, _SRCH_Frame, track->count);
+   S64*         clip_of = PushArrayNoZero(scratch.arena, S64, track->count);
+   for (U64 i = 0; i < track->count; i += 1) {
+      U16* v = track->vectors + i * EMB_DIM;
+      F32  dot = 0;
+      for (U64 j = 0; j < EMB_DIM; j += 1) dot += q[j] * table[v[j]];
+      frames[i].idx = i;
+      frames[i].score = (dot - low) / (high - low);
+      clip_of[i] = -1;
+   }
+
+   // The clips: the best frame not yet in one starts one, which takes in its
+   // neighbours on each side for as long as they score nearly as well as it
+   // does and come straight after one another (silence is left out of the
+   // sound, so its neighbours may not). So each frame is in one clip, and a
+   // clip's score is its best frame's.
+   quick_sort(frames, track->count, sizeof(_SRCH_Frame), _SRCH_FrameIsWorse);
+   F32* scores = PushArrayNoZero(scratch.arena, F32, track->count);
+   for (U64 i = 0; i < track->count; i += 1) scores[frames[i].idx] = frames[i].score;
+   F32* times = track->times;
+   F32  gap = (F32)(step * 1.5);
+
+   for (U64 k = 0; k < track->count; k += 1) {
+      U64 best = frames[k].idx;
+      F32 score = frames[k].score;
+      if (clip_of[best] != -1) {
+         continue;
+      }
+      if (*count == SRCH_MAX_HITS && score <= hits[*count - 1].score) {
+         break; // the rest are worse still
+      }
+      U64 first = best;
+      U64 last = best;
+      clip_of[best] = (S64)k;
+      while (first > 0 && clip_of[first - 1] == -1 && scores[first - 1] >= score - margin &&
+             times[first] - times[first - 1] <= gap) {
+         first -= 1;
+         clip_of[first] = (S64)k;
+      }
+      while (last + 1 < track->count && clip_of[last + 1] == -1 && scores[last + 1] >= score - margin &&
+             times[last + 1] - times[last] <= gap) {
+         last += 1;
+         clip_of[last] = (S64)k;
+      }
+
+      // From its first frame to the end of its last. A clip found by its
+      // frames is padded by a second each side, so it shows what led up to
+      // it and what came after; a stretch of sound is long enough as it is.
+      F64 pad = is_sound ? 0.0 : 1.0;
+      F64 video_end = times[track->count - 1] + step;
+
+      SRCH_Hit hit = {0};
+      hit.video_idx = video_idx;
+      hit.start_s = Max(0.0, (F64)times[first] - pad);
+      hit.end_s = Min(video_end, (F64)times[last] + step + pad);
+      hit.best_s = is_sound ? times[best] + step * 0.5 : times[best];
+      hit.score = score;
+      hit.by_sound = is_sound;
+      _SRCH_Insert(hits, count, hit);
+   }
+   ScratchEnd(scratch);
+}
+
 internal SRCH_Results
 SRCH_Run(Arena* arena, SRCH_Search* search, LIB_Library* library, String8 query) {
    SRCH_Results result = {0};
    F32          q[EMB_DIM];
+   F32          sound_q[EMB_DIM];
+   B32          current = (search->library_gen == library->generation);
+   B32          by_pictures = (query.size != 0 && current && search->frame_count != 0 && EMB_TextVector(search->model, query, q));
+   B32          by_sound =
+       (query.size != 0 && current && search->sound_count != 0 && EMB_SoundTextVector(search->model, query, sound_q));
    if (query.size == 0) {
       // No hits.
-   } else if (search->frame_count == 0 || search->library_gen != library->generation ||
-              !EMB_TextVector(search->model, query, q)) {
+   } else if (!by_pictures && !by_sound) {
       result = _SRCH_ByName(arena, library, query);
    } else {
       SRCH_Hit* hits = PushArray(arena, SRCH_Hit, SRCH_MAX_HITS);
       U64       count = 0;
-      F32*      table = search->f32_from_f16;
       for (U64 video_idx = 0; video_idx < search->video_count; video_idx += 1) {
          _SRCH_Video* video = &search->videos[video_idx];
-         if (video->count == 0) {
-            continue;
+         if (by_pictures && video->pictures.count != 0) {
+            _SRCH_Clips(search, hits, &count, video_idx, &video->pictures, q, 0);
          }
-         Temp scratch = ScratchBegin(&arena, 1);
-
-         _SRCH_Frame* frames = PushArrayNoZero(scratch.arena, _SRCH_Frame, video->count);
-         S64*         clip_of = PushArrayNoZero(scratch.arena, S64, video->count);
-         for (U64 i = 0; i < video->count; i += 1) {
-            U16* v = video->vectors + i * EMB_DIM;
-            F32  score = 0;
-            for (U64 j = 0; j < EMB_DIM; j += 1) score += q[j] * table[v[j]];
-            frames[i].idx = i;
-            frames[i].score = score;
-            clip_of[i] = -1;
+         if (by_sound && video->sound.count != 0) {
+            _SRCH_Clips(search, hits, &count, video_idx, &video->sound, sound_q, 1);
          }
-
-         // The clips: the best frame not yet in one starts one, which takes
-         // in its neighbours on each side for as long as they score nearly
-         // as well as it does. So each frame is in one clip, and a clip's
-         // score is its best frame's.
-         quick_sort(frames, video->count, sizeof(_SRCH_Frame), _SRCH_FrameIsWorse);
-         F32* scores = PushArrayNoZero(scratch.arena, F32, video->count);
-         for (U64 i = 0; i < video->count; i += 1) scores[frames[i].idx] = frames[i].score;
-
-         for (U64 k = 0; k < video->count; k += 1) {
-            U64 best = frames[k].idx;
-            F32 score = frames[k].score;
-            if (clip_of[best] != -1) {
-               continue;
-            }
-            if (count == SRCH_MAX_HITS && score <= hits[count - 1].score) {
-               break; // the rest are worse still
-            }
-            U64 first = best;
-            U64 last = best;
-            clip_of[best] = (S64)k;
-            while (first > 0 && clip_of[first - 1] == -1 && scores[first - 1] >= score - SRCH_CLIP_MARGIN) {
-               first -= 1;
-               clip_of[first] = (S64)k;
-            }
-            while (last + 1 < video->count && clip_of[last + 1] == -1 && scores[last + 1] >= score - SRCH_CLIP_MARGIN) {
-               last += 1;
-               clip_of[last] = (S64)k;
-            }
-
-            // From its first frame to the end of its last (the next frame's
-            // time), padded by a second each side so the clip shows what led
-            // up to it and what came after.
-            F64 end = (last + 1 < video->count) ? video->times[last + 1] : video->times[last] + IDX_SAMPLE_SECONDS;
-            F64 video_end = video->times[video->count - 1] + IDX_SAMPLE_SECONDS;
-
-            SRCH_Hit hit = {0};
-            hit.video_idx = video_idx;
-            hit.start_s = Max(0.0, (F64)video->times[first] - 1.0);
-            hit.end_s = Min(video_end, end + 1.0);
-            hit.best_s = video->times[best];
-            hit.score = score;
-            _SRCH_Insert(hits, &count, hit);
-         }
-         ScratchEnd(scratch);
       }
       result.v = hits;
       result.count = count;

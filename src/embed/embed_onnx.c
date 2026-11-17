@@ -41,6 +41,13 @@ struct EMB_Model {
    _EMB_Half      image;  // input pixel_values; output image_embeds
    _EMB_Half      text;   // inputs input_ids and maybe attention_mask; output text_embeds
    U64            loaded; // set once both halves are, read with an atomic
+
+   // CLAP. No folder: it was not opened, and sound is not searched.
+   String8        sound_folder;
+   EMB_Tokenizer* sound_tokenizer;
+   _EMB_Half      sound;      // input input_features; output audio_embeds
+   _EMB_Half      sound_text; // as text
+   U64            sound_loaded;
 };
 
 // Logs what went wrong, if anything, and lets go of the status.
@@ -59,6 +66,8 @@ EMB_Close(EMB_Model* model) {
    if (model != 0) {
       if (model->image.session != 0) model->ort->ReleaseSession(model->image.session);
       if (model->text.session != 0) model->ort->ReleaseSession(model->text.session);
+      if (model->sound.session != 0) model->ort->ReleaseSession(model->sound.session);
+      if (model->sound_text.session != 0) model->ort->ReleaseSession(model->sound_text.session);
       if (model->memory != 0) model->ort->ReleaseMemoryInfo(model->memory);
       if (model->env != 0) model->ort->ReleaseEnv(model->env);
       ArenaRelease(model->arena);
@@ -107,12 +116,12 @@ EMB_Open(String8 folder, String8 merges_path) {
    return model;
 }
 
-// Loads file from the model's folder into half, with the names of its inputs
-// and of the output named output.
+// Loads file from folder into half, with the names of its inputs and of the
+// output named output.
 internal B32
-_EMB_LoadHalf(EMB_Model* model, _EMB_Half* half, char* file, char* output) {
+_EMB_LoadHalf(EMB_Model* model, _EMB_Half* half, String8 folder, char* file, char* output) {
    Temp    scratch = ScratchBegin(0, 0);
-   String8 path = PushStr8F(scratch.arena, "%S\\%s", model->folder, file);
+   String8 path = PushStr8F(scratch.arena, "%S\\%s", folder, file);
    B32     ok = 1;
    if (!FilePathExists(path)) {
       LogUserErrorF("No model at %S\n", path);
@@ -190,8 +199,8 @@ _EMB_LoadHalf(EMB_Model* model, _EMB_Half* half, char* file, char* output) {
 
 internal B32
 EMB_Load(EMB_Model* model) {
-   B32 ok = _EMB_LoadHalf(model, &model->image, "vision_model.onnx", "image_embeds");
-   ok = ok && _EMB_LoadHalf(model, &model->text, "text_model.onnx", "text_embeds");
+   B32 ok = _EMB_LoadHalf(model, &model->image, model->folder, "vision_model.onnx", "image_embeds");
+   ok = ok && _EMB_LoadHalf(model, &model->text, model->folder, "text_model.onnx", "text_embeds");
    if (ok) {
       InsAtomicU64EvalAssign(&model->loaded, 1);
    }
@@ -266,6 +275,39 @@ EMB_ImageVectors(EMB_Model* model, F32* images, U64 count, F32* vectors_out) {
    return ok;
 }
 
+// size numbers of words through a text half: input_ids, and attention_mask
+// if this export has one.
+internal B32
+_EMB_RunText(EMB_Model* model, _EMB_Half* half, int64_t* ids, U64 size, F32* vector_out) {
+   B32     ok = 1;
+   int64_t mask[EMB_TEXT_TOKENS];
+   for (U64 i = 0; i < size; i += 1) mask[i] = 1;
+
+   int64_t   shape[2] = {1, (int64_t)size};
+   OrtValue* inputs[ArrayCount(half->inputs)] = {0};
+   for (U64 i = 0; ok && i < half->input_count; i += 1) {
+      String8 name = half->inputs[i];
+      void*   data = 0;
+      if (Str8Match(name, Str8Lit("input_ids"), 0)) {
+         data = ids;
+      } else if (Str8Match(name, Str8Lit("attention_mask"), 0)) {
+         data = mask;
+      } else {
+         LogUserErrorF("The text model has an input %S, which is not known here\n", name);
+         ok = 0;
+      }
+      ok = ok && _EMB_Ok(model,
+                         model->ort->CreateTensorWithDataAsOrtValue(model->memory, data, size * sizeof(int64_t), shape, 2,
+                                                                    ONNX_TENSOR_ELEMENT_DATA_TYPE_INT64, &inputs[i]),
+                         "encoding words");
+   }
+   ok = ok && _EMB_Run(model, half, inputs, 1, vector_out, "encoding words");
+   for (U64 i = 0; i < half->input_count; i += 1) {
+      if (inputs[i] != 0) model->ort->ReleaseValue(inputs[i]);
+   }
+   return ok;
+}
+
 internal B32
 EMB_TextVector(EMB_Model* model, String8 text, F32* vector_out) {
    B32 ok = EMB_IsLoaded(model);
@@ -276,38 +318,86 @@ EMB_TextVector(EMB_Model* model, String8 text, F32* vector_out) {
       // Only up to the end token: the model reads the words one way, so what
       // comes after the end changes nothing, and a shorter input is quicker.
       int64_t ids64[EMB_TEXT_TOKENS];
-      int64_t mask[EMB_TEXT_TOKENS];
       U64     size = 0;
       while (size < EMB_TEXT_TOKENS) {
          ids64[size] = ids[size];
-         mask[size] = 1;
          size += 1;
          if (ids[size - 1] == EMB_TOKEN_END) break;
       }
+      ok = _EMB_RunText(model, &model->text, ids64, size, vector_out);
+   }
+   return ok;
+}
 
-      // input_ids, and attention_mask if this export has one.
-      int64_t   shape[2] = {1, (int64_t)size};
-      OrtValue* inputs[ArrayCount(model->text.inputs)] = {0};
-      for (U64 i = 0; ok && i < model->text.input_count; i += 1) {
-         String8 name = model->text.inputs[i];
-         void*   data = 0;
-         if (Str8Match(name, Str8Lit("input_ids"), 0)) {
-            data = ids64;
-         } else if (Str8Match(name, Str8Lit("attention_mask"), 0)) {
-            data = mask;
-         } else {
-            LogUserErrorF("The text model has an input %S, which is not known here\n", name);
-            ok = 0;
-         }
-         ok = ok && _EMB_Ok(model,
-                            model->ort->CreateTensorWithDataAsOrtValue(model->memory, data, size * sizeof(int64_t), shape, 2,
-                                                                       ONNX_TENSOR_ELEMENT_DATA_TYPE_INT64, &inputs[i]),
-                            "encoding words");
+////////////////////////////////
+//~ bgz: sound
+
+internal B32
+EMB_OpenSound(EMB_Model* model, String8 folder, String8 vocab_path, String8 merges_path) {
+   B32 ok = (model != 0);
+   if (ok && !FilePathExists(folder)) {
+      LogInfoF("No sound model at %S, so sound is not searched\n", folder);
+      ok = 0;
+   }
+   if (ok) {
+      Temp    scratch = ScratchBegin(0, 0);
+      String8 vocab = DataFromFilePath(scratch.arena, vocab_path);
+      String8 merges = DataFromFilePath(scratch.arena, merges_path);
+      if (vocab.size == 0 || merges.size == 0) {
+         LogUserErrorF("No sound tokenizer at %S and %S\n", vocab_path, merges_path);
+         ok = 0;
+      } else {
+         model->sound_tokenizer = EMB_SoundTokenizerFromVocab(model->arena, vocab, merges);
+         model->sound_folder = PushStr8Copy(model->arena, folder);
       }
-      ok = ok && _EMB_Run(model, &model->text, inputs, 1, vector_out, "encoding words");
-      for (U64 i = 0; i < model->text.input_count; i += 1) {
-         if (inputs[i] != 0) model->ort->ReleaseValue(inputs[i]);
-      }
+      ScratchEnd(scratch);
+   }
+   return ok;
+}
+
+internal B32
+EMB_LoadSound(EMB_Model* model) {
+   B32 ok = (model != 0 && model->sound_folder.size != 0);
+   ok = ok && _EMB_LoadHalf(model, &model->sound, model->sound_folder, "audio_model.onnx", "audio_embeds");
+   ok = ok && _EMB_LoadHalf(model, &model->sound_text, model->sound_folder, "text_model.onnx", "text_embeds");
+   if (ok && model->sound.input_count != 1) {
+      LogUserErrorF("The sound model has %llu inputs, not the one known here\n", (unsigned long long)model->sound.input_count);
+      ok = 0;
+   }
+   if (ok) {
+      InsAtomicU64EvalAssign(&model->sound_loaded, 1);
+   }
+   return ok;
+}
+
+internal B32
+EMB_SoundIsLoaded(EMB_Model* model) {
+   return model != 0 && InsAtomicU64Eval(&model->sound_loaded) != 0;
+}
+
+internal B32
+EMB_SoundVector(EMB_Model* model, F32* features, F32* vector_out) {
+   OrtValue* input = 0;
+   int64_t   shape[4] = {1, 1, EMB_SOUND_FRAMES, EMB_SOUND_MELS};
+   B32       ok = EMB_SoundIsLoaded(model);
+   ok = ok && _EMB_Ok(model,
+                      model->ort->CreateTensorWithDataAsOrtValue(model->memory, features, EMB_SOUND_FLOATS * sizeof(F32), shape,
+                                                                 4, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT, &input),
+                      "encoding sound");
+   ok = ok && _EMB_Run(model, &model->sound, &input, 1, vector_out, "encoding sound");
+   if (input != 0) model->ort->ReleaseValue(input);
+   return ok;
+}
+
+internal B32
+EMB_SoundTextVector(EMB_Model* model, String8 text, F32* vector_out) {
+   B32 ok = EMB_SoundIsLoaded(model);
+   if (ok) {
+      S32     ids[EMB_TEXT_TOKENS];
+      int64_t ids64[EMB_TEXT_TOKENS];
+      U64     size = EMB_SoundTokenize(model->sound_tokenizer, text, ids);
+      for (U64 i = 0; i < size; i += 1) ids64[i] = ids[i];
+      ok = _EMB_RunText(model, &model->sound_text, ids64, size, vector_out);
    }
    return ok;
 }

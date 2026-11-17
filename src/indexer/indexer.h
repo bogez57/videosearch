@@ -6,6 +6,10 @@
 // model (embed.h) and writing what it makes of them to the video's index
 // file (index.h). A video whose file is up to date is not read again.
 //
+// With the sound model there (embed.h), the video's sound goes the same way
+// in the same pass: IDX_SOUND_SECONDS of it at a time, one stretch after
+// another, through the sound model and into the video's sound index file.
+//
 // Called from the main thread. The thread it starts calls the decoder
 // (video_decoder.h), the model and the index files; what they log is handed
 // to the main thread and logged by IDX_Update.
@@ -24,6 +28,15 @@
 // Frames run through the model at once.
 #define IDX_BATCH 8
 
+// How long a stretch of sound is, in seconds and in samples. The sound model
+// takes ten seconds and a shorter sound repeated; at five, a hit says where
+// in the video to within five seconds.
+#define IDX_SOUND_SECONDS 5.0
+#define IDX_SOUND_SAMPLES (5 * EMB_SOUND_RATE)
+
+// A stretch that is never louder than this (of 1) is silence, and left out.
+#define IDX_SOUND_SILENCE 0.003f
+
 typedef struct IDX_Indexer IDX_Indexer;
 
 // How far it has got, as last seen.
@@ -38,8 +51,9 @@ struct IDX_Status {
 };
 
 // index_folder is where the index files go. model may be 0 (it could not be
-// opened); model_name goes in the files, to say which model made them.
-internal IDX_Indexer* IDX_Alloc(String8 index_folder, String8 model_name, EMB_Model* model);
+// opened); model_name and sound_model_name go in the files, to say which
+// model made them.
+internal IDX_Indexer* IDX_Alloc(String8 index_folder, String8 model_name, String8 sound_model_name, EMB_Model* model);
 
 // Once a frame: logs what the thread has logged, and starts again from the
 // first video whenever the library's videos have changed (its generation).
@@ -50,6 +64,7 @@ internal IDX_Status IDX_GetStatus(IDX_Indexer* indexer);
 // Whether the video's index file is up to date, as of this run: the
 // library's video_idx'th video at library_gen.
 internal B32 IDX_IsIndexed(IDX_Indexer* indexer, U64 library_gen, U64 video_idx);
+internal B32 IDX_SoundIsIndexed(IDX_Indexer* indexer, U64 library_gen, U64 video_idx);
 
 // Stops the thread, at the end of the program.
 internal void IDX_Stop(IDX_Indexer* indexer);

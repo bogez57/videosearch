@@ -120,9 +120,7 @@ CLIP sees only pictures. "A man screaming" will find a man with his mouth
 open, but not a scream off screen. Two additions, after step 4 and only if
 they are wanted:
 
-- **CLAP** (a CLIP for sound and words, LAION) on one-second windows of the
-  soundtrack, its scores added to the picture's for the same moment. Also an
-  ONNX model, so it goes through the same embed layer.
+- **CLAP** (a CLIP for sound and words, LAION). Done: see below.
 - **Speech**: whisper.cpp to transcribe what is said, searched as words.
 
 ## Choices for J
@@ -130,3 +128,20 @@ they are wanted:
 - MobileCLIP-S2 or OpenCLIP ViT-B/32 (the plan works the same with either).
 - ONNX Runtime, or a ggml port to compile in.
 - Whether sound matters for the first version, or comes after step 4.
+
+## Sound search, as built
+
+- The model: `clap-htsat-unfused` (Xenova's ONNX export), in
+  `data\models\clap-htsat-unfused\`, optional. It goes through the embed
+  layer beside CLIP (`embed_sound.c` for its spectrogram,
+  `embed_sound_tokenizer.c` for its tokenizer, the sessions in
+  `embed_onnx.c`).
+- Indexing: in the same pass as the frames, the soundtrack five seconds at a
+  time, one stretch after another, each into a vector in a second index file
+  per video (`.vsa`). Silence is left out.
+- Searching: the query through CLAP's text half as well as CLIP's; clips of
+  sound are found as clips of frames are, and both go in one list. Each
+  model's score is stretched over its own band so they compare; a row found
+  by sound says "sound match".
+- Still to do: set the sound's band (`SRCH_SOUND_LOW`, `SRCH_SOUND_HIGH`)
+  from real videos; maybe one hit where a clip matches by both.

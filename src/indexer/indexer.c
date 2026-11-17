@@ -27,6 +27,7 @@ struct IDX_Indexer {
 
    String8    index_folder;
    String8    model_name;
+   String8    sound_model_name;
    EMB_Model* model;       // 0: none could be opened
    B32        model_tried; // only the thread reads or writes it, and one runs at a time
 
@@ -48,6 +49,7 @@ struct IDX_Indexer {
    U64 no_model;
    U64  current; // the video under way, plus one. 0: none
    U64* indexed; // one a video, set when its index file is up to date
+   U64* sound_indexed; // and when its sound's is
 };
 
 internal void
@@ -82,6 +84,32 @@ _IDX_Encode(IDX_Indexer* indexer, Arena* arena, F32* images, F32* times, U64 cou
    return ok;
 }
 
+// A stretch of sound through the sound model, and its time and vector (as
+// F16) onto the lists. One too quiet to be anything is left out.
+internal B32
+_IDX_EncodeSound(IDX_Indexer* indexer, Arena* arena, F32* samples, U64 count, F32 time_s, F32* features, String8List* times_out,
+                 String8List* vectors_out) {
+   B32 ok = 1;
+   F32 peak = 0;
+   for (U64 i = 0; i < count; i += 1) {
+      peak = Max(peak, fabsf(samples[i]));
+   }
+   if (peak >= IDX_SOUND_SILENCE) {
+      F32 vector[EMB_DIM];
+      EMB_SoundFeatures(samples, count, features);
+      ok = EMB_SoundVector(indexer->model, features, vector);
+      if (ok) {
+         U16 v[EMB_DIM];
+         for (U64 i = 0; i < EMB_DIM; i += 1) {
+            v[i] = INX_F16FromF32(vector[i]);
+         }
+         Str8ListPush(arena, times_out, PushStr8Copy(arena, Str8((U8*)&time_s, sizeof(time_s))));
+         Str8ListPush(arena, vectors_out, PushStr8Copy(arena, Str8((U8*)v, sizeof(v))));
+      }
+   }
+   return ok;
+}
+
 internal void
 _IDX_ThreadEntry(void* p) {
    IDX_Indexer* indexer = (IDX_Indexer*)p;
@@ -96,6 +124,10 @@ _IDX_ThreadEntry(void* p) {
       U64 begin_us = NowTimeUS();
       if (EMB_Load(indexer->model)) {
          LogInfoF("Loaded the model in %.1f s\n", (F64)(NowTimeUS() - begin_us) / 1000000.0);
+         begin_us = NowTimeUS();
+         if (EMB_LoadSound(indexer->model)) {
+            LogInfoF("Loaded the sound model in %.1f s\n", (F64)(NowTimeUS() - begin_us) / 1000000.0);
+         }
       }
       _IDX_PassOnLogs(indexer, LogScopeEnd(arena));
       ArenaClear(arena);
@@ -104,26 +136,39 @@ _IDX_ThreadEntry(void* p) {
    if (!loaded) {
       InsAtomicU64EvalAssign(&indexer->no_model, 1);
    }
+   B32 sound_on = EMB_SoundIsLoaded(indexer->model);
 
    for (U64 idx = 0; loaded && idx < indexer->count && !InsAtomicU64Eval(&indexer->cancel); idx += 1) {
       InsAtomicU64EvalAssign(&indexer->current, idx + 1);
       Temp temp = TempBegin(arena);
       LogScopeBegin();
 
-      String8    path = indexer->paths[idx];
-      INX_Header header = INX_HeaderFor(path, PropertiesFromFilePath(path), indexer->model_name, IDX_SAMPLE_SECONDS);
-      String8    file_path = INX_FilePath(arena, indexer->index_folder, path);
-      U64        have = 0;
-      if (INX_IsUpToDate(file_path, &header, &have)) {
+      String8        path = indexer->paths[idx];
+      FileProperties props = PropertiesFromFilePath(path);
+      INX_Header     header = INX_HeaderFor(path, props, indexer->model_name, IDX_SAMPLE_SECONDS);
+      INX_Header     sound_header = INX_HeaderFor(path, props, indexer->sound_model_name, IDX_SOUND_SECONDS);
+      String8        file_path = INX_FilePath(arena, indexer->index_folder, path, INX_PICTURES);
+      String8        sound_file_path = INX_FilePath(arena, indexer->index_folder, path, INX_SOUND);
+      U64            have = 0;
+      U64            sound_have = 0;
+      B32            pictures_done = INX_IsUpToDate(file_path, &header, &have);
+      B32            sound_done = !sound_on || INX_IsUpToDate(sound_file_path, &sound_header, &sound_have);
+      if (pictures_done) {
          InsAtomicU64EvalAssign(&indexer->frames, InsAtomicU64Eval(&indexer->frames) + have);
-         InsAtomicU64IncEval(&indexer->up_to_date);
          InsAtomicU64EvalAssign(&indexer->indexed[idx], 1);
+      }
+      if (sound_on && sound_done) {
+         InsAtomicU64EvalAssign(&indexer->sound_indexed[idx], 1);
+      }
+
+      if (pictures_done && sound_done) {
+         InsAtomicU64IncEval(&indexer->up_to_date);
       } else {
          U64 begin_us = NowTimeUS();
 
-         // No sound: only the picture is looked at.
+         // The sound is only asked for if it is to be indexed.
          VID_DecoderInfo info = {0};
-         VID_Decoder*    decoder = VID_DecoderOpen(arena, path, IDX_FRAME_DIM, 0, &info);
+         VID_Decoder*    decoder = VID_DecoderOpen(arena, path, IDX_FRAME_DIM, sound_done ? 0 : EMB_SOUND_RATE, &info);
          B32             ok = (decoder != 0);
          if (ok) {
             U8*         pixels = PushArrayNoZero(arena, U8, (U64)info.size.x * (U64)info.size.y * 4);
@@ -134,13 +179,31 @@ _IDX_ThreadEntry(void* p) {
             String8List times = {0};
             String8List vector_list = {0};
 
+            // The sound, gathered into one channel a stretch at a time.
+            F32*        stretch = PushArrayNoZero(arena, F32, IDX_SOUND_SAMPLES);
+            F32*        features = PushArrayNoZero(arena, F32, EMB_SOUND_FLOATS);
+            F32         chunk[2 * 4096];
+            U64         stretch_count = 0;
+            F32         stretch_s = 0;
+            F64         sound_s = 0; // how far the sound has been read
+            B32         sound_more = (!sound_done && info.has_sound);
+            String8List sound_times = {0};
+            String8List sound_vectors = {0};
+
             // Every frame is decoded - a codec can't skip to the next second
             // without decoding what is between - and the first at or after
-            // each whole step is the one taken.
+            // each whole step is the one taken. That goes for a video whose
+            // frames are indexed already too, when it is here for its sound:
+            // the decoder keeps what it reads of the one while asked for the
+            // other, so the two are read side by side.
             F64 next_s = 0;
             F64 time_s = 0;
-            while (ok && !InsAtomicU64Eval(&indexer->cancel) && VID_DecoderNextFrame(decoder, pixels, &time_s)) {
-               if (time_s >= next_s) {
+            B32 frames_more = 1;
+            while (ok && !InsAtomicU64Eval(&indexer->cancel) && (frames_more || sound_more)) {
+               if (frames_more) {
+                  frames_more = VID_DecoderNextFrame(decoder, pixels, &time_s);
+               }
+               if (frames_more && !pictures_done && time_s >= next_s) {
                   next_s = time_s + IDX_SAMPLE_SECONDS;
                   EMB_ImageFromFrame(pixels, info.size, images + batch_count * EMB_IMAGE_FLOATS);
                   batch_times[batch_count] = (F32)time_s;
@@ -150,22 +213,58 @@ _IDX_ThreadEntry(void* p) {
                      batch_count = 0;
                   }
                }
+
+               // The sound up to this frame, or all the rest of it once the
+               // frames have ended.
+               while (ok && sound_more && (!frames_more || sound_s < time_s) && !InsAtomicU64Eval(&indexer->cancel)) {
+                  F64 chunk_s = 0;
+                  U64 got = VID_DecoderNextSound(decoder, chunk, ArrayCount(chunk) / 2, &chunk_s);
+                  sound_more = (got != 0);
+                  sound_s = chunk_s + (F64)got / (F64)EMB_SOUND_RATE;
+                  for (U64 i = 0; ok && i < got; i += 1) {
+                     if (stretch_count == 0) {
+                        stretch_s = (F32)(chunk_s + (F64)i / (F64)EMB_SOUND_RATE);
+                     }
+                     stretch[stretch_count++] = 0.5f * (chunk[2 * i] + chunk[2 * i + 1]);
+                     if (stretch_count == IDX_SOUND_SAMPLES) {
+                        ok = _IDX_EncodeSound(indexer, arena, stretch, stretch_count, stretch_s, features, &sound_times,
+                                              &sound_vectors);
+                        stretch_count = 0;
+                     }
+                  }
+               }
             }
             if (ok && batch_count != 0) {
                ok = _IDX_Encode(indexer, arena, images, batch_times, batch_count, vectors, &times, &vector_list);
             }
+            // What is left at the end, if it is a second or more.
+            if (ok && stretch_count >= EMB_SOUND_RATE) {
+               ok = _IDX_EncodeSound(indexer, arena, stretch, stretch_count, stretch_s, features, &sound_times, &sound_vectors);
+            }
             VID_DecoderClose(decoder);
 
-            // A video stopped part way is not written: it is read again next time.
+            // A video stopped part way is not written: it is read again next
+            // time. One with no sound gets a sound file with nothing in it,
+            // so it is not read again for that.
             if (ok && !InsAtomicU64Eval(&indexer->cancel)) {
-               U64 frames = times.total_size / sizeof(F32);
-               if (INX_Write(file_path, header, path, times, vector_list)) {
-                  InsAtomicU64EvalAssign(&indexer->indexed[idx], 1);
-                  LogInfoF("Indexed %S: %llu frames in %.1f s\n", indexer->names[idx], (unsigned long long)frames,
-                           (F64)(NowTimeUS() - begin_us) / 1000000.0);
-               } else {
-                  LogUserErrorF("Could not write %S, the index of %S\n", file_path, path);
+               if (!pictures_done) {
+                  if (INX_Write(file_path, header, path, times, vector_list)) {
+                     InsAtomicU64EvalAssign(&indexer->indexed[idx], 1);
+                  } else {
+                     LogUserErrorF("Could not write %S, the index of %S\n", file_path, path);
+                  }
                }
+               if (!sound_done) {
+                  if (INX_Write(sound_file_path, sound_header, path, sound_times, sound_vectors)) {
+                     InsAtomicU64EvalAssign(&indexer->sound_indexed[idx], 1);
+                  } else {
+                     LogUserErrorF("Could not write %S, the sound index of %S\n", sound_file_path, path);
+                  }
+               }
+               LogInfoF("Indexed %S: %llu frames, %llu stretches of sound in %.1f s\n", indexer->names[idx],
+                        (unsigned long long)(times.total_size / sizeof(F32)),
+                        (unsigned long long)(sound_times.total_size / sizeof(F32)),
+                        (F64)(NowTimeUS() - begin_us) / 1000000.0);
             }
          }
          if (!ok) {
@@ -182,7 +281,7 @@ _IDX_ThreadEntry(void* p) {
 }
 
 internal IDX_Indexer*
-IDX_Alloc(String8 index_folder, String8 model_name, EMB_Model* model) {
+IDX_Alloc(String8 index_folder, String8 model_name, String8 sound_model_name, EMB_Model* model) {
    Arena*       arena = ArenaAlloc();
    IDX_Indexer* indexer = PushArray(arena, IDX_Indexer, 1);
    indexer->arena = ArenaAlloc();
@@ -192,6 +291,7 @@ IDX_Alloc(String8 index_folder, String8 model_name, EMB_Model* model) {
    indexer->thread_log = LogAlloc();
    indexer->index_folder = PushStr8Copy(arena, index_folder);
    indexer->model_name = PushStr8Copy(arena, model_name);
+   indexer->sound_model_name = PushStr8Copy(arena, sound_model_name);
    if (!FilePathExists(index_folder)) {
       MakeDirectory(index_folder);
    }
@@ -250,6 +350,7 @@ IDX_Update(IDX_Indexer* indexer, LIB_Library* library) {
    indexer->paths = PushArray(indexer->arena, String8, indexer->count);
    indexer->names = PushArray(indexer->arena, String8, indexer->count);
    indexer->indexed = PushArray(indexer->arena, U64, indexer->count);
+   indexer->sound_indexed = PushArray(indexer->arena, U64, indexer->count);
    for (U64 i = 0; i < indexer->count; i += 1) {
       indexer->paths[i] = PushStr8Copy(indexer->arena, library->videos[i].path);
       indexer->names[i] = Str8SkipLastSlash(indexer->paths[i]);
@@ -289,4 +390,10 @@ internal B32
 IDX_IsIndexed(IDX_Indexer* indexer, U64 library_gen, U64 video_idx) {
    return (indexer->library_gen == library_gen && video_idx < indexer->count &&
            InsAtomicU64Eval(&indexer->indexed[video_idx]) != 0);
+}
+
+internal B32
+IDX_SoundIsIndexed(IDX_Indexer* indexer, U64 library_gen, U64 video_idx) {
+   return (indexer->library_gen == library_gen && video_idx < indexer->count &&
+           InsAtomicU64Eval(&indexer->sound_indexed[video_idx]) != 0);
 }

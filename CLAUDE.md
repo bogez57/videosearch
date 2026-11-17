@@ -73,5 +73,12 @@ through ONNX Runtime, vectors on disk) in five steps.
   Remove, and "Add a folder..." opens Windows' folder window (`src/picker`).
 - `main.c` only lists includes: warnings are turned off in `build.bat`, not
   with pragmas around includes.
+- Sound search: CLAP (`data/models/clap-htsat-unfused`, optional; its
+  tokenizer's files in `data/clap`) through the embed layer
+  (`embed_sound.c`, `embed_sound_tokenizer.c`); the indexer reads the sound
+  five seconds at a time in the same pass, into a second index file per
+  video (`.vsa`); the search finds clips of sound as it does clips of
+  frames, in one list ("sound match"). The sound's score band in `search.h`
+  is a first guess.
 - Next: step 5, as wanted (the GPU through DirectML, new videos found while
-  it runs, taking a folder out), or sound search (CLAP, whisper.cpp).
+  it runs, taking a folder out), or speech search (whisper.cpp).

@@ -17,7 +17,8 @@
 // The indexer runs a frame a second of every video through CLIP's image
 // model and keeps what it makes of them on disk (indexer\indexer.md); a
 // search puts what is typed through the text model and finds the frames
-// that match it best (search\search.md). Where it is going is in
+// that match it best (search\search.md). The videos' sound goes the same
+// way through a second model, CLAP, if it is there. Where it is going is in
 // Claude outputs\clip_search_plan.md.
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -65,6 +66,8 @@
 #include "video/video_ffmpeg.c" // the decoder: the one file to change for another (video_decoder.h)
 #include "embed/embed.c"
 #include "embed/embed_tokenizer.c"
+#include "embed/embed_sound.c"
+#include "embed/embed_sound_tokenizer.c"
 #include "embed/embed_onnx.c" // the model: the one file to change to run it with something else (embed.h)
 #include "index/index.c"
 #include "indexer/indexer.c"
@@ -178,8 +181,12 @@ _EntryPoint(CmdLine* cmdline) {
       String8 model_name = Str8Lit("clip-vit-base-patch32");
       app_state.model = EMB_Open(PushStr8F(scratch.arena, "%S\\models\\%S", data, model_name),
                                  PushStr8F(scratch.arena, "%S\\clip\\bpe_merges.txt", data));
+      String8 sound_model_name = Str8Lit("clap-htsat-unfused");
+      EMB_OpenSound(app_state.model, PushStr8F(scratch.arena, "%S\\models\\%S", data, sound_model_name),
+                    PushStr8F(scratch.arena, "%S\\clap\\vocab.json", data),
+                    PushStr8F(scratch.arena, "%S\\clap\\merges.txt", data));
       String8 index_folder = PushStr8F(scratch.arena, "%S\\index", FR_LocalFolder(scratch.arena));
-      app_state.indexer = IDX_Alloc(index_folder, model_name, app_state.model);
+      app_state.indexer = IDX_Alloc(index_folder, model_name, sound_model_name, app_state.model);
       app_state.search = SRCH_Alloc(index_folder, app_state.model);
       ScratchEnd(scratch);
    }
