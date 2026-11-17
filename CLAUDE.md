@@ -16,9 +16,10 @@ through ONNX Runtime, vectors on disk) in five steps.
 
 ## How J works
 
-- Claude works on a branch per step and opens a pull request on GitHub
-  (`bogez57/videosearch`); J pulls it, builds, runs, and merges. Claude
-  doesn't push to `main`.
+- J and Claude both work on `main` of `bogez57/videosearch` on GitHub, no
+  branches or pull requests. Claude pushes each step there when it is done;
+  J pulls, builds and runs. Pull before starting, so neither overwrites the
+  other.
 - J builds and runs: `build` from the repo root (an MSVC prompt, clang-cl),
   then `bin\videosearch.exe [folder ...]`. Plan larger features first, then
   small, clearly explained steps.
