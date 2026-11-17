@@ -13,9 +13,9 @@
 // best first. Esc empties the search bar.
 //
 // For now a match is by file name only (search\search.md). Meanwhile the
-// indexer reads a frame a second from every video (indexer\indexer.md). How
-// it is to find clips by what is in them is in
-// Claude outputs\clip_search_plan.md.
+// indexer runs a frame a second of every video through the image model and
+// keeps what it makes of them on disk (indexer\indexer.md). How it is to
+// find clips by what is in them is in Claude outputs\clip_search_plan.md.
 
 #define _CRT_SECURE_NO_WARNINGS
 
@@ -37,6 +37,8 @@
 #include "text/text.h"
 #include "library/library.h"
 #include "video/video_decoder.h"
+#include "embed/embed.h"
+#include "index/index.h"
 #include "indexer/indexer.h"
 #include "search/search.h"
 #include "app_state.h"
@@ -77,6 +79,9 @@
 #if defined(__clang__)
 # pragma clang diagnostic pop
 #endif
+#include "embed/embed.c"
+#include "embed/embed_onnx.c" // the model: the one file to change to run it with something else (embed.h)
+#include "index/index.c"
 #include "indexer/indexer.c"
 #include "search/search.c"
 #include "frame.c"
@@ -176,7 +181,14 @@ _EntryPoint(CmdLine* cmdline) {
 
    // The videos: the folders searched last time, and any on the command line.
    app_state.library = LIB_Alloc();
-   app_state.indexer = IDX_Alloc();
+   {
+      Temp    scratch = ScratchBegin(0, 0);
+      String8 index_folder = PushStr8F(scratch.arena, "%S\\index", FR_LocalFolder(scratch.arena));
+      String8 model_folder =
+          PushStr8F(scratch.arena, "%S\\..\\data\\models\\clip-vit-base-patch32", GetProcessInfo()->binary_path);
+      app_state.indexer = IDX_Alloc(index_folder, model_folder);
+      ScratchEnd(scratch);
+   }
    FR_LoadFolders(&app_state);
    for (String8Node* node = cmdline->inputs.first; node != 0; node = node->next) {
       FR_AddFolder(&app_state, node->string);

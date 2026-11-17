@@ -55,6 +55,16 @@ set "ffmpeg_libs=%ffmpeg%\lib\avformat.lib %ffmpeg%\lib\avcodec.lib %ffmpeg%\lib
 xcopy /D /Y /Q %ffmpeg%\bin\*.dll %bin%\ >NUL || echo Failed to copy FFmpeg's DLLs
 ::--- (end) ffmpeg -----------------------------------------
 
+::--- (begin) onnxruntime ----------------------------------
+:: What runs the model (src\embed\embed_onnx.c, and only that file). Like
+:: FFmpeg: its headers, the import library, and the DLLs copied next to the
+:: exe - Windows can have an older onnxruntime.dll of its own, and the one next to
+:: the exe is the one loaded.
+set "onnxruntime=src\third_party\onnxruntime"
+set "onnxruntime_libs=%onnxruntime%\lib\onnxruntime.lib"
+xcopy /D /Y /Q %onnxruntime%\bin\*.dll %bin%\ >NUL || echo Failed to copy ONNX Runtime's DLLs
+::--- (end) onnxruntime ------------------------------------
+
 ::--- (begin) flags ----------------------------------------
 set "opt=/Od"
 if "%o2%"=="1" set "opt=/O2"
@@ -65,7 +75,7 @@ set "compile=clang-cl /nologo /Z7 %opt% /W4 /arch:AVX /diagnostics:caret /clang:
 :: there ("base/...", "win32/..."); then src\bgz\bgz, the same for bgz's;
 :: src\bgz so that main.c's "rad/..." and "bgz/..." are found; src for the
 :: program's own layers.
-set "includes=-Isrc\bgz\rad -Isrc\bgz\bgz -Isrc\bgz -Isrc -I%ffmpeg%\include"
+set "includes=-Isrc\bgz\rad -Isrc\bgz\bgz -Isrc\bgz -Isrc -I%ffmpeg%\include -I%onnxruntime%\include"
 :: The defines raddebugger's headers expect - see src\bgz\build.bat.
 set "defines=-D_USE_MATH_DEFINES -Dstrdup=_strdup -Dgnu_printf=printf"
 :: The one warning turned off: an initializer that leaves out trailing fields,
@@ -75,7 +85,7 @@ set "warnings=-Wno-missing-field-initializers"
 
 ::--- (begin) videosearch ----------------------------------
 echo [---building videosearch]
-%compile% %warnings% %defines% %includes% src\main.c %bin%\bgz.lib %ffmpeg_libs% /Fo%bin%\ /Fe%bin%\videosearch.exe /link /DEBUG:FULL /INCREMENTAL:NO /PDB:%bin%\videosearch.pdb
+%compile% %warnings% %defines% %includes% src\main.c %bin%\bgz.lib %ffmpeg_libs% %onnxruntime_libs% /Fo%bin%\ /Fe%bin%\videosearch.exe /link /DEBUG:FULL /INCREMENTAL:NO /PDB:%bin%\videosearch.pdb
 if errorlevel 1 exit /b 1
 ::--- (end) videosearch ------------------------------------
 

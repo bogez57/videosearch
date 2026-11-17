@@ -2,7 +2,8 @@
 
 A plan for turning the stand-in search (file names, `src/search/search.c`)
 into one that finds "a man screaming" or "a car driving down a highway" in
-the videos themselves. Nothing here is built yet.
+the videos themselves. Steps 1 and 2 are built; the model chosen is OpenAI's
+CLIP ViT-B/32, exported to ONNX (`data/models/README.md`).
 
 ## The idea
 

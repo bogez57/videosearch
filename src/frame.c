@@ -600,16 +600,18 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
          // How far the indexer has got: the video under way, or all done.
          IDX_Status idx = IDX_GetStatus(app_state->indexer);
          String8    reading = {0};
-         if (idx.videos_done < idx.video_count) {
-            reading = PushStr8F(scratch.arena, " Reading frames: %llu of %llu videos, %llu frames (%S).",
+         if (idx.no_model) {
+            reading = Str8Lit(" No image model, so nothing is indexed: see data\\models\\README.md.");
+         } else if (idx.videos_done < idx.video_count) {
+            reading = PushStr8F(scratch.arena, " Indexing: %llu of %llu videos, %llu frames (%S).",
                                 (unsigned long long)idx.videos_done, (unsigned long long)idx.video_count,
                                 (unsigned long long)idx.frames, idx.current);
          } else if (idx.video_count != 0) {
-            reading = PushStr8F(scratch.arena, " %llu frames read.", (unsigned long long)idx.frames);
+            reading = PushStr8F(scratch.arena, " %llu frames indexed.", (unsigned long long)idx.frames);
          }
          String8 failed = {0};
          if (idx.videos_failed != 0) {
-            failed = PushStr8F(scratch.arena, " %llu could not be decoded.", (unsigned long long)idx.videos_failed);
+            failed = PushStr8F(scratch.arena, " %llu could not be indexed.", (unsigned long long)idx.videos_failed);
          }
          status = PushStr8F(scratch.arena, "%S%llu videos in %llu folders.%S%S Searching by file name for now.", hits,
                             (unsigned long long)library->video_count, (unsigned long long)library->folders.node_count,

@@ -56,6 +56,11 @@ through ONNX Runtime, vectors on disk) in five steps.
   command line, dropped on the window, remembered in
   `bin\local\folders.txt`), and the stand-in search by file name.
 - Step 1 of the plan, frames: the indexer (`src/indexer`) reads a frame a
-  second from every video with the slideshow's decoder (`src/video`) and
-  counts them; the status line shows how far it has got.
-- Next: step 2, image vectors (ONNX Runtime and the image model).
+  second from every video with the slideshow's decoder (`src/video`).
+- Step 2, image vectors: ONNX Runtime (`src/third_party/onnxruntime`) runs
+  CLIP ViT-B/32's image half (`src/embed`, the model in `data/models`, see
+  its README) on each frame, and the vectors go to one file per video in
+  `bin\local\index` (`src/index`).
+- Next: step 3, text vectors and real search. CLIP's tokenizer is written
+  (`src/embed/embed_tokenizer.c`, not compiled in yet); it needs the merges
+  file in `data/clip`.
