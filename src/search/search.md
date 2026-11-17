@@ -49,9 +49,9 @@ Brute force over every frame: see the plan for why that is enough.
 
 Where in that range the scores are depends on the words more than on the
 frames ("a man screaming" averaged 0.229 over the test library, "a city
-skyline" 0.182), so half the mean frame's vector
-(`SRCH_PICTURE_MEAN_SHARE`) is taken from the query's first: a frame's score
-then has half the library's average for those words taken from it. Half,
+skyline" 0.182), so a frame's score has half the library's average for
+those words taken from it (`SRCH_PICTURE_MEAN_SHARE`; the average is the
+query's dot product with the mean frame, from `picture_sum`). Half,
 because with all of it a frame J found a good match for "person screaming"
 (0.27, where those words average about 0.23) scored as low as the best
 frame for words in no video. In a library whose frames nearly all match the

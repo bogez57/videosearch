@@ -222,12 +222,11 @@ _SRCH_ByName(Arena* arena, LIB_Library* library, String8 query) {
 }
 
 // The clips of one video's frames, or of its stretches of sound, that match
-// q (the query's vector less half the frames' mean; for sound, less sound_base),
-// into hits. A score is the dot product stretched so that 0 is no match
+// q, into hits. base is taken from each one's dot product with q. A score is the dot product stretched so that 0 is no match
 // and 1 a good one (search.h), which is what lets clips found by picture and
 // by sound go in one list.
 internal void
-_SRCH_Clips(SRCH_Search* search, SRCH_Hit* hits, U64* count, U64 video_idx, _SRCH_Track* track, F32* q, B32 is_sound) {
+_SRCH_Clips(SRCH_Search* search, SRCH_Hit* hits, U64* count, U64 video_idx, _SRCH_Track* track, F32* q, F32 base, B32 is_sound) {
    Temp scratch = ScratchBegin(0, 0);
    F32* table = search->f32_from_f16;
    F32  low = is_sound ? SRCH_SOUND_LOW : SRCH_PICTURE_LOW;
@@ -242,7 +241,7 @@ _SRCH_Clips(SRCH_Search* search, SRCH_Hit* hits, U64* count, U64 video_idx, _SRC
       F32  dot = 0;
       for (U64 j = 0; j < EMB_DIM; j += 1) dot += q[j] * table[v[j]];
       frames[i].idx = i;
-      frames[i].score = (dot - low) / (high - low);
+      frames[i].score = (dot - base - low) / (high - low);
       clip_of[i] = -1;
    }
 
@@ -316,14 +315,18 @@ SRCH_Run(Arena* arena, SRCH_Search* search, LIB_Library* library, String8 query)
       SRCH_Hit* found = PushArray(scratch.arena, SRCH_Hit, SRCH_MAX_HITS);
       U64       found_count = 0;
       for (U64 j = 0; j < EMB_DIM; j += 1) sound_q[j] -= search->sound_base[j];
-      for (U64 j = 0; by_pictures && j < EMB_DIM; j += 1) q[j] -= (F32)(SRCH_PICTURE_MEAN_SHARE * search->picture_sum[j] / (F64)search->frame_count);
+      // What the frames score for the query on average: its dot product
+      // with their mean.
+      F64 mean = 0;
+      for (U64 j = 0; by_pictures && j < EMB_DIM; j += 1) mean += q[j] * search->picture_sum[j] / (F64)search->frame_count;
+      F32 picture_base = (F32)(SRCH_PICTURE_MEAN_SHARE * mean);
       for (U64 video_idx = 0; video_idx < search->video_count; video_idx += 1) {
          _SRCH_Video* video = &search->videos[video_idx];
          if (by_pictures && video->pictures.count != 0) {
-            _SRCH_Clips(search, found, &found_count, video_idx, &video->pictures, q, 0);
+            _SRCH_Clips(search, found, &found_count, video_idx, &video->pictures, q, picture_base, 0);
          }
          if (by_sound && video->sound.count != 0) {
-            _SRCH_Clips(search, found, &found_count, video_idx, &video->sound, sound_q, 1);
+            _SRCH_Clips(search, found, &found_count, video_idx, &video->sound, sound_q, 0, 1);
          }
       }
 
