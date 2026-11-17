@@ -27,13 +27,16 @@
 // band, and where the band is depends on the words: CLIP gives a frame
 // about 0.19 to 0.23 for words it has nothing to do with, and only some
 // 0.03 to 0.10 more than that for words it matches. So a frame's score has
-// taken from it what the library's frames score for the query on average,
-// and a hit's score is what is left, stretched so the band's low end is 0
-// and its high end 1 - CLIP's and the sound model's each by its own, which
-// is what makes the two comparable. The picture's band is from the same 58
-// test searches as the sound's: the best frame for words that were in no
-// video ("a cat", "something") was left with about 0.04, for words that
-// were ("a desert", "a soldier in a trench") with 0.07 to 0.11.
+// taken from it half of what the library's frames score for the query on
+// average (SRCH_PICTURE_MEAN_SHARE), and a hit's score is what is left,
+// stretched so the band's low end is 0 and its high end 1 - CLIP's and the
+// sound model's each by its own, which is what makes the two comparable.
+// Half, not all: with all of it a frame of someone screaming, which J found
+// a good match for "person screaming", scored as low as the best frame for
+// words that were in no video. The picture's band is from the same 58 test
+// searches as the sound's: the best frame for words in no video ("a cat")
+// is left with about 0.14, for words that were ("a desert", "a soldier in a
+// trench") with 0.20 to 0.22.
 //
 // The sound model gives some stretches of sound a good score for any words
 // at all, so a stretch's score has taken from it what it scores for words
@@ -42,8 +45,9 @@
 // sound that matched the words was left with 0.3 to 0.5, and sound for words
 // about something seen, not heard, mostly with under 0.3 - though up to 0.4:
 // the sound model can't tell them apart well.
-#define SRCH_PICTURE_LOW  0.03f
-#define SRCH_PICTURE_HIGH 0.10f
+#define SRCH_PICTURE_LOW  0.12f
+#define SRCH_PICTURE_HIGH 0.20f
+#define SRCH_PICTURE_MEAN_SHARE 0.5
 #define SRCH_SOUND_LOW    0.20f
 #define SRCH_SOUND_HIGH   0.50f
 

@@ -83,8 +83,8 @@ through ONNX Runtime, vectors on disk) in five steps.
 - Ranking: a stretch of sound's score has taken from it what it scores for
   words that say nothing, and the sound's band in `search.h` is set from 58
   test searches on J's five trailers; a clip that matches by picture and by
-  sound at once is one row ("picture and sound match"). A frame scores by
-  how far it is above the library's average for the query, and clips under
+  sound at once is one row ("picture and sound match"). A frame's score
+  has half the library's average for the query taken from it, and clips under
   half the score of the best of their kind (picture, sound, both) are left
   out. The sound model
   still can't tell words about something seen from words about something

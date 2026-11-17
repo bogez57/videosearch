@@ -49,10 +49,13 @@ Brute force over every frame: see the plan for why that is enough.
 
 Where in that range the scores are depends on the words more than on the
 frames ("a man screaming" averaged 0.229 over the test library, "a city
-skyline" 0.182), so the mean frame's vector is taken from the query's first:
-a frame's score is then how far above the library's average for those words
-it is. In a library whose frames nearly all match the words, that makes
-them all score low.
+skyline" 0.182), so half the mean frame's vector
+(`SRCH_PICTURE_MEAN_SHARE`) is taken from the query's first: a frame's score
+then has half the library's average for those words taken from it. Half,
+because with all of it a frame J found a good match for "person screaming"
+(0.27, where those words average about 0.23) scored as low as the best
+frame for words in no video. In a library whose frames nearly all match the
+words, it makes them all score lower.
 
 The sound is searched the same way (`_SRCH_Clips` does both): the query
 through the sound model's text half (`EMB_SoundTextVector`), a dot product
@@ -63,11 +66,11 @@ scores for words that say nothing.
 
 So that clips found by picture and by sound can be in one list, a score is
 the model's own stretched over its band: `SRCH_PICTURE_LOW` to
-`SRCH_PICTURE_HIGH` (0.03 to 0.10 above the average) becomes 0 to 1, and
+`SRCH_PICTURE_HIGH` (0.12 to 0.20, of what is left) becomes 0 to 1, and
 `SRCH_SOUND_LOW` to `SRCH_SOUND_HIGH` (0.20 to 0.50) likewise. Both bands
 are from 58 test searches on five film trailers. The best frame for words
-in none of them was about 0.04 above the average, for words that were in
-them 0.07 to 0.11. For the sound: sound that matched the words was left with
+in none of them was left with about 0.14, for words that were in them 0.20
+to 0.22. For the sound: sound that matched the words was left with
 0.3 to 0.5 ("music", "gunfire and explosions", "people cheering"), sound
 under words about something seen mostly with less than 0.3, but up to 0.4
 ("a soldier in a trench", "fire", "a monkey"). The sound model's scores

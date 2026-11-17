@@ -222,7 +222,7 @@ _SRCH_ByName(Arena* arena, LIB_Library* library, String8 query) {
 }
 
 // The clips of one video's frames, or of its stretches of sound, that match
-// q (the query's vector less the frames' mean; for sound, less sound_base),
+// q (the query's vector less half the frames' mean; for sound, less sound_base),
 // into hits. A score is the dot product stretched so that 0 is no match
 // and 1 a good one (search.h), which is what lets clips found by picture and
 // by sound go in one list.
@@ -316,7 +316,7 @@ SRCH_Run(Arena* arena, SRCH_Search* search, LIB_Library* library, String8 query)
       SRCH_Hit* found = PushArray(scratch.arena, SRCH_Hit, SRCH_MAX_HITS);
       U64       found_count = 0;
       for (U64 j = 0; j < EMB_DIM; j += 1) sound_q[j] -= search->sound_base[j];
-      for (U64 j = 0; by_pictures && j < EMB_DIM; j += 1) q[j] -= (F32)(search->picture_sum[j] / (F64)search->frame_count);
+      for (U64 j = 0; by_pictures && j < EMB_DIM; j += 1) q[j] -= (F32)(SRCH_PICTURE_MEAN_SHARE * search->picture_sum[j] / (F64)search->frame_count);
       for (U64 video_idx = 0; video_idx < search->video_count; video_idx += 1) {
          _SRCH_Video* video = &search->videos[video_idx];
          if (by_pictures && video->pictures.count != 0) {
