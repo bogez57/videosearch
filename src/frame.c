@@ -822,6 +822,7 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
          F32     button_h = (F32)(S32)(30.0f * ui);
          String8 remove = {0}; // done after the list has been gone through
          B32     add = 0;
+         B32     reindex = 0;
 
          UI_SetNextPrefWidth(UI_Px(window_dim.x, 1));
          UI_SetNextPrefHeight(UI_Px(rows_h, 1));
@@ -842,6 +843,10 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
                UI_Label((library->folders.node_count == 0)
                             ? Str8Lit("No folders yet. Add one that has videos in it, or drop it on the window.")
                             : Str8Lit("Every video in these folders, and in the folders under them, is searched."));
+               if (library->video_count != 0) {
+                  reindex = _FR_Button(Str8Lit("Re-index everything"), (F32)(S32)(200.0f * ui), button_h, "###folders reindex");
+                  UI_Spacer(UI_Px(pad, 1));
+               }
             }
             UI_Spacer(UI_Px(pad * 0.5f, 1));
 
@@ -879,6 +884,13 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
 
          if (remove.size != 0) {
             FR_RemoveFolder(app_state, remove);
+         }
+         // What was made of every video is thrown away and made again.
+         if (reindex) {
+            IDX_Reindex(app_state->indexer, library);
+            SRCH_Forget(app_state->search);
+            LogInfoF("Re-indexing everything\n");
+            FR_Notice(app_state, Str8Lit("Indexing every video again."));
          }
          // Windows' window for it: the frame waits here until it is answered.
          if (add) {

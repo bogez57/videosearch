@@ -413,3 +413,19 @@ IDX_SoundIsIndexed(IDX_Indexer* indexer, U64 library_gen, U64 video_idx) {
    return (indexer->library_gen == library_gen && video_idx < indexer->count &&
            InsAtomicU64Eval(&indexer->sound_indexed[video_idx]) != 0);
 }
+
+internal void
+IDX_Reindex(IDX_Indexer* indexer, LIB_Library* library) {
+   // Stopped first: it may be part way through writing one.
+   _IDX_StopThread(indexer);
+   Temp scratch = ScratchBegin(0, 0);
+   for (U64 i = 0; i < library->video_count; i += 1) {
+      DeleteFileAtPath(INX_FilePath(scratch.arena, indexer->index_folder, library->videos[i].path, INX_PICTURES));
+      DeleteFileAtPath(INX_FilePath(scratch.arena, indexer->index_folder, library->videos[i].path, INX_SOUND));
+   }
+   ScratchEnd(scratch);
+
+   // No library's generation, so IDX_Update starts a run, and until it has
+   // nothing counts as indexed.
+   indexer->library_gen = max_U64;
+}

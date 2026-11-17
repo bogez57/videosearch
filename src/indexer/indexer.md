@@ -42,6 +42,9 @@ the sound model and into the video's sound index file.
   it.
 - `IDX_IsIndexed(indexer, library_gen, video_idx)`,
   `IDX_SoundIsIndexed(...)`: the search asks them which files to load.
+- `IDX_Reindex(indexer, library)`: stops the run, deletes the index files
+  of the library's videos (both kinds) and has the next `IDX_Update` start
+  again. The Folders panel's "Re-index everything".
 - `IDX_Stop`: cancels and joins, at the end of the program.
 
 ## How a video is read

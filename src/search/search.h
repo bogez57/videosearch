@@ -71,6 +71,10 @@ internal SRCH_Search* SRCH_Alloc(String8 index_folder, EMB_Model* model);
 internal void SRCH_Update(SRCH_Search* search, LIB_Library* library, IDX_Indexer* indexer);
 internal U64  SRCH_Generation(SRCH_Search* search);
 
+// Lets go of every index file loaded: the next SRCH_Update loads them again
+// as the indexer finishes them. For when they are made again (IDX_Reindex).
+internal void SRCH_Forget(SRCH_Search* search);
+
 // The hits for query, best first, pushed on arena. No hits for an empty
 // query.
 internal SRCH_Results SRCH_Run(Arena* arena, SRCH_Search* search, LIB_Library* library, String8 query);

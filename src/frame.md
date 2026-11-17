@@ -30,7 +30,8 @@ layer's state.
 - The Folders panel, in the list's place when `folders_open` is set (the
   Folders button beside the search bar) or there are no folders: each
   folder with how many videos it has and a Remove button, and "Add a
-  folder...", which asks with Windows' folder window (`PICK_Folder`). Esc,
+  folder...", which asks with Windows' folder window (`PICK_Folder`), and
+  "Re-index everything" (`IDX_Reindex`, `SRCH_Forget`). Esc,
   the button again, or typing closes it. `_FR_Button` is its buttons.
 - `FR_AddFolder`, `FR_RemoveFolder`, `FR_LoadFolders`: the library's
   folders, kept a line each in `bin\local\folders.txt`.

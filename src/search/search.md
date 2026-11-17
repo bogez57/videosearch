@@ -26,6 +26,8 @@ and shows the `SRCH_Hit`s, and knows nothing of how they were found.
 - `SRCH_Alloc(index_folder, model)`
 - `SRCH_Update(search, library, indexer)`: once a frame, after `IDX_Update`.
 - `SRCH_Generation`
+- `SRCH_Forget(search)`: lets go of what is loaded, to be loaded again as
+  the indexer finishes each video. Called with `IDX_Reindex`.
 - `SRCH_Run(arena, search, library, query)`: up to `SRCH_MAX_HITS` hits,
   best first. A hit is a video (`video_idx`), a stretch of it in seconds
   (`start_s`, `end_s`; both 0 is the whole video), when its best frame is

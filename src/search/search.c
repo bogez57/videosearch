@@ -105,6 +105,11 @@ SRCH_Update(SRCH_Search* search, LIB_Library* library, IDX_Indexer* indexer) {
    }
 }
 
+internal void
+SRCH_Forget(SRCH_Search* search) {
+   search->library_gen = max_U64;
+}
+
 internal U64
 SRCH_Generation(SRCH_Search* search) {
    return search->generation;

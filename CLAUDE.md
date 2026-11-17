@@ -70,7 +70,8 @@ through ONNX Runtime, vectors on disk) in five steps.
   (`src/thumbs`); a click plays the clip in the window with the slideshow's
   player and audio (`src/video`, `src/audio`, copied as they are).
 - Folders in the app: the Folders panel (`frame.c`) lists the folders with
-  Remove, and "Add a folder..." opens Windows' folder window (`src/picker`).
+  Remove, "Add a folder..." opens Windows' folder window (`src/picker`), and
+  "Re-index everything" throws the index files away and makes them again.
 - `main.c` only lists includes: warnings are turned off in `build.bat`, not
   with pragmas around includes.
 - Sound search: CLAP (`data/models/clap-htsat-unfused`, optional; its

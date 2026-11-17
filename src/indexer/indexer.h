@@ -68,6 +68,11 @@ internal IDX_Status IDX_GetStatus(IDX_Indexer* indexer);
 internal B32 IDX_IsIndexed(IDX_Indexer* indexer, U64 library_gen, U64 video_idx);
 internal B32 IDX_SoundIsIndexed(IDX_Indexer* indexer, U64 library_gen, U64 video_idx);
 
+// Deletes the index files of the library's videos, pictures and sound, and
+// has the next IDX_Update start again from the first video. The search is
+// told with SRCH_Forget.
+internal void IDX_Reindex(IDX_Indexer* indexer, LIB_Library* library);
+
 // Stops the thread, at the end of the program.
 internal void IDX_Stop(IDX_Indexer* indexer);
 
