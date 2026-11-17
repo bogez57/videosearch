@@ -119,3 +119,32 @@ LIB_Rescan(LIB_Library* library) {
 
    ScratchEnd(scratch);
 }
+
+internal B32
+LIB_RemoveFolder(LIB_Library* library, String8 folder) {
+   B32 result = 0;
+
+   // The folders that stay, onto the arena again from its start: copied off
+   // it first, since that is where they are.
+   Temp        scratch = ScratchBegin(0, 0);
+   String8List kept = {0};
+   for (String8Node* node = library->folders.first; node != 0; node = node->next) {
+      if (Str8Match(node->string, folder, StringMatchFlag_CaseInsensitive)) {
+         result = 1;
+      } else {
+         Str8ListPush(scratch.arena, &kept, PushStr8Copy(scratch.arena, node->string));
+      }
+   }
+
+   if (result) {
+      ArenaClear(library->folders_arena);
+      MemoryZeroStruct(&library->folders);
+      for (String8Node* node = kept.first; node != 0; node = node->next) {
+         Str8ListPush(library->folders_arena, &library->folders, PushStr8Copy(library->folders_arena, node->string));
+      }
+      LIB_Rescan(library);
+   }
+
+   ScratchEnd(scratch);
+   return result;
+}

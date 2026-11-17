@@ -8,8 +8,9 @@
 //    bin\videosearch.exe                the folders of videos searched last time
 //    bin\videosearch.exe <folder> ...   adds those folders to them
 //
-// A folder dropped on the window is added too (a video dropped adds its
-// folder). What is typed is the search: the list under it is what matches,
+// Folders are added and taken out in the Folders panel (the button beside
+// the search bar; it is up by itself when there are none). A folder dropped
+// on the window is added too (a video dropped adds its folder). What is typed is the search: the list under it is what matches,
 // best first. Esc empties the search bar. A click on a hit plays its clip
 // in the window: Space pauses, Left and Right go 5 seconds, Esc goes back.
 //
@@ -38,6 +39,7 @@
 
 #include "text/text.h"
 #include "library/library.h"
+#include "picker/picker.h"
 #include "audio/audio.h"
 #include "audio/audio_device.h"
 #include "video/video.h"
@@ -53,41 +55,14 @@
 ////////////////////////////////
 //~ bgz: implementations
 
-// The UI times its passes with raddebugger's ProfScope. With no profiler
-// built in, that is DeferLoop((0), ProfEnd()), and the (0) is an unused
-// value. Only that warning, and only for the UI (as in the slideshow).
-#if defined(__clang__)
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wunused-value"
-#endif
 #include "ui/ui_inc.c"
-#if defined(__clang__)
-# pragma clang diagnostic pop
-#endif
-// The text layer as the slideshow has it. Only TXT_OpenFonts is used so far:
-// the rest is there for drawing text by hand, as the slideshow does.
-#if defined(__clang__)
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wunused-function"
-#endif
 #include "text/text.c"
-#if defined(__clang__)
-# pragma clang diagnostic pop
-#endif
 #include "library/library.c"
-// Sound, the player and the decoder as the slideshow has them. Not all of
-// the player is used: a clip is opened, sought in, played and closed.
-#if defined(__clang__)
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wunused-function"
-#endif
+#include "picker/picker_win32.c" // the folder window: the one file that knows Windows' is there (picker.h)
 #include "audio/audio.c"
 #include "audio/audio_wasapi.c" // the device: the one file to change for another (audio_device.h)
 #include "video/video.c"
 #include "video/video_ffmpeg.c" // the decoder: the one file to change for another (video_decoder.h)
-#if defined(__clang__)
-# pragma clang diagnostic pop
-#endif
 #include "embed/embed.c"
 #include "embed/embed_tokenizer.c"
 #include "embed/embed_onnx.c" // the model: the one file to change to run it with something else (embed.h)

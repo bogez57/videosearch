@@ -36,8 +36,8 @@ through ONNX Runtime, vectors on disk) in five steps.
 ## Rules of the code
 
 - `src/bgz/` is a copy of the slideshow's `src/bgz`, and `src/ui`,
-  `src/text`, `src/video` and `src/audio` of its layers of those names. Change them there first, then copy
-  across, so the projects don't drift.
+  `src/text`, `src/video` and `src/audio` of its layers of those names.
+  Change them there first, then copy across, so the projects don't drift.
 - `src/bgz/rad/` is an unedited copy of raddebugger - never edit it.
 - The app calls bgz's PascalCase functions (`Core_WM_...`, `Core_D_...`,
   `FileOpen`, `PushStr8F`, ...), never raddebugger's snake_case ones, and
@@ -69,5 +69,9 @@ through ONNX Runtime, vectors on disk) in five steps.
   one clip (`src/search`); each row has a thumbnail of its best frame
   (`src/thumbs`); a click plays the clip in the window with the slideshow's
   player and audio (`src/video`, `src/audio`, copied as they are).
+- Folders in the app: the Folders panel (`frame.c`) lists the folders with
+  Remove, and "Add a folder..." opens Windows' folder window (`src/picker`).
+- `main.c` only lists includes: warnings are turned off in `build.bat`, not
+  with pragmas around includes.
 - Next: step 5, as wanted (the GPU through DirectML, new videos found while
   it runs, taking a folder out), or sound search (CLAP, whisper.cpp).

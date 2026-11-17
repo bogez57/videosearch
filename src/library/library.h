@@ -19,8 +19,7 @@ struct LIB_Video {
 
 typedef struct LIB_Library LIB_Library;
 struct LIB_Library {
-   // The folders given, in the order they were. Grows only: a folder is not
-   // taken out yet.
+   // The folders given, in the order they were.
    Arena*       folders_arena;
    String8List  folders;
 
@@ -43,6 +42,10 @@ internal LIB_Library* LIB_Alloc(void);
 // Adds the folder, if it is one and is not there already, and finds the
 // videos again. folder is whole, from the drive. 0 if it was not added.
 internal B32 LIB_AddFolder(LIB_Library* library, String8 folder);
+
+// Takes the folder out, if it is there, and finds the videos again. 0 if it
+// was not there.
+internal B32 LIB_RemoveFolder(LIB_Library* library, String8 folder);
 
 // Walks every folder again for its videos.
 internal void LIB_Rescan(LIB_Library* library);

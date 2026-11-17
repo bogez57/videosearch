@@ -189,6 +189,19 @@ FR_LoadFolders(App_State* app_state) {
 }
 
 internal void
+FR_RemoveFolder(App_State* app_state, String8 folder) {
+   // The folder is a piece of the library's own, which taking it out lets go of.
+   Temp    scratch = ScratchBegin(0, 0);
+   String8 copy = PushStr8Copy(scratch.arena, folder);
+   if (LIB_RemoveFolder(app_state->library, copy)) {
+      _FR_SaveFolders(app_state);
+      LogInfoF("Folder taken out: %S\n", copy);
+      FR_Notice(app_state, Str8Lit("Folder taken out. Its videos are no longer searched."));
+   }
+   ScratchEnd(scratch);
+}
+
+internal void
 FR_AddFolder(App_State* app_state, String8 path) {
    Temp    scratch = ScratchBegin(0, 0);
    String8 folder = FR_WholePath(scratch.arena, path);
@@ -201,6 +214,7 @@ FR_AddFolder(App_State* app_state, String8 path) {
 
    if (LIB_AddFolder(app_state->library, folder)) {
       _FR_SaveFolders(app_state);
+      LogInfoF("Folder added: %S\n", folder);
       FR_Notice(app_state, Str8Lit("Folder added."));
    } else if (PropertiesFromFilePath(folder).flags & FilePropertyFlag_IsFolder) {
       FR_Notice(app_state, Str8Lit("That folder is already being searched."));
@@ -292,6 +306,7 @@ _FR_Input(App_State* app_state) {
             MemoryCopy(app_state->query + app_state->query_size, text.str, text.size);
             app_state->query_size += text.size;
          }
+         app_state->folders_open = 0; // typing is searching: back to the hits
          ScratchEnd(scratch);
       }
    }
@@ -323,8 +338,13 @@ _FR_Input(App_State* app_state) {
          app_state->query_size -= 1;
       }
    }
+   // Esc closes the Folders panel if it is up, else empties the search.
    if (Core_WM_KeyPress(events, window, 0, WM_Key_Esc)) {
-      app_state->query_size = 0;
+      if (app_state->folders_open) {
+         app_state->folders_open = 0;
+      } else {
+         app_state->query_size = 0;
+      }
    }
 }
 
@@ -473,6 +493,8 @@ _FR_BeginUI(App_State* app_state, UI_EventList* ui_events, Vec2F32 window_dim) {
        {"row hot", UI_ColorSlot_Background, {{1.00f, 1.00f, 1.00f, 0.07f}}},   // under the mouse
        {"dim", UI_ColorSlot_Text, {{0.84f, 0.86f, 0.90f, 0.55f}}},             // hints, folders, times
        {"notice", UI_ColorSlot_Text, {{1.00f, 0.85f, 0.50f, 1.00f}}},          // FR_Notice's
+       {"button", UI_ColorSlot_Border, {{1.00f, 1.00f, 1.00f, 0.16f}}},
+       {"button hot", UI_ColorSlot_Background, {{0.30f, 0.38f, 0.55f, 1.00f}}},
        {"video", UI_ColorSlot_Text, {{1.00f, 0.80f, 0.40f, 1.00f}}},           // a hit's file name
    };
    static UI_Theme theme = {theme_patterns, ArrayCount(theme_patterns)};
@@ -624,6 +646,35 @@ _FR_DrawUITree(App_State* app_state) {
 //~ bgz: the screen
 
 // A bar the width of rect, its one line of text pad in from the left.
+// A button: a box with its words in the middle, lighter under the mouse.
+// Whether it was clicked. The key is the box's own, not what it shows.
+internal B32
+_FR_Button(String8 text, F32 width, F32 height, char* key_fmt, ...) {
+   Temp    scratch = ScratchBegin(0, 0);
+   va_list args;
+   va_start(args, key_fmt);
+   String8 key = PushStr8FV(scratch.arena, key_fmt, args);
+   va_end(args);
+
+   UI_SetNextPrefWidth(UI_Px(width, 1));
+   UI_SetNextPrefHeight(UI_Px(height, 1));
+   UI_SetNextChildLayoutAxis(Axis2_X);
+   UI_SetNextColorTag(Str8Lit("button"));
+   UI_Box* box = UI_BuildBoxFromString(UI_BoxFlag_Clickable | UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawBorder, key);
+   UI_Parent(box) UI_PrefHeight(UI_Pct(1, 1)) {
+      UI_Spacer(UI_Pct(1, 0));
+      UI_SetNextPrefWidth(UI_TextDim(1, 1));
+      UI_Label(text);
+      UI_Spacer(UI_Pct(1, 0));
+   }
+   UI_Signal signal = UI_SignalFromBox(box);
+   if (UI_Hovering(signal)) {
+      box->background_color = UI_ThemeColor(Str8Lit("button hot"), UI_ColorSlot_Background);
+   }
+   ScratchEnd(scratch);
+   return UI_Clicked(signal);
+}
+
 internal void
 _FR_BuildBar(Rng2F32 rect, F32 pad, String8 color_tag, String8 text, char* key) {
    UI_SetNextPrefWidth(UI_Px(Dim2F32(rect).x, 1));
@@ -665,7 +716,8 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
       UI_Box* search_row = UI_BuildBoxFromStringf(0, "###search row");
       UI_Parent(search_row) {
          UI_Spacer(UI_Px(pad, 1));
-         UI_SetNextPrefWidth(UI_Px(Max(window_dim.x - pad * 2.0f, 0), 1));
+         F32 folders_w = (F32)(S32)(110.0f * ui);
+         UI_SetNextPrefWidth(UI_Px(Max(window_dim.x - pad * 3.0f - folders_w, 0), 1));
          UI_SetNextPrefHeight(UI_Px(search_h - pad, 1));
          UI_SetNextChildLayoutAxis(Axis2_X);
          UI_SetNextColorTag(Str8Lit("search"));
@@ -681,6 +733,11 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
                UI_Label(Str8Lit("Search your videos: a man screaming, a car driving down a highway..."));
             }
          }
+         UI_Spacer(UI_Px(pad, 1));
+         if (_FR_Button(Str8Lit("Folders"), folders_w, search_h - pad, "###folders button")) {
+            app_state->folders_open = !app_state->folders_open;
+            _FR_StopPlaying(app_state);
+         }
       }
 
       //- bgz: the status line: a notice if one is up, else what there is
@@ -694,7 +751,7 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
                             _FR_Clock(scratch.arena, VID_Position(video)), _FR_Clock(scratch.arena, VID_Duration(video)),
                             VID_IsPlaying(video) ? "" : "Paused");
       } else if (library->folders.node_count == 0) {
-         status = Str8Lit("No videos yet. Drop a folder of videos on the window to search it.");
+         status = Str8Lit("No videos yet.");
       } else {
          String8 hits = (app_state->results_query.size == 0)
                             ? Str8Lit("")
@@ -756,8 +813,84 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
          }
       }
 
+      //- bgz: the Folders panel, in the list's place: the folders searched,
+      // each with how many videos it has and a way to take it out, and a
+      // button that asks Windows for one to add.
+      B32 folders_shown = (app_state->play_video == 0 && (app_state->folders_open || library->folders.node_count == 0));
+      if (folders_shown) {
+         F32     line_h = (F32)(S32)(40.0f * ui);
+         F32     button_h = (F32)(S32)(30.0f * ui);
+         String8 remove = {0}; // done after the list has been gone through
+         B32     add = 0;
+
+         UI_SetNextPrefWidth(UI_Px(window_dim.x, 1));
+         UI_SetNextPrefHeight(UI_Px(rows_h, 1));
+         UI_SetNextChildLayoutAxis(Axis2_Y);
+         UI_Box* panel = UI_BuildBoxFromStringf(UI_BoxFlag_Clip, "###folders panel");
+         UI_Parent(panel) {
+            UI_Spacer(UI_Px(pad, 1));
+            UI_SetNextChildLayoutAxis(Axis2_X);
+            UI_SetNextPrefWidth(UI_Pct(1, 0));
+            UI_SetNextPrefHeight(UI_Px(line_h, 1));
+            UI_Box* head = UI_BuildBoxFromStringf(0, "###folders head");
+            UI_Parent(head) UI_PrefHeight(UI_Pct(1, 1)) {
+               UI_Spacer(UI_Px(pad, 1));
+               add = _FR_Button(Str8Lit("Add a folder..."), (F32)(S32)(170.0f * ui), button_h, "###folders add");
+               UI_Spacer(UI_Px(18.0f * ui, 1));
+               UI_SetNextPrefWidth(UI_Pct(1, 0));
+               UI_SetNextColorTag(Str8Lit("dim"));
+               UI_Label((library->folders.node_count == 0)
+                            ? Str8Lit("No folders yet. Add one that has videos in it, or drop it on the window.")
+                            : Str8Lit("Every video in these folders, and in the folders under them, is searched."));
+            }
+            UI_Spacer(UI_Px(pad * 0.5f, 1));
+
+            U64 folder_idx = 0;
+            for (String8Node* node = library->folders.first; node != 0; node = node->next, folder_idx += 1) {
+               // Its videos: the ones whose path starts with it.
+               U64 videos = 0;
+               for (U64 i = 0; i < library->video_count; i += 1) {
+                  String8 path = library->videos[i].path;
+                  if (path.size > node->string.size && path.str[node->string.size] == '\\' &&
+                      Str8Match(Str8Prefix(path, node->string.size), node->string, StringMatchFlag_CaseInsensitive)) {
+                     videos += 1;
+                  }
+               }
+
+               UI_SetNextColorTag(Str8Lit("row"));
+               UI_Box* row_box = UI_ListRow(line_h, 0, 0, "###folder %llu", (unsigned long long)folder_idx);
+               UI_Parent(row_box) UI_PrefHeight(UI_Pct(1, 1)) {
+                  UI_Spacer(UI_Px(pad, 1));
+                  if (_FR_Button(Str8Lit("Remove"), (F32)(S32)(90.0f * ui), button_h, "###folder remove %llu",
+                                 (unsigned long long)folder_idx)) {
+                     remove = node->string;
+                  }
+                  UI_Spacer(UI_Px(18.0f * ui, 1));
+                  UI_SetNextPrefWidth(UI_TextDim(1, 1));
+                  UI_SetNextColorTag(Str8Lit("video"));
+                  UI_Label(node->string);
+                  UI_Spacer(UI_Px(18.0f * ui, 1));
+                  UI_SetNextPrefWidth(UI_TextDim(1, 0));
+                  UI_SetNextColorTag(Str8Lit("dim"));
+                  UI_Label(PushStr8F(scratch.arena, "%llu videos", (unsigned long long)videos));
+               }
+            }
+         }
+
+         if (remove.size != 0) {
+            FR_RemoveFolder(app_state, remove);
+         }
+         // Windows' window for it: the frame waits here until it is answered.
+         if (add) {
+            String8 folder = PICK_Folder(scratch.arena, Str8Lit("Add a folder of videos"));
+            if (folder.size != 0) {
+               FR_AddFolder(app_state, folder);
+            }
+         }
+      }
+
       //- bgz: the hits
-      if (app_state->play_video == 0) {
+      if (app_state->play_video == 0 && !folders_shown) {
          UI_ScrollRowsFlags scroll_flags = UI_ScrollRowsFlag_RowClicks;
          UI_ScrollRowsFrame rows_frame = UI_ScrollRowsBegin(&app_state->results_scroll, V2F32(window_dim.x, rows_h),
                                                             (S64)results->count, row_h, 0, scroll_flags, "###hits");
@@ -841,7 +974,9 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
       _FR_BuildBar(R2F32P(0, 0, window_dim.x, bar_h), pad, Str8Lit("dim"),
                    (app_state->play_video != 0)
                        ? Str8Lit("Space or a click pauses and plays. Left and Right go 5 seconds. Esc goes back to the hits.")
-                       : Str8Lit("Type to search. Click a hit to play it. Esc empties the search. Drop a folder of videos to add it."),
+                       : folders_shown
+                             ? Str8Lit("Add a folder to search its videos, or Remove one. Esc or the Folders button goes back.")
+                             : Str8Lit("Type to search. Click a hit to play it. Esc empties the search. Folders adds videos."),
                    "foot");
    }
 

@@ -26,8 +26,13 @@ layer's state.
   at the clip's end, once; `_FR_StopPlaying`. While a clip is open the keys
   are the player's: Space (or a click) pauses and plays, Left and Right go 5
   seconds, Esc goes back to the hits.
-- `FR_AddFolder`, `FR_LoadFolders`: the library's folders, kept a line each
-  in `bin\local\folders.txt`.
+- The Folders panel, in the list's place when `folders_open` is set (the
+  Folders button beside the search bar) or there are no folders: each
+  folder with how many videos it has and a Remove button, and "Add a
+  folder...", which asks with Windows' folder window (`PICK_Folder`). Esc,
+  the button again, or typing closes it. `_FR_Button` is its buttons.
+- `FR_AddFolder`, `FR_RemoveFolder`, `FR_LoadFolders`: the library's
+  folders, kept a line each in `bin\local\folders.txt`.
 - The log: `FR_OpenLogFile`, `FR_WriteLogs`, to
   `bin\local\logs\videosearch_log.txt` and the console.
 - `FR_Notice`, `FR_CurrentNotice`, `FR_WholePath`, `FR_LocalFolder`,

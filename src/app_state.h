@@ -52,6 +52,10 @@ struct App_State {
    // The frames indexed so far, and the search through them (src\search).
    SRCH_Search* search;
 
+   // The Folders panel is up, in the list's place. It is also up whenever
+   // there are no folders, whatever this says.
+   B32 folders_open;
+
    // The search bar: what is typed, as UTF-8.
    U8  query[APP_QUERY_CAP];
    U64 query_size;

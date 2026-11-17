@@ -78,9 +78,16 @@ set "compile=clang-cl /nologo /Z7 %opt% /W4 /arch:AVX /diagnostics:caret /clang:
 set "includes=-Isrc\bgz\rad -Isrc\bgz\bgz -Isrc\bgz -Isrc -I%ffmpeg%\include -I%onnxruntime%\include"
 :: The defines raddebugger's headers expect - see src\bgz\build.bat.
 set "defines=-D_USE_MATH_DEFINES -Dstrdup=_strdup -Dgnu_printf=printf"
-:: The one warning turned off: an initializer that leaves out trailing fields,
-:: which C zeroes.
-set "warnings=-Wno-missing-field-initializers"
+:: The warnings turned off, here so that main.c only lists what it includes:
+::   missing-field-initializers  an initializer that leaves out trailing
+::                               fields, which C zeroes.
+::   unused-function             the layers copied from the slideshow (ui,
+::                               text, video) have functions this program
+::                               does not call yet.
+::   unused-value                the UI times its passes with ProfScope,
+::                               which with no profiler built in is
+::                               DeferLoop((0), ...), and the (0) is unused.
+set "warnings=-Wno-missing-field-initializers -Wno-unused-function -Wno-unused-value"
 ::--- (end) flags ------------------------------------------
 
 ::--- (begin) videosearch ----------------------------------

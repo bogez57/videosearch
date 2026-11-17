@@ -36,6 +36,10 @@ internal void FR_LoadFolders(App_State* app_state);
 // remembers it for next time. A notice says what came of it.
 internal void FR_AddFolder(App_State* app_state, String8 path);
 
+// Takes a folder out of the library, and out of the file that remembers
+// them. folder is one of the library's.
+internal void FR_RemoveFolder(App_State* app_state, String8 folder);
+
 // notice must last: a literal.
 internal void    FR_Notice(App_State* app_state, String8 notice);
 // The notice, if one is up now, else an empty string.
