@@ -3,7 +3,14 @@
 Pictures and words into vectors with CLIP's two halves: `EMB_DIM` (512)
 numbers each, made length one, so the dot product of a frame's vector and a
 query's is how well they match. `embed.h` is the seam: `embed_onnx.c` is the only
-file that knows ONNX Runtime (`src/third_party/onnxruntime`, 1.23.2).
+file that knows ONNX Runtime (`src/third_party/onnxruntime`: Microsoft's
+DirectML build, 1.23.0, with `DirectML.dll` 1.15.4 beside it).
+
+The picture and sound halves run on the graphics card through DirectML when
+`EMB_Open` is given `use_gpu` (it is unless the program is started with
+`--cpu`), and on the processor if the card can't do it; the log says which.
+The text halves are always on the processor. The vectors come out the same
+either way.
 
 The model is two files in `data\models\clip-vit-base-patch32\`
 (`data/models/README.md`):
@@ -48,7 +55,7 @@ Its tokenizer (RoBERTa's) reads `data\clap\vocab.json` and `merges.txt`
 - `EMB_TokenizerFromMerges`, `EMB_Tokenize` (embed_tokenizer.c): CLIP's
   tokenizer in C, words into the numbers the text half reads. Checked
   against a port of OpenAI's `simple_tokenizer.py` on ten queries.
-- `EMB_Open(folder, merges_path)`: quick - reads the merges, starts ONNX
+- `EMB_Open(folder, merges_path, use_gpu)`: quick - reads the merges, starts ONNX
   Runtime. 0 if it can't (no merges file, an old `onnxruntime.dll`), and why
   is logged.
 - `EMB_Load(model)`: loads both halves, on the indexer's thread. 0 if a file

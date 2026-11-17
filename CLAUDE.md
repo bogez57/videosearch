@@ -80,5 +80,11 @@ through ONNX Runtime, vectors on disk) in five steps.
   video (`.vsa`); the search finds clips of sound as it does clips of
   frames, in one list ("sound match"). The sound's score band in `search.h`
   is a first guess.
-- Next: step 5, as wanted (the GPU through DirectML, new videos found while
-  it runs, taking a folder out), or speech search (whisper.cpp).
+- The GPU: the picture and sound models run on the graphics card through
+  DirectML (ONNX Runtime's DirectML build; `--cpu` turns it off). On J's PC
+  (RTX 5060) that made indexing only 15% quicker (36 s against 43 s for 13
+  minutes of video): decoding the video, on the processor, is most of the
+  time.
+- Next: quicker decoding for the indexer (it is the slideshow's decoder, so
+  J decides how), new videos found while it runs, or speech search
+  (whisper.cpp).

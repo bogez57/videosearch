@@ -145,3 +145,15 @@ they are wanted:
   by sound says "sound match".
 - Still to do: set the sound's band (`SRCH_SOUND_LOW`, `SRCH_SOUND_HIGH`)
   from real videos; maybe one hit where a clip matches by both.
+
+## The GPU, as built
+
+The picture and sound models run on the graphics card through DirectML
+(ONNX Runtime's DirectML build and `DirectML.dll`, in
+`src/third_party/onnxruntime`), falling back to the processor; `--cpu`
+forces that. Measured on J's PC (RTX 5060) over 13 minutes of video, 809
+frames and 153 stretches of sound: 36.0 s on the card, 42.6 s on the
+processor, the same vectors. The card was at about 12%: the models are not
+what takes the time, decoding every frame on the processor is. What would
+help next is in the decoder (`video_ffmpeg.c`, the slideshow's): decoding on
+the card too (D3D11VA), or decoding only keyframes.
