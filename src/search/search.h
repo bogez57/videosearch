@@ -79,4 +79,9 @@ internal void SRCH_Forget(SRCH_Search* search);
 // query.
 internal SRCH_Results SRCH_Run(Arena* arena, SRCH_Search* search, LIB_Library* library, String8 query);
 
+// For working out the ranking, to be taken out again: each line of the file
+// at queries_path as a query, and to out_path every stretch of sound's own
+// score for it, and what the frames' scores are like.
+internal void SRCH_DumpScores(SRCH_Search* search, LIB_Library* library, String8 queries_path, String8 out_path);
+
 #endif // SEARCH_H

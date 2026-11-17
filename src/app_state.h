@@ -52,6 +52,11 @@ struct App_State {
    // The frames indexed so far, and the search through them (src\search).
    SRCH_Search* search;
 
+   // For working out the ranking, to be taken out again: a file of queries
+   // whose scores are written out once everything is indexed, and then the
+   // program closes (--score-queries=<file>, SRCH_DumpScores).
+   String8 score_queries_path;
+
    // The Folders panel is up, in the list's place. It is also up whenever
    // there are no folders, whatever this says.
    B32 folders_open;

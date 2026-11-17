@@ -1053,6 +1053,16 @@ FrameWork(App_State* app_state) {
    THM_Update(app_state->thumbs);
    IDX_Update(app_state->indexer, app_state->library);
    SRCH_Update(app_state->search, app_state->library, app_state->indexer);
+   if (app_state->score_queries_path.size != 0) {
+      IDX_Status idx = IDX_GetStatus(app_state->indexer);
+      if (idx.video_count != 0 && idx.videos_done == idx.video_count) {
+         Temp scratch = ScratchBegin(0, 0);
+         SRCH_DumpScores(app_state->search, app_state->library, app_state->score_queries_path,
+                         PushStr8F(scratch.arena, "%S\\scores.txt", FR_LocalFolder(scratch.arena)));
+         ScratchEnd(scratch);
+         app_state->quit = 1;
+      }
+   }
    _FR_UpdateResults(app_state);
 
    // The UI tree, built after the input. UI_EndBuild lays it out; it is
