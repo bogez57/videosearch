@@ -215,6 +215,10 @@ IDX_Stop(IDX_Indexer* indexer) {
 
 internal void
 IDX_Update(IDX_Indexer* indexer, LIB_Library* library) {
+   // Read before the logs are: the thread hands on a video's logs before it
+   // counts the video done, so all of the run's are logged ahead of its end.
+   U64 done = InsAtomicU64Eval(&indexer->done);
+
    MutexTake(indexer->log_mutex);
    for (U64 kind = 0; kind < LogMsgKind_COUNT; kind += 1) {
       for (String8Node* n = indexer->logs[kind].first; n != 0; n = n->next) {
@@ -226,7 +230,7 @@ IDX_Update(IDX_Indexer* indexer, LIB_Library* library) {
    MutexDrop(indexer->log_mutex);
 
    // The end of a run, logged once.
-   if (indexer->running && !indexer->reported && InsAtomicU64Eval(&indexer->done) == indexer->count) {
+   if (indexer->running && !indexer->reported && done == indexer->count) {
       indexer->reported = 1;
       F64 seconds = (F64)(NowTimeUS() - indexer->started_us) / 1000000.0;
       LogInfoF("%llu frames in the index of %llu videos, %.1f s (%llu were up to date, %llu could not be read)\n",
