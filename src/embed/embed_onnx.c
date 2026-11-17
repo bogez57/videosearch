@@ -334,13 +334,13 @@ EMB_TextVector(EMB_Model* model, String8 text, F32* vector_out) {
 
 internal B32
 EMB_OpenSound(EMB_Model* model, String8 folder, String8 vocab_path, String8 merges_path) {
-   B32 ok = (model != 0);
-   if (ok && !FilePathExists(folder)) {
+   B32  ok = (model != 0);
+   Temp scratch = ScratchBegin(0, 0);
+   if (ok && !FilePathExists(PushStr8F(scratch.arena, "%S\\audio_model.onnx", folder))) {
       LogInfoF("No sound model at %S, so sound is not searched\n", folder);
       ok = 0;
    }
    if (ok) {
-      Temp    scratch = ScratchBegin(0, 0);
       String8 vocab = DataFromFilePath(scratch.arena, vocab_path);
       String8 merges = DataFromFilePath(scratch.arena, merges_path);
       if (vocab.size == 0 || merges.size == 0) {
@@ -350,8 +350,8 @@ EMB_OpenSound(EMB_Model* model, String8 folder, String8 vocab_path, String8 merg
          model->sound_tokenizer = EMB_SoundTokenizerFromVocab(model->arena, vocab, merges);
          model->sound_folder = PushStr8Copy(model->arena, folder);
       }
-      ScratchEnd(scratch);
    }
+   ScratchEnd(scratch);
    return ok;
 }
 
