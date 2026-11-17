@@ -31,7 +31,8 @@ the sound model and into the video's sound index file.
 
 ## Functions
 
-- `IDX_Alloc(index_folder, model_name, sound_model_name, model)`
+- `IDX_Alloc(index_folder, model_name, sound_model_name, model, use_gpu)`:
+  with `use_gpu` the videos are decoded on the graphics card.
 - `IDX_Update(indexer, library)`: once a frame, from `FrameWork`. Logs what
   the thread has logged; starts a run when the library's generation has
   changed. When a run has gone through every video, logs how many frames,
@@ -46,12 +47,13 @@ the sound model and into the video's sound index file.
 ## How a video is read
 
 Every frame is decoded (a codec can't skip to the next second without
-decoding what is between), and the first one at or after each whole second
-is taken. A video that can't be opened, or that the model fails on, counts
+decoding what is between), on the graphics card if it can, but only the
+first one at or after each whole second is made into pixels and taken
+(`VID_DecoderNextFrameFrom`). A video that can't be opened, or that the model fails on, counts
 as failed. One stopped part way (the library changed, or the program
 closed) is not written, and is read again next time. A line is logged per
-video indexed: how many frames, how many stretches of sound and how long it
-took.
+video indexed: how many frames, how many stretches of sound, how long it
+took, and how much of that was each model.
 
 The sound is asked of the decoder at 48 kHz, after each frame up to that
 frame's time and then to its end, so the decoder never holds much of the one

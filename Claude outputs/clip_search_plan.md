@@ -157,3 +157,11 @@ processor, the same vectors. The card was at about 12%: the models are not
 what takes the time, decoding every frame on the processor is. What would
 help next is in the decoder (`video_ffmpeg.c`, the slideshow's): decoding on
 the card too (D3D11VA), or decoding only keyframes.
+
+Then the decoder (with J's say-so, as it is the slideshow's): the indexer
+decodes on the card through FFmpeg's Direct3D 11 decoder, and only the
+frame taken each second is brought back and made into pixels. The same 13
+minutes: 27.4 s on the card, 34.5 s with `--cpu` (from 36.0 and 42.6). Of
+the 25 s in the videos themselves on the card: the picture model 2.8 s, the
+sound model with its spectrogram 9.0 s, the rest (decoding picture and
+sound) about 13 s.
