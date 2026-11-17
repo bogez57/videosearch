@@ -14,8 +14,8 @@ the public test sets (`esc50`, `flickr1k`).
   eye as `LABELING.md` says.
 - `embed_images.py MODEL...`: every frame through a model, five ways (the whole frame squashed,
   padded, and three squares cut from it).
-- `queries.txt`: searches, each with the tags a frame must have to match, or NEAR / NONE for
-  something that is in none of the videos.
+- `queries.txt`: searches, each with the tags a frame must have to match (or words its caption
+  must have), or NEAR / NONE for something that is in none of the videos.
 - `bank.txt`: words that could be about anything, for taking out what a frame scores for any words.
 - `eval.py CONFIG...`: scores each way of searching against the labels (the top of the file says
   how to write a config and what the numbers mean).

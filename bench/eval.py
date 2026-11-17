@@ -18,9 +18,9 @@
 #             rbt, rbtz, fbrb, fbrbz; flickr.py makes their vectors)
 #   smooth:   0, or 1 (a frame's score mixed with its neighbours' a second each side)
 #
-# Queries are bench/queries.txt: words <tab> expression over the labels' tags (python: and, or, not),
-# or NEAR / NONE for something that is in no video. A tag a frame is not sure of leaves that frame
-# out of the query's sums.
+# Queries are bench/queries.txt: words <tab> expression over the labels' tags (python: and, or, not;
+# cap("words") for words in the frame's caption), or NEAR / NONE for something that is in no video.
+# A tag a frame is not sure of leaves that frame out of the query's sums.
 #
 # For each config, over the queries that have matching frames:
 #   mAP   mean average precision of the frames' ranking
@@ -203,8 +203,7 @@ def load_queries(frame_keys, labels, partial=False):
         if not kind:
             code = compile(expr, "<query>", "eval")
             for i, key in enumerate(frame_keys):
-                sure, unsure, _ = labels.get(key, (set(), set(), ""))
-                rel[i], keep[i] = matches(code, sure, unsure)
+                rel[i], keep[i] = matches(code, *labels.get(key, (set(), set(), "")))
             if not rel.any():
                 if partial:
                     continue

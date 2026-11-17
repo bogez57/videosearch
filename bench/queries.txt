@@ -1,5 +1,6 @@
 # Searches: words <tab> what a frame must have to match.
-#   an expression over the labels' tags (python: and, or, not)
+#   an expression over the labels' tags (python: and, or, not); cap("words") is whether the
+#   frame's caption has them
 #   NEAR   something these videos could well have had, but that is in none of them
 #   NONE   something far from anything in them
 # A tag a frame is "not sure" of (a trailing ? in labels.tsv) leaves that frame out of the search's sums.
@@ -12,8 +13,9 @@ a man playing guitar	playing_guitar
 a guitar	guitar
 a microphone	microphone
 a singer on a stage	singing and stage
-a concert	stage or audience
-an audience at a concert	audience
+a concert	concert
+an audience at a concert	audience and concert
+an audience	audience
 a crowd of people	crowd
 a woman	woman
 two people hugging	hugging
@@ -25,8 +27,8 @@ a wounded soldier lying on the ground	soldier and lying and blood
 a person smiling	smiling
 a person laughing	laughing
 a child	child
-a family eating dinner at a table	sitting and interior and (child or woman) and not soldier
-a close up of a face	closeup
+people eating dinner at a table	cap("dinner table|eats at")
+a close up of a face	face_closeup or (closeup and person)
 a person climbing	climbing
 a person crawling on the ground	crawling
 a person lying down	lying
@@ -36,6 +38,20 @@ someone shooting a gun	shooting
 a dead body	corpse
 two soldiers	soldier and two_people
 a man and a woman	man and woman and two_people
+a man and a woman kissing	kissing
+a couple embracing	hugging and two_people
+a person crying	crying
+a clown	clown
+a man in clown makeup	clown and man
+a man dancing	dancing and man
+people watching television	tv and person
+a man wearing glasses	man and cap("[^n]glasses")
+a man in a red suit	man and cap("red suit")
+a woman in a green dress	woman and cap("green dress")
+a woman playing the piano	playing_piano
+a woman with a sword	cap("sword")
+women riding horses into battle	horse and riding
+a man swimming underwater	underwater and man
 # -- places
 a trench	trench
 a battlefield	battlefield
@@ -44,7 +60,7 @@ water	water
 a forest	forest
 a field of grass	field
 a desert	desert
-sand dunes	desert and not cave
+sand dunes	cap("dune")
 a city street	city_street
 a city skyline	skyline
 ruined buildings	ruins
@@ -60,6 +76,16 @@ a night sky	sky and night
 at night	night
 a sunset	sunset
 fog	fog
+rain	rain
+the sea	sea
+underwater	underwater
+a city at night	(city_street or skyline) and night
+an island seen from above	aerial_view and sea and mountain
+a volcano erupting	cap("volcano")
+a stairway	stairs
+the subway	subway
+a kitchen	cap("kitchen")
+inside a spaceship	spaceship and interior
 # -- things
 an explosion	explosion
 fire	fire
@@ -73,7 +99,7 @@ a bird flying	bird and flying
 a monster	monster
 an airplane	airplane
 a burning airplane	airplane and fire
-fighter jets	airplane and flying and sky
+fighter jets	cap("fighter jets")
 a car	car
 a car flying through the air	car and flying
 a truck	truck
@@ -83,6 +109,23 @@ stage lights	lamp and stage
 gold and treasure	treasure
 yellow flowers	flowers
 barbed wire	barbed_wire
+a dinosaur	dinosaur
+a raccoon	raccoon
+a beetle	insect
+a horse	horse
+a robot	robot
+a spaceship	spaceship
+a helicopter	helicopter
+a ship	boat
+a submarine	submarine
+a white pickup truck	cap("white pickup")
+a television	tv
+a piano	piano
+a statue	statue
+a mirror	cap("mirror")
+a newspaper	cap("newspaper")
+a child's drawing	cap("crayon drawing")
+lightning	lightning
 # -- the shot
 words on the screen	title_text or lyrics_text or credits
 a title card	title_text
@@ -90,7 +133,7 @@ song lyrics on the screen	lyrics_text
 a company logo	logo
 a black screen	black_frame
 an aerial view of a city	aerial_view and (city_street or skyline)
-a wide landscape	wide_shot and not stage and not city_street
+a wide landscape	wide_shot and (aerial_view or mountain or field or desert or sea or forest or river) and not city_street and not night and not interior and not car
 # -- more than one thing
 a soldier running across a battlefield	soldier and running and battlefield
 soldiers walking through a trench	soldier and trench and walking
@@ -100,9 +143,22 @@ an explosion in a city street	explosion and city_street
 a crowd of people in a city street	crowd and city_street
 a soldier at night	soldier and night
 a man playing guitar on a stage	playing_guitar and stage
-a woman in a yellow coat on a street	woman and city_street and not crowd
+a woman in a yellow coat on a street	woman and city_street and cap("yellow coat")
 a soldier silhouetted against a fire	soldier and fire and night
 a biplane flying over a field	airplane and field
+a dinosaur in a cage	dinosaur and cap("cage")
+a dinosaur in the jungle	dinosaur and forest
+a man reaching out to a dinosaur	dinosaur and man and forest
+a flying reptile	dinosaur and flying
+a clown on the subway	clown and subway
+a man dancing down a stairway	dancing and stairs
+a man running through lightning	lightning and running
+fire falling from the sky	cap("fiery streaks|fiery debris")
+a traffic jam	cap("jammed|traffic jam")
+a car driving down a road	car and cap("down a .*road")
+an airplane on an airfield at night	airplane and night
+a helicopter over the sea	helicopter and sea
+surfers on a giant wave	surfing
 # -- typed as a few bare words
 man screaming	man and screaming
 woman singing	woman and singing
@@ -116,55 +172,67 @@ crowd	crowd
 car	car
 trench	trench
 bird flying	bird and flying
+dinosaur	dinosaur
+clown	clown
+robot	robot
+kissing	kissing
+subway	subway
+spaceship	spaceship
+surfing	surfing
+raccoon	raccoon
+helicopter	helicopter
 # -- could have been in these videos, but is not
-people dancing	NEAR
-a person riding a horse	NEAR
-a horse	NEAR
 a monkey	NEAR
 a dog	NEAR
 an elephant	NEAR
-a helicopter	NEAR
-a boat	NEAR
 a tank	NEAR
-a sword	NEAR
-a piano	NEAR
 a violin	NEAR
-a book	NEAR
-a beach	NEAR
-a train	NEAR
 a motorcycle	NEAR
-a police officer	NEAR
 a wedding	NEAR
-a ship at sea	NEAR
-a man riding a bicycle	NEAR
+a shark	NEAR
+a snake	NEAR
+a spider	NEAR
+a wolf	NEAR
+a bear	NEAR
+a cow	NEAR
+a deer	NEAR
+a rabbit	NEAR
+an owl	NEAR
+a butterfly	NEAR
+a windmill	NEAR
+a lighthouse	NEAR
+a telescope	NEAR
+a parachute	NEAR
+a hot air balloon	NEAR
 # -- far from anything in them
 a basketball game	NONE
-a kitchen	NONE
 a laptop computer	NONE
 a wedding cake	NONE
 penguins	NONE
 a tennis match	NONE
 sushi	NONE
-a spaceship	NONE
 a classroom	NONE
-a swimming pool	NONE
 a giraffe	NONE
 a bowl of fruit	NONE
-a bicycle race	NONE
 a dentist	NONE
 a skateboard	NONE
 a christmas tree	NONE
-an astronaut	NONE
 a pizza	NONE
 a rainbow	NONE
-a robot	NONE
-a shark	NONE
 a tractor	NONE
 a snowman	NONE
 a chess board	NONE
 a golf course	NONE
-a hospital operating room	NONE
 a supermarket	NONE
-a traffic light	NONE
 a birthday party	NONE
 a bride in a wedding dress	NONE
+a washing machine	NONE
+a bowling alley	NONE
+a ski slope	NONE
+a hamburger	NONE
+a toothbrush	NONE
+a vending machine	NONE
+a zebra	NONE
+a kangaroo	NONE
+a trampoline	NONE
+a hockey game	NONE

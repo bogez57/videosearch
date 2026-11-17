@@ -1,6 +1,7 @@
 # Shared by the bench scripts: where things are, and the frames.
 import json
 import os
+import re
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BENCH = os.environ.get("VS_BENCH") or os.path.join(os.path.dirname(REPO), "videosearch_bench")
@@ -50,17 +51,19 @@ def save_json(path, obj):
 
 
 class _Tags(dict):
-    def __init__(self, tags):
+    def __init__(self, tags, caption):
         super().__init__()
         self.tags = tags
+        self["cap"] = lambda pattern: re.search(pattern, caption, re.I) is not None
 
     def __missing__(self, key):
         return key.lower() in self.tags
 
 
-def matches(code, sure, unsure):
-    """A compiled tag expression (python: and, or, not) against a frame's tags: (it matches, that is
-    certain - no "not sure" tag could change it)."""
-    lo = bool(eval(code, {"__builtins__": {}}, _Tags(sure)))
-    hi = bool(eval(code, {"__builtins__": {}}, _Tags(sure | unsure)))
+def matches(code, sure, unsure, caption=""):
+    """A compiled tag expression (python: and, or, not; cap("words") is whether the frame's caption
+    has them, a regular expression) against a frame: (it matches, that is certain - no "not sure"
+    tag could change it)."""
+    lo = bool(eval(code, {"__builtins__": {}}, _Tags(sure, caption)))
+    hi = bool(eval(code, {"__builtins__": {}}, _Tags(sure | unsure, caption)))
     return lo and lo == hi, lo == hi

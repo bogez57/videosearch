@@ -464,7 +464,7 @@ def real(name):
                 rel = np.zeros(len(at), bool)
                 keep = np.ones(len(at), bool)
                 for i, (v, t) in enumerate(at):
-                    got = [matches(code, *labels[(v, t + k)][:2]) for k in range(5) if (v, t + k) in labels]
+                    got = [matches(code, *labels[(v, t + k)]) for k in range(5) if (v, t + k) in labels]
                     rel[i] = any(r for r, _ in got)
                     keep[i] = rel[i] or all(sure for _, sure in got)
                 if not rel.any():
