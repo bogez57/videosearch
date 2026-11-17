@@ -10,7 +10,8 @@
 //
 // A folder dropped on the window is added too (a video dropped adds its
 // folder). What is typed is the search: the list under it is what matches,
-// best first. Esc empties the search bar.
+// best first. Esc empties the search bar. A click on a hit plays its clip
+// in the window: Space pauses, Left and Right go 5 seconds, Esc goes back.
 //
 // The indexer runs a frame a second of every video through CLIP's image
 // model and keeps what it makes of them on disk (indexer\indexer.md); a
@@ -37,11 +38,15 @@
 
 #include "text/text.h"
 #include "library/library.h"
+#include "audio/audio.h"
+#include "audio/audio_device.h"
+#include "video/video.h"
 #include "video/video_decoder.h"
 #include "embed/embed.h"
 #include "index/index.h"
 #include "indexer/indexer.h"
 #include "search/search.h"
+#include "thumbs/thumbs.h"
 #include "app_state.h"
 #include "frame.h"
 
@@ -70,12 +75,15 @@
 # pragma clang diagnostic pop
 #endif
 #include "library/library.c"
-// The decoder as the slideshow has it. Sound and seeking are not used yet:
-// the indexer only reads each video through, picture only.
+// Sound, the player and the decoder as the slideshow has them. Not all of
+// the player is used: a clip is opened, sought in, played and closed.
 #if defined(__clang__)
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wunused-function"
 #endif
+#include "audio/audio.c"
+#include "audio/audio_wasapi.c" // the device: the one file to change for another (audio_device.h)
+#include "video/video.c"
 #include "video/video_ffmpeg.c" // the decoder: the one file to change for another (video_decoder.h)
 #if defined(__clang__)
 # pragma clang diagnostic pop
@@ -86,6 +94,7 @@
 #include "index/index.c"
 #include "indexer/indexer.c"
 #include "search/search.c"
+#include "thumbs/thumbs.c"
 #include "frame.c"
 
 ////////////////////////////////
@@ -181,6 +190,11 @@ _EntryPoint(CmdLine* cmdline) {
       ScratchEnd(scratch);
    }
 
+   // Sound, before any clip is played: a video takes a voice as it opens.
+   AUD_Init();
+   app_state.thumbs = THM_Alloc();
+   app_state.play_arena = ArenaAlloc();
+
    // The videos: the folders searched last time, and any on the command line.
    app_state.library = LIB_Alloc();
    {
@@ -228,6 +242,9 @@ _EntryPoint(CmdLine* cmdline) {
    }
 
    g_repaint_app_state = 0;
+   VID_Close(app_state.play_video);
+   AUD_Shutdown();
+   THM_Stop(app_state.thumbs);
    IDX_Stop(app_state.indexer);
    EMB_Close(app_state.model);
    FileClose(app_state.log_file);

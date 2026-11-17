@@ -1,10 +1,10 @@
 # video
 
-The slideshow's decoder, copied as it is: `video_decoder.h`, the seam, and
-`video_ffmpeg.c`, the only file that includes FFmpeg's headers. The
-slideshow's `video.md` has the whole of it. The player (`video.c`, the decode
-thread, sound and the texture) is not here yet: indexing needs only the
-decoder. It comes with step 4, to play a hit.
+The slideshow's video layer, copied as it is: the player (`video.h`,
+`video.c`: a decode thread, sound through `src/audio`, a clock and a
+texture), `video_decoder.h`, the seam, and `video_ffmpeg.c`, the only file
+that includes FFmpeg's headers. The slideshow's `video.md` has the whole of
+it.
 
 Change these in the slideshow first, then copy them across.
 
@@ -12,6 +12,9 @@ Change these in the slideshow first, then copy them across.
 
 - `src/indexer`: `VID_DecoderOpen` (with no sound), `VID_DecoderNextFrame`,
   `VID_DecoderClose`, on the indexer's thread.
+- `src/thumbs`: the same and `VID_DecoderSeek`, on its thread.
+- `frame.c`: the player, for the clip being played (`VID_Open`, `VID_Seek`,
+  `VID_SetPlaying`, `VID_Update`, `VID_Texture`, `VID_Close`).
 
 ## FFmpeg
 

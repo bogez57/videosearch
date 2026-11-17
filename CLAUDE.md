@@ -35,8 +35,8 @@ through ONNX Runtime, vectors on disk) in five steps.
 
 ## Rules of the code
 
-- `src/bgz/` is a copy of the slideshow's `src/bgz`, and `src/ui` and
-  `src/text` of its layers of those names. Change them there first, then copy
+- `src/bgz/` is a copy of the slideshow's `src/bgz`, and `src/ui`,
+  `src/text`, `src/video` and `src/audio` of its layers of those names. Change them there first, then copy
   across, so the projects don't drift.
 - `src/bgz/rad/` is an unedited copy of raddebugger - never edit it.
 - The app calls bgz's PascalCase functions (`Core_WM_...`, `Core_D_...`,
@@ -65,5 +65,9 @@ through ONNX Runtime, vectors on disk) in five steps.
   merges in `data/clip`) and text half put the query into a vector;
   `src/search` loads the index files and ranks every frame by its dot
   product with it.
-- Step 4, under way: runs of frames that score nearly as well as their best
-  are one clip (`src/search`). Next: thumbnails, playing a hit.
+- Step 4, clips: runs of frames that score nearly as well as their best are
+  one clip (`src/search`); each row has a thumbnail of its best frame
+  (`src/thumbs`); a click plays the clip in the window with the slideshow's
+  player and audio (`src/video`, `src/audio`, copied as they are).
+- Next: step 5, as wanted (the GPU through DirectML, new videos found while
+  it runs, taking a folder out), or sound search (CLAP, whisper.cpp).

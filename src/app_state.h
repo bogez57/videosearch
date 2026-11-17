@@ -65,6 +65,17 @@ struct App_State {
    SRCH_Results  results;
    UI_ScrollRows results_scroll;
 
+   // The rows' pictures (src\thumbs).
+   THM_Thumbs* thumbs;
+
+   // The clip being played, in place of the list: a hit that was clicked.
+   // 0: none. play_hit is a copy - the results can be searched again under
+   // it - and play_name is on play_arena.
+   VID_Video* play_video;
+   Arena*     play_arena;
+   SRCH_Hit   play_hit;
+   String8    play_name;
+
    // A line of text shown for a few seconds: a folder added, a folder
    // refused. Always a string that lasts (a literal).
    String8 notice;

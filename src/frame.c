@@ -217,6 +217,56 @@ FR_AddFolder(App_State* app_state, String8 path) {
 
 // The search bar takes what is typed: there is nothing else on the screen to
 // type into. Backspace takes off the last character, Esc empties it.
+////////////////////////////////
+//~ bgz: playing a hit
+
+internal void
+_FR_StopPlaying(App_State* app_state) {
+   VID_Close(app_state->play_video);
+   app_state->play_video = 0;
+}
+
+// Opens the hit's video in place of the list, and plays it from the clip's
+// start.
+internal void
+_FR_PlayHit(App_State* app_state, SRCH_Hit* hit) {
+   _FR_StopPlaying(app_state);
+   LIB_Video* video = &app_state->library->videos[hit->video_idx];
+   app_state->play_video = VID_Open(video->path);
+   if (app_state->play_video == 0) {
+      FR_Notice(app_state, Str8Lit("That video could not be opened."));
+   } else {
+      ArenaClear(app_state->play_arena);
+      app_state->play_hit = *hit;
+      app_state->play_name = PushStr8Copy(app_state->play_arena, video->name);
+      if (hit->start_s > 0) {
+         VID_Seek(app_state->play_video, hit->start_s);
+      }
+      VID_SetPlaying(app_state->play_video, 1);
+   }
+}
+
+// Once a frame: the frame that is due into the player's texture, and the
+// clip stopped at its end - once: played again, it goes on past it.
+internal void
+_FR_UpdatePlaying(App_State* app_state) {
+   VID_Video* video = app_state->play_video;
+   if (video != 0) {
+      VID_Update(video);
+      SRCH_Hit* hit = &app_state->play_hit;
+      if (hit->end_s > hit->start_s && VID_IsPlaying(video) && VID_Position(video) >= hit->end_s) {
+         VID_SetPlaying(video, 0);
+         hit->end_s = 0;
+      }
+   }
+}
+
+internal String8
+_FR_Clock(Arena* arena, F64 seconds) {
+   U64 s = (U64)Max(seconds, 0.0);
+   return PushStr8F(arena, "%llu:%02llu", (unsigned long long)(s / 60), (unsigned long long)(s % 60));
+}
+
 internal void
 _FR_Input(App_State* app_state) {
    WM_EventList* events = &app_state->events;
@@ -232,8 +282,10 @@ _FR_Input(App_State* app_state) {
             FR_AddFolder(app_state, node->string);
          }
       }
-      // A character typed, not a key that only moves or edits.
-      if (event->kind == WM_EventKind_Text && event->character >= 32 && event->character != 127) {
+      // A character typed, not a key that only moves or edits. Not while a
+      // clip plays: the keys are the player's then.
+      if (event->kind == WM_EventKind_Text && event->character >= 32 && event->character != 127 &&
+          app_state->play_video == 0) {
          Temp    scratch = ScratchBegin(0, 0);
          String8 text = Str8From32(scratch.arena, Str32(&event->character, 1));
          if (app_state->query_size + text.size <= APP_QUERY_CAP) {
@@ -242,6 +294,25 @@ _FR_Input(App_State* app_state) {
          }
          ScratchEnd(scratch);
       }
+   }
+
+   if (app_state->play_video != 0) {
+      VID_Video* video = app_state->play_video;
+      if (Core_WM_KeyPress(events, window, 0, WM_Key_Space)) {
+         VID_SetPlaying(video, !VID_IsPlaying(video));
+      }
+      // Sought by hand, it plays on from there, past the clip's end.
+      F64 seek_s = 0;
+      while (Core_WM_KeyPress(events, window, 0, WM_Key_Left)) seek_s -= 5.0;
+      while (Core_WM_KeyPress(events, window, 0, WM_Key_Right)) seek_s += 5.0;
+      if (seek_s != 0) {
+         VID_Seek(video, Max(VID_Position(video) + seek_s, 0.0));
+         app_state->play_hit.end_s = 0;
+      }
+      if (Core_WM_KeyPress(events, window, 0, WM_Key_Esc)) {
+         _FR_StopPlaying(app_state);
+      }
+      return;
    }
 
    // Backspace takes off a whole character: the bytes after its first are
@@ -572,7 +643,7 @@ internal void
 _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
    F32  ui = FR_UIScale(window_dim);
    F32  pad = 18.0f * ui;
-   F32  row_h = (F32)(S32)(30.0f * ui);
+   F32  row_h = (F32)(S32)(56.0f * ui);
    F32  search_h = (F32)(S32)(64.0f * ui);
    F32  bar_h = (F32)(S32)(32.0f * ui);
    Temp scratch = ScratchBegin(0, 0);
@@ -617,6 +688,11 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
       String8 status = {0};
       if (notice.size != 0) {
          status = notice;
+      } else if (app_state->play_video != 0) {
+         VID_Video* video = app_state->play_video;
+         status = PushStr8F(scratch.arena, "%S   %S / %S   %s", app_state->play_name,
+                            _FR_Clock(scratch.arena, VID_Position(video)), _FR_Clock(scratch.arena, VID_Duration(video)),
+                            VID_IsPlaying(video) ? "" : "Paused");
       } else if (library->folders.node_count == 0) {
          status = Str8Lit("No videos yet. Drop a folder of videos on the window to search it.");
       } else {
@@ -647,55 +723,125 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
       _FR_BuildBar(R2F32P(0, 0, window_dim.x, bar_h), pad, (notice.size != 0) ? Str8Lit("notice") : Str8Lit("dim"), status,
                    "status");
 
+      F32 rows_h = Max(window_dim.y - search_h - bar_h * 2.0f, 0);
+
+      //- bgz: the clip being played, as large as fits, in the list's place.
+      // A click on it pauses and plays.
+      if (app_state->play_video != 0) {
+         VID_Video* video = app_state->play_video;
+         Vec2S32    size = VID_Size(video);
+         F32        scale = Min(window_dim.x / (F32)size.x, rows_h / (F32)size.y);
+         Vec2F32    dim = V2F32((F32)(S32)((F32)size.x * scale), (F32)(S32)((F32)size.y * scale));
+
+         UI_SetNextPrefWidth(UI_Px(window_dim.x, 1));
+         UI_SetNextPrefHeight(UI_Px(rows_h, 1));
+         UI_SetNextChildLayoutAxis(Axis2_Y);
+         UI_Box* player = UI_BuildBoxFromStringf(UI_BoxFlag_Clickable, "###player");
+         UI_Parent(player) {
+            UI_Spacer(UI_Px((rows_h - dim.y) * 0.5f, 1));
+            UI_SetNextPrefWidth(UI_Pct(1, 0));
+            UI_SetNextPrefHeight(UI_Px(dim.y, 1));
+            UI_SetNextChildLayoutAxis(Axis2_X);
+            UI_Box* across = UI_BuildBoxFromStringf(0, "###player_across");
+            UI_Parent(across) {
+               UI_Spacer(UI_Px((window_dim.x - dim.x) * 0.5f, 1));
+               UI_SetNextPrefWidth(UI_Px(dim.x, 1));
+               UI_SetNextPrefHeight(UI_Px(dim.y, 1));
+               UI_Image(VID_Texture(video), R_Tex2DSampleKind_Linear, R2F32P(0, 0, (F32)size.x, (F32)size.y), V4F32(1, 1, 1, 1), 0,
+                        Str8Lit("###player_picture"));
+            }
+         }
+         if (UI_Clicked(UI_SignalFromBox(player))) {
+            VID_SetPlaying(video, !VID_IsPlaying(video));
+         }
+      }
+
       //- bgz: the hits
-      F32                rows_h = Max(window_dim.y - search_h - bar_h * 2.0f, 0);
-      UI_ScrollRowsFlags scroll_flags = UI_ScrollRowsFlag_RowClicks;
-      UI_ScrollRowsFrame rows_frame = UI_ScrollRowsBegin(&app_state->results_scroll, V2F32(window_dim.x, rows_h),
-                                                         (S64)results->count, row_h, 0, scroll_flags, "###hits");
-      UI_ScrollRowsEnd(&app_state->results_scroll, &rows_frame, 0, scroll_flags);
+      if (app_state->play_video == 0) {
+         UI_ScrollRowsFlags scroll_flags = UI_ScrollRowsFlag_RowClicks;
+         UI_ScrollRowsFrame rows_frame = UI_ScrollRowsBegin(&app_state->results_scroll, V2F32(window_dim.x, rows_h),
+                                                            (S64)results->count, row_h, 0, scroll_flags, "###hits");
+         UI_ScrollRowsEnd(&app_state->results_scroll, &rows_frame, 0, scroll_flags);
 
-      UI_Parent(rows_frame.rows_box) UI_ColorTag(Str8Lit("row")) {
-         for (S64 row_idx = rows_frame.first_row; row_idx < rows_frame.last_row; row_idx += 1) {
-            SRCH_Hit*  hit = &results->v[row_idx];
-            LIB_Video* video = &library->videos[hit->video_idx];
+         UI_Parent(rows_frame.rows_box) UI_ColorTag(Str8Lit("row")) {
+            for (S64 row_idx = rows_frame.first_row; row_idx < rows_frame.last_row; row_idx += 1) {
+               SRCH_Hit*  hit = &results->v[row_idx];
+               LIB_Video* video = &library->videos[hit->video_idx];
 
-            UI_Box* row_box = UI_ListRow(row_h, 0, UI_BoxFlag_Clickable | UI_BoxFlag_DrawBackground, "###hit %lld", row_idx);
+               UI_Box* row_box = UI_ListRow(row_h, 0, UI_BoxFlag_Clickable | UI_BoxFlag_DrawBackground, "###hit %lld", row_idx);
 
-            // A clip says how well it matched, for telling a good match from
-            // a poor one: CLIP's scores are about 0.2 to 0.35.
-            String8 when = Str8Lit("whole video");
-            if (hit->end_s > hit->start_s) {
-               U64 a = (U64)hit->start_s;
-               U64 b = (U64)(hit->end_s + 0.5);
-               when = PushStr8F(scratch.arena, "%llu:%02llu to %llu:%02llu   %.2f", (unsigned long long)(a / 60),
-                                (unsigned long long)(a % 60), (unsigned long long)(b / 60), (unsigned long long)(b % 60), hit->score);
-            }
+               // A clip says how well it matched, for telling a good match from
+               // a poor one: CLIP's scores are about 0.2 to 0.35.
+               String8 when = Str8Lit("whole video");
+               if (hit->end_s > hit->start_s) {
+                  U64 a = (U64)hit->start_s;
+                  U64 b = (U64)(hit->end_s + 0.5);
+                  when = PushStr8F(scratch.arena, "%llu:%02llu to %llu:%02llu   %.2f", (unsigned long long)(a / 60),
+                                   (unsigned long long)(a % 60), (unsigned long long)(b / 60), (unsigned long long)(b % 60), hit->score);
+               }
 
-            UI_Parent(row_box) UI_PrefHeight(UI_Pct(1, 1)) {
-               UI_Spacer(UI_Px(pad + 22.0f * ui, 1));
-               UI_SetNextPrefWidth(UI_TextDim(1, 1));
-               UI_SetNextColorTag(Str8Lit("video"));
-               UI_Label(video->name);
-               UI_Spacer(UI_Px(18.0f * ui, 1));
-               UI_SetNextPrefWidth(UI_TextDim(1, 1));
-               UI_SetNextColorTag(Str8Lit("dim"));
-               UI_Label(when);
-               UI_Spacer(UI_Px(18.0f * ui, 1));
-               UI_SetNextPrefWidth(UI_TextDim(1, 0));
-               UI_SetNextColorTag(Str8Lit("dim"));
-               UI_Label(video->folder);
-            }
+               // The picture of its best moment, in a place 16 wide and 9
+               // high: a wider one has its sides cut off, a narrower one is in
+               // the middle.
+               F32       thumb_h = row_h - (F32)(S32)(8.0f * ui);
+               F32       thumb_w = (F32)(S32)(thumb_h * 16.0f / 9.0f);
+               THM_Thumb thumb = THM_Get(app_state->thumbs, video->path, hit->best_s);
 
-            UI_Signal signal = UI_SignalFromBox(row_box);
-            if (UI_Hovering(signal)) {
-               row_box->background_color = UI_ThemeColor(Str8Lit("hot"), UI_ColorSlot_Background);
+               UI_Parent(row_box) UI_PrefHeight(UI_Pct(1, 1)) {
+                  UI_Spacer(UI_Px(pad, 1));
+                  UI_SetNextPrefWidth(UI_Px(thumb_w, 1));
+                  UI_SetNextChildLayoutAxis(Axis2_Y);
+                  UI_Box* thumb_box = UI_BuildBoxFromStringf(0, "###thumb %lld", row_idx);
+                  if (thumb.size.x > 0 && thumb.size.y > 0) {
+                     F32     picture_w = Min(thumb_w, (F32)(S32)(thumb_h * (F32)thumb.size.x / (F32)thumb.size.y));
+                     F32     shown_x = Min((F32)thumb.size.x, (F32)thumb.size.y * 16.0f / 9.0f);
+                     F32     cut_x = ((F32)thumb.size.x - shown_x) * 0.5f;
+                     Rng2F32 region = R2F32P(cut_x, 0, cut_x + shown_x, (F32)thumb.size.y);
+                     UI_Parent(thumb_box) {
+                        UI_Spacer(UI_Px((row_h - thumb_h) * 0.5f, 1));
+                        UI_SetNextPrefWidth(UI_Pct(1, 0));
+                        UI_SetNextPrefHeight(UI_Px(thumb_h, 1));
+                        UI_SetNextChildLayoutAxis(Axis2_X);
+                        UI_Box* across = UI_BuildBoxFromStringf(0, "###thumb_across %lld", row_idx);
+                        UI_Parent(across) {
+                           UI_Spacer(UI_Px((thumb_w - picture_w) * 0.5f, 1));
+                           UI_SetNextPrefWidth(UI_Px(picture_w, 1));
+                           UI_SetNextPrefHeight(UI_Px(thumb_h, 1));
+                           UI_ImageF(thumb.texture, R_Tex2DSampleKind_Linear, region, V4F32(1, 1, 1, 1), 0, "###thumb_picture %lld",
+                                     row_idx);
+                        }
+                     }
+                  }
+                  UI_Spacer(UI_Px(14.0f * ui, 1));
+                  UI_SetNextPrefWidth(UI_TextDim(1, 1));
+                  UI_SetNextColorTag(Str8Lit("video"));
+                  UI_Label(video->name);
+                  UI_Spacer(UI_Px(18.0f * ui, 1));
+                  UI_SetNextPrefWidth(UI_TextDim(1, 1));
+                  UI_SetNextColorTag(Str8Lit("dim"));
+                  UI_Label(when);
+                  UI_Spacer(UI_Px(18.0f * ui, 1));
+                  UI_SetNextPrefWidth(UI_TextDim(1, 0));
+                  UI_SetNextColorTag(Str8Lit("dim"));
+                  UI_Label(video->folder);
+               }
+
+               UI_Signal signal = UI_SignalFromBox(row_box);
+               if (UI_Hovering(signal)) {
+                  row_box->background_color = UI_ThemeColor(Str8Lit("hot"), UI_ColorSlot_Background);
+               }
+               if (UI_Clicked(signal)) {
+                  _FR_PlayHit(app_state, hit);
+               }
             }
          }
       }
 
       //- bgz: the foot: what can be done
       _FR_BuildBar(R2F32P(0, 0, window_dim.x, bar_h), pad, Str8Lit("dim"),
-                   Str8Lit("Type to search. Backspace takes a letter off, Esc empties it. Drop a folder of videos to add it."),
+                   (app_state->play_video != 0)
+                       ? Str8Lit("Space or a click pauses and plays. Left and Right go 5 seconds. Esc goes back to the hits.")
+                       : Str8Lit("Type to search. Click a hit to play it. Esc empties the search. Drop a folder of videos to add it."),
                    "foot");
    }
 
@@ -732,6 +878,8 @@ FrameWork(App_State* app_state) {
 
    _FR_BeginText(app_state, window_dim);
    _FR_Input(app_state);
+   _FR_UpdatePlaying(app_state);
+   THM_Update(app_state->thumbs);
    IDX_Update(app_state->indexer, app_state->library);
    SRCH_Update(app_state->search, app_state->library, app_state->indexer);
    _FR_UpdateResults(app_state);
