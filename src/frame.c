@@ -885,6 +885,7 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
             String8 folder = PICK_Folder(scratch.arena, Str8Lit("Add a folder of videos"));
             if (folder.size != 0) {
                FR_AddFolder(app_state, folder);
+               app_state->folders_open = 1; // stays up, to show it was added
             }
          }
       }
