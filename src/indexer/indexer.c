@@ -203,12 +203,19 @@ _IDX_ThreadEntry(void* p) {
             F64 next_s = 0;
             F64 time_s = 0;
             B32 frames_more = 1;
+
+            // Where the time goes, for the log: in the two models. The rest
+            // is the decoder's.
+            U64 pictures_us = 0;
+            U64 sound_us = 0;
+            U64 t = 0;
             while (ok && !InsAtomicU64Eval(&indexer->cancel) && (frames_more || sound_more)) {
                if (frames_more) {
                   frames_more = VID_DecoderNextFrameFrom(decoder, next_s, pixels, &time_s);
                   next_s = time_s + IDX_SAMPLE_SECONDS;
                }
                if (frames_more && !pictures_done) {
+                  t = NowTimeUS();
                   EMB_ImageFromFrame(pixels, info.size, images + batch_count * EMB_IMAGE_FLOATS);
                   batch_times[batch_count] = (F32)time_s;
                   batch_count += 1;
@@ -216,6 +223,7 @@ _IDX_ThreadEntry(void* p) {
                      ok = _IDX_Encode(indexer, arena, images, batch_times, batch_count, vectors, &times, &vector_list);
                      batch_count = 0;
                   }
+                  pictures_us += NowTimeUS() - t;
                }
 
                // The sound up to this frame, or all the rest of it once the
@@ -231,8 +239,10 @@ _IDX_ThreadEntry(void* p) {
                      }
                      stretch[stretch_count++] = 0.5f * (chunk[2 * i] + chunk[2 * i + 1]);
                      if (stretch_count == IDX_SOUND_SAMPLES) {
+                        t = NowTimeUS();
                         ok = _IDX_EncodeSound(indexer, arena, stretch, stretch_count, stretch_s, features, &sound_times,
                                               &sound_vectors);
+                        sound_us += NowTimeUS() - t;
                         stretch_count = 0;
                      }
                   }
@@ -265,10 +275,11 @@ _IDX_ThreadEntry(void* p) {
                      LogUserErrorF("Could not write %S, the sound index of %S\n", sound_file_path, path);
                   }
                }
-               LogInfoF("Indexed %S: %llu frames, %llu stretches of sound in %.1f s\n", indexer->names[idx],
-                        (unsigned long long)(times.total_size / sizeof(F32)),
+               LogInfoF("Indexed %S: %llu frames, %llu stretches of sound in %.1f s (the picture model %.1f s, the sound "
+                        "model %.1f s)\n",
+                        indexer->names[idx], (unsigned long long)(times.total_size / sizeof(F32)),
                         (unsigned long long)(sound_times.total_size / sizeof(F32)),
-                        (F64)(NowTimeUS() - begin_us) / 1000000.0);
+                        (F64)(NowTimeUS() - begin_us) / 1000000.0, (F64)pictures_us / 1000000.0, (F64)sound_us / 1000000.0);
             }
          }
          if (!ok) {
