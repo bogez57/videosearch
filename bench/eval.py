@@ -13,7 +13,7 @@
 #   template: plain, photo, ens (see TEMPLATES)
 #   norm:     raw, or a way of making one score mean the same for every query and frame (see
 #             normalize()): against the library (qhalf, qmean, qz), against a bank of words that
-#             could be about anything (fb, fbq, fbz, sm, sm0, smk5, cen, cenv, cent; --bank=FILE for
+#             could be about anything (fb, fbs, fbq, fbz, sm, sm0, smk5, cen, cenv, cent; --bank=FILE for
 #             another bank than bank.txt), against 1000 photographs of other things (rb, rbh, rbz,
 #             rbt, rbtz, fbrb, fbrbz; flickr.py makes their vectors)
 #   smooth:   0, or 1 (a frame's score mixed with its neighbours' a second each side)
@@ -123,6 +123,9 @@ def normalize(norm, S, SB, T, TB, V, agg, tau, R):
         return (S - S.mean(1, keepdims=True)) / S.std(1, keepdims=True)
     if norm == "fb":  # less what each frame scores for the bank on average
         return S - SB.mean(0, keepdims=True)
+    if norm == "fbs":  # and more for a query the further its words are from the bank's middle (half of cent)
+        far = np.linalg.norm(T - TB.mean(0, keepdims=True), axis=1, keepdims=True)
+        return (S - SB.mean(0, keepdims=True)) / np.sqrt(far)
     if norm == "fbq":
         X = S - SB.mean(0, keepdims=True)
         return X - X.mean(1, keepdims=True)
