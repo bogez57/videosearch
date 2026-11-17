@@ -1,0 +1,55 @@
+# Video Search - notes for Claude
+
+A native C unity-build Windows program, built like the slideshow
+(`..\slideshow`): `bgz.dll` (raddebugger's layers in `src/bgz/rad/`, bgz's on
+top in `src/bgz/bgz/`) and the app, `bin\videosearch.exe`, whose one unit is
+`src/main.c`. It has a search bar; what is typed finds the clips that match
+in the folders of videos the user gave it.
+
+How the code works now: each layer's own `<folder>/<folder>.md` (e.g.
+`src/search/search.md`) - what it's for, State, Functions, Used by. Current
+facts only. A change to a layer updates its `.md` in the same change.
+
+Where it is going: `Claude outputs/clip_search_plan.md`, the plan for finding
+clips by what is in them (frames sampled with FFmpeg, a CLIP-style model run
+through ONNX Runtime, vectors on disk) in five steps.
+
+## How J works
+
+- Don't run git commands in this repo. Give J the commands to run.
+- J builds and runs: `build` from the repo root (an MSVC prompt, clang-cl),
+  then `bin\videosearch.exe [folder ...]`. Plan larger features first, then
+  small, clearly explained steps.
+- Only touch the files that are necessary. Don't abstract or pull things into
+  functions unnecessarily.
+- Comments only where the code can't explain itself - short, no narrating the
+  change.
+- Line endings: hand-written sources and `.bat` files are CRLF; generated meta
+  files are LF. Preserve each file's endings.
+- The program writes its log to `bin\local\logs\videosearch_log.txt`
+  (`videosearch_log_previous.txt` for the run before). Read that rather than
+  asking J to paste output.
+
+## Rules of the code
+
+- `src/bgz/` is a copy of the slideshow's `src/bgz`, and `src/ui` and
+  `src/text` of its layers of those names. Change them there first, then copy
+  across, so the projects don't drift.
+- `src/bgz/rad/` is an unedited copy of raddebugger - never edit it.
+- The app calls bgz's PascalCase functions (`Core_WM_...`, `Core_D_...`,
+  `FileOpen`, `PushStr8F`, ...), never raddebugger's snake_case ones, and
+  includes no `rad/` header itself: `bgz_inc.h` does.
+- A layer is a folder under `src/` with a `.h`, a `.c` and a `.md`; `main.c`
+  includes every header, then every `.c`, in dependency order. Its functions
+  share a prefix (`LIB_`, `SRCH_`, `FR_`); its own ones start with `_`.
+- A library from outside (FFmpeg, ONNX Runtime) is known to one `.c` file
+  only, behind a seam header, as `video_decoder.h` / `video_ffmpeg.c` are in
+  the slideshow.
+- Style: `.clang-format` (3 spaces, `Type* name`).
+
+## Where we left off
+
+- The skeleton: the window, the search bar, the library of folders (from the
+  command line, dropped on the window, remembered in
+  `bin\local\folders.txt`), and the stand-in search by file name.
+- Next: step 1 of the plan, frames.

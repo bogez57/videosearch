@@ -1,0 +1,18 @@
+BasedOnStyle: LLVM
+IndentWidth: 3 
+AlignConsecutiveDeclarations: Consecutive
+PointerAlignment: Left
+SortIncludes: false
+ColumnLimit: 0
+BreakBeforeBraces: Custom
+BraceWrapping:
+  BeforeElse: true
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AlignConsecutiveAssignments: Consecutive
+# Loop macros (raddebugger's base_core.h) that stand for a for's parentheses:
+# expansions clang-format lays the code out by. The code keeps the macro.
+Macros:
+  - EachIndex(it, count)=(int it = 0; it < count; it += 1)
+  - EachElement(it, array)=(int it = 0; it < array; it += 1)
+  - EachEnumVal(type, it)=(type it = 0; it < 1; it += 1)
+  - EachNonZeroEnumVal(type, it)=(type it = 0; it < 1; it += 1)

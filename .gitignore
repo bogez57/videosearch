@@ -1,0 +1,29 @@
+# Build output: the exe, bgz.dll and everything else the builds write
+/bin/
+
+# bgz own build output (src/bgz/.gitignore has this too)
+/src/bgz/_bin/
+
+# Profile captures
+*.spall
+
+# Videos: they are the user's, not the program's, and they get huge
+*.mp4
+*.m4v
+*.mov
+*.mkv
+*.webm
+*.avi
+*.wmv
+*.flv
+*.mpg
+*.mpeg
+*.ts
+*.m2ts
+*.mts
+*.3gp
+*.ogv
+*.vob
+
+# Models: downloaded, not kept in the repo (see Claude outputs/clip_search_plan.md)
+/data/models/

@@ -1,0 +1,62 @@
+////////////////////////////////
+//~ bgz: app state
+//
+// Everything the program knows, in one struct. There is one, made in
+// _EntryPoint (main.c).
+
+#ifndef APP_STATE_H
+#define APP_STATE_H
+
+// The longest search that can be typed, in bytes.
+#define APP_QUERY_CAP 256
+
+typedef struct App_State App_State;
+struct App_State {
+   WM_Window    window;
+   R_Handle     window_eqp;
+   Arena*       frame_arena; // cleared at the end of every frame
+   WM_EventList events;      // this frame's, on frame_arena
+   B32          quit;
+
+   // Text. A change in the window's size changes every size text is drawn
+   // at, and the font cache is emptied of the old ones - see _FR_BeginText
+   // (frame.c).
+   TXT_Fonts fonts;
+   Vec2F32   text_window_dim; // the window's size when the font cache was last emptied
+
+   // The UI layer (src\ui): its box cache, hot and active boxes, and so on,
+   // made once at the start. A UI tree is built inside FrameWork every frame,
+   // between _FR_BeginUI and UI_EndBuild (frame.c).
+   UI_State* ui_state;
+   FNT_Tag   ui_icon_font;     // raddebugger's icon font, data\fonts\Icons.ttf. The zero tag without it: no icons
+   U64       ui_last_frame_us; // when the last UI build began, for its animations. 0: none yet
+
+   // What is logged (LogInfoF, LogUserErrorF) is gathered a frame at a time
+   // and written to local\logs\videosearch_log.txt beside the program, and
+   // to the console (FR_WriteLogs).
+   Log* log;
+   File log_file;
+   U64  log_file_off; // how much has been written to it
+
+   // The folders of videos, and the videos in them (src\library).
+   LIB_Library* library;
+
+   // The search bar: what is typed, as UTF-8.
+   U8  query[APP_QUERY_CAP];
+   U64 query_size;
+
+   // What the list shows: the search's hits, for the query they were found
+   // for. Searched again when the query or the library changes (FrameWork).
+   Arena*        results_arena;
+   String8       results_query;       // on results_arena
+   U64           results_library_gen; // the library's generation they were found in
+   SRCH_Results  results;
+   UI_ScrollRows results_scroll;
+
+   // A line of text shown for a few seconds: a folder added, a folder
+   // refused. Always a string that lasts (a literal).
+   String8 notice;
+   U64     notice_us; // when it was set
+};
+
+#endif // APP_STATE_H
