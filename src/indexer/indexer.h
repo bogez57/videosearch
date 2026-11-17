@@ -52,8 +52,10 @@ struct IDX_Status {
 
 // index_folder is where the index files go. model may be 0 (it could not be
 // opened); model_name and sound_model_name go in the files, to say which
-// model made them.
-internal IDX_Indexer* IDX_Alloc(String8 index_folder, String8 model_name, String8 sound_model_name, EMB_Model* model);
+// model made them. With use_gpu the videos are decoded on the graphics card
+// where it can decode them.
+internal IDX_Indexer* IDX_Alloc(String8 index_folder, String8 model_name, String8 sound_model_name, EMB_Model* model,
+                                B32 use_gpu);
 
 // Once a frame: logs what the thread has logged, and starts again from the
 // first video whenever the library's videos have changed (its generation).

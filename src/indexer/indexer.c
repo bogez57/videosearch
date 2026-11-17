@@ -28,6 +28,7 @@ struct IDX_Indexer {
    String8    index_folder;
    String8    model_name;
    String8    sound_model_name;
+   B32        use_gpu; // videos are decoded on the graphics card where it can
    EMB_Model* model;       // 0: none could be opened
    B32        model_tried; // only the thread reads or writes it, and one runs at a time
 
@@ -168,7 +169,9 @@ _IDX_ThreadEntry(void* p) {
 
          // The sound is only asked for if it is to be indexed.
          VID_DecoderInfo info = {0};
-         VID_Decoder*    decoder = VID_DecoderOpen(arena, path, IDX_FRAME_DIM, sound_done ? 0 : EMB_SOUND_RATE, &info);
+         S32             sound_rate = sound_done ? 0 : EMB_SOUND_RATE;
+         VID_Decoder*    decoder = indexer->use_gpu ? VID_DecoderOpenOnCard(arena, path, IDX_FRAME_DIM, sound_rate, &info)
+                                                    : VID_DecoderOpen(arena, path, IDX_FRAME_DIM, sound_rate, &info);
          B32             ok = (decoder != 0);
          if (ok) {
             U8*         pixels = PushArrayNoZero(arena, U8, (U64)info.size.x * (U64)info.size.y * 4);
@@ -191,8 +194,9 @@ _IDX_ThreadEntry(void* p) {
             String8List sound_vectors = {0};
 
             // Every frame is decoded - a codec can't skip to the next second
-            // without decoding what is between - and the first at or after
-            // each whole step is the one taken. That goes for a video whose
+            // without decoding what is between - but only the first at or
+            // after each whole step is made into pixels and taken
+            // (VID_DecoderNextFrameFrom). That goes for a video whose
             // frames are indexed already too, when it is here for its sound:
             // the decoder keeps what it reads of the one while asked for the
             // other, so the two are read side by side.
@@ -201,10 +205,10 @@ _IDX_ThreadEntry(void* p) {
             B32 frames_more = 1;
             while (ok && !InsAtomicU64Eval(&indexer->cancel) && (frames_more || sound_more)) {
                if (frames_more) {
-                  frames_more = VID_DecoderNextFrame(decoder, pixels, &time_s);
-               }
-               if (frames_more && !pictures_done && time_s >= next_s) {
+                  frames_more = VID_DecoderNextFrameFrom(decoder, next_s, pixels, &time_s);
                   next_s = time_s + IDX_SAMPLE_SECONDS;
+               }
+               if (frames_more && !pictures_done) {
                   EMB_ImageFromFrame(pixels, info.size, images + batch_count * EMB_IMAGE_FLOATS);
                   batch_times[batch_count] = (F32)time_s;
                   batch_count += 1;
@@ -281,11 +285,12 @@ _IDX_ThreadEntry(void* p) {
 }
 
 internal IDX_Indexer*
-IDX_Alloc(String8 index_folder, String8 model_name, String8 sound_model_name, EMB_Model* model) {
+IDX_Alloc(String8 index_folder, String8 model_name, String8 sound_model_name, EMB_Model* model, B32 use_gpu) {
    Arena*       arena = ArenaAlloc();
    IDX_Indexer* indexer = PushArray(arena, IDX_Indexer, 1);
    indexer->arena = ArenaAlloc();
    indexer->model = model;
+   indexer->use_gpu = use_gpu;
    indexer->log_arena = ArenaAlloc();
    indexer->log_mutex = MutexAlloc();
    indexer->thread_log = LogAlloc();

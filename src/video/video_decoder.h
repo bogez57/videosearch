@@ -31,6 +31,12 @@ struct VID_DecoderInfo {
 // for as long as it is open may be pushed on arena. 0 if the file could not
 // be opened as a video, and why is logged (LogUserErrorF).
 internal VID_Decoder* VID_DecoderOpen(Arena* arena, String8 path, S32 max_dim, S32 sound_rate, VID_DecoderInfo* info_out);
+
+// As VID_DecoderOpen, but the video is decoded on the graphics card if the
+// card can decode it, and on the processor if not. For going through a
+// whole video quickly with VID_DecoderNextFrameFrom: a frame that is not
+// given out never leaves the card.
+internal VID_Decoder* VID_DecoderOpenOnCard(Arena* arena, String8 path, S32 max_dim, S32 sound_rate, VID_DecoderInfo* info_out);
 internal void         VID_DecoderClose(VID_Decoder* decoder);
 
 // Decodes the next frame into pixels: info.size.x * info.size.y * 4 bytes,
@@ -38,6 +44,11 @@ internal void         VID_DecoderClose(VID_Decoder* decoder);
 // it is shown, in seconds from the video's start. 0 at the end of the video,
 // or when it can't be decoded further.
 internal B32 VID_DecoderNextFrame(VID_Decoder* decoder, U8* pixels, F64* time_s_out);
+
+// As VID_DecoderNextFrame, but gives out the first frame at or after
+// from_s: the ones before it are decoded and let go, without being made
+// into pixels.
+internal B32 VID_DecoderNextFrameFrom(VID_Decoder* decoder, F64 from_s, U8* pixels, F64* time_s_out);
 
 // Decodes the next of the video's sound into samples: up to frame_cap
 // frames, each a left and a right F32. Returns how many, and time_s_out gets

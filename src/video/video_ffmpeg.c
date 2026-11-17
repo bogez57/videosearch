@@ -19,8 +19,12 @@
 //                  channels of F32 at the rate asked for
 //    libavutil     what the three share
 //
-// Decoding is on the processor, on as many threads as FFmpeg sees fit. The
-// graphics card's decoders are not used.
+// Decoding is on the processor, on as many threads as FFmpeg sees fit.
+// VID_DecoderOpenOnCard asks for the graphics card's decoder instead
+// (Direct3D 11's, which any card's driver has): FFmpeg hands the codec the
+// card, the frames come out as textures on it, and one is brought back to
+// memory only when its pixels are wanted. A video the card can't decode is
+// decoded on the processor, by FFmpeg's own choice (_VID_PickFormat).
 //
 // FFmpeg's memory is its own (malloc): its libraries are DLLs with no way
 // to be given an arena. Everything it allocates here is let go of in
@@ -42,9 +46,11 @@
 #include "libavcodec/avcodec.h"
 #include "libavutil/avutil.h"
 #include "libavutil/error.h"
+#include "libavutil/hwcontext.h"
 #include "libswscale/swscale.h"
 #include "libswresample/swresample.h"
 #include "libavutil/channel_layout.h"
+#include "libavutil/pixdesc.h"
 #if defined(__clang__)
 # pragma clang diagnostic pop
 #endif
@@ -74,6 +80,11 @@ struct VID_Decoder {
    AVPacket*        packet;
    AVFrame*         frame;
    struct SwsContext* scale;
+
+   // Decoding on the graphics card: the card, and a frame brought back from
+   // it. Both 0 when it was not asked for or there is no card to ask.
+   AVBufferRef* card;
+   AVFrame*     card_frame;
 
    Vec2S32 size;         // of the frames given out
    F64     seconds_per_tick; // the stream's time base
@@ -250,13 +261,42 @@ VID_DecoderClose(VID_Decoder* decoder) {
    avcodec_free_context(&decoder->sound_codec);
    sws_freeContext(decoder->scale);
    av_frame_free(&decoder->frame);
+   av_frame_free(&decoder->card_frame);
    av_packet_free(&decoder->packet);
    avcodec_free_context(&decoder->codec);
+   av_buffer_unref(&decoder->card);
    avformat_close_input(&decoder->format);
 }
 
+// FFmpeg asks which of the forms a codec can decode to is wanted: the
+// card's, if it is among them. If the card then can't decode this video,
+// FFmpeg asks again without it, and the first of the rest is one the
+// processor decodes to.
+internal enum AVPixelFormat
+_VID_PickFormat(AVCodecContext* codec, const enum AVPixelFormat* formats) {
+   enum AVPixelFormat result = formats[0];
+   for (const enum AVPixelFormat* f = formats; *f != AV_PIX_FMT_NONE; f += 1) {
+      if (*f == AV_PIX_FMT_D3D11) {
+         result = *f;
+         break;
+      }
+   }
+   // Not the card's: the first that is no card's at all.
+   if (result != AV_PIX_FMT_D3D11) {
+      for (const enum AVPixelFormat* f = formats; *f != AV_PIX_FMT_NONE; f += 1) {
+         const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(*f);
+         if (desc != 0 && !(desc->flags & AV_PIX_FMT_FLAG_HWACCEL)) {
+            result = *f;
+            break;
+         }
+      }
+   }
+   UnusedVariable(codec);
+   return result;
+}
+
 internal VID_Decoder*
-VID_DecoderOpen(Arena* arena, String8 path, S32 max_dim, S32 sound_rate, VID_DecoderInfo* info_out) {
+_VID_DecoderOpen(Arena* arena, String8 path, S32 max_dim, S32 sound_rate, VID_DecoderInfo* info_out, B32 on_card) {
    VID_Decoder* decoder = PushArray(arena, VID_Decoder, 1);
    decoder->path = PushStr8Copy(arena, path);
    decoder->stream_idx = -1;
@@ -293,6 +333,26 @@ VID_DecoderOpen(Arena* arena, String8 path, S32 max_dim, S32 sound_rate, VID_Dec
       } else {
          // 0: as many threads as it sees fit.
          decoder->codec->thread_count = 0;
+
+         // The card, if it was asked for, there is one, and this codec has a
+         // decoder on it. Without, it is decoded on the processor as ever.
+         if (on_card) {
+            B32 codec_has_card = 0;
+            for (int i = 0;; i += 1) {
+               const AVCodecHWConfig* config = avcodec_get_hw_config(codec, i);
+               if (config == 0) break;
+               if ((config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX) &&
+                   config->device_type == AV_HWDEVICE_TYPE_D3D11VA) {
+                  codec_has_card = 1;
+                  break;
+               }
+            }
+            if (codec_has_card && av_hwdevice_ctx_create(&decoder->card, AV_HWDEVICE_TYPE_D3D11VA, 0, 0, 0) >= 0) {
+               decoder->codec->hw_device_ctx = av_buffer_ref(decoder->card);
+               decoder->codec->get_format = _VID_PickFormat;
+               decoder->card_frame = av_frame_alloc();
+            }
+         }
          error = avcodec_open2(decoder->codec, codec, 0);
          if (error < 0) {
             LogUserErrorF("Could not start the %s decoder for %S: %S\n", codec->name, path,
@@ -394,8 +454,20 @@ VID_DecoderOpen(Arena* arena, String8 path, S32 max_dim, S32 sound_rate, VID_Dec
    return decoder;
 }
 
+internal VID_Decoder*
+VID_DecoderOpen(Arena* arena, String8 path, S32 max_dim, S32 sound_rate, VID_DecoderInfo* info_out) {
+   return _VID_DecoderOpen(arena, path, max_dim, sound_rate, info_out, 0);
+}
+
+internal VID_Decoder*
+VID_DecoderOpenOnCard(Arena* arena, String8 path, S32 max_dim, S32 sound_rate, VID_DecoderInfo* info_out) {
+   return _VID_DecoderOpen(arena, path, max_dim, sound_rate, info_out, 1);
+}
+
+// Decodes the next frame into decoder->frame, which the caller unrefs, and
+// says when it is shown. 0 at the end, or when it can't go on.
 internal B32
-VID_DecoderNextFrame(VID_Decoder* decoder, U8* pixels, F64* time_s_out) {
+_VID_DecodeFrame(VID_Decoder* decoder, F64* time_s_out) {
    B32 result = 0;
 
    // The codec is asked for a frame. When it wants more of the file first,
@@ -455,9 +527,31 @@ VID_DecoderNextFrame(VID_Decoder* decoder, U8* pixels, F64* time_s_out) {
       time_s = Max(time_s, 0.0);
       decoder->last_time_s = time_s;
       *time_s_out = time_s;
+   }
 
-      //- bgz: to RGBA, at the size given out
-      //
+   return result;
+}
+
+// decoder->frame into pixels, as RGBA at the size given out, and lets go of
+// it. 0 if it can't be.
+internal B32
+_VID_ConvertFrame(VID_Decoder* decoder, U8* pixels) {
+   B32      result = 1;
+   AVFrame* frame = decoder->frame;
+
+   // A frame on the card is brought back to memory first, in the form the
+   // card has it.
+   if (frame->format == AV_PIX_FMT_D3D11 && decoder->card_frame != 0) {
+      av_frame_unref(decoder->card_frame);
+      if (av_hwframe_transfer_data(decoder->card_frame, frame, 0) >= 0) {
+         frame = decoder->card_frame;
+      } else {
+         LogUserErrorF("%S: a frame could not be brought back from the graphics card\n", decoder->path);
+         result = 0;
+      }
+   }
+
+   if (result) {
       // The context is kept from frame to frame, and made again only if the
       // frames change size or form part way through, as some files' do.
       decoder->scale = sws_getCachedContext(decoder->scale, frame->width, frame->height, (enum AVPixelFormat)frame->format,
@@ -471,9 +565,26 @@ VID_DecoderNextFrame(VID_Decoder* decoder, U8* pixels, F64* time_s_out) {
          sws_scale(decoder->scale, (const uint8_t* const*)frame->data, frame->linesize, 0, frame->height, dst_planes,
                    dst_strides);
       }
-      av_frame_unref(frame);
    }
+   av_frame_unref(decoder->frame);
+   return result;
+}
 
+internal B32
+VID_DecoderNextFrame(VID_Decoder* decoder, U8* pixels, F64* time_s_out) {
+   return _VID_DecodeFrame(decoder, time_s_out) && _VID_ConvertFrame(decoder, pixels);
+}
+
+internal B32
+VID_DecoderNextFrameFrom(VID_Decoder* decoder, F64 from_s, U8* pixels, F64* time_s_out) {
+   B32 result = 0;
+   while (_VID_DecodeFrame(decoder, time_s_out)) {
+      if (*time_s_out >= from_s) {
+         result = _VID_ConvertFrame(decoder, pixels);
+         break;
+      }
+      av_frame_unref(decoder->frame);
+   }
    return result;
 }
 
