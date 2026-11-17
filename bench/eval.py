@@ -210,7 +210,8 @@ def load_queries(frame_keys, labels, partial=False):
     return out
 
 
-def run(config, queries, bank, frame_keys, use, want_rows=False):
+def frame_scores(config, queries, bank, frame_keys, use):
+    """Every query's score for every frame [Q, N], the way the config says."""
     name, views, agg, template, norm, sm = config
     m, allV = model(name)
     V = allV[use][:, VIEW_SETS[views]]
@@ -221,10 +222,15 @@ def run(config, queries, bank, frame_keys, use, want_rows=False):
     SB = scores(TB, V, agg)
     tau = 100.0
     S = normalize(norm, S, SB, T, TB, V, agg, tau, lambda: reference(name)[:, VIEW_SETS[views]])
+    if sm == "1":
+        S = smooth(S, np.array([k[0] for k in frame_keys]))
+    return S
+
+
+def run(config, queries, bank, frame_keys, use, want_rows=False):
+    S = frame_scores(config, queries, bank, frame_keys, use)
     videos = np.array([k[0] for k in frame_keys])
     seconds = np.array([k[1] for k in frame_keys])
-    if sm == "1":
-        S = smooth(S, videos)
 
     aps, s1, p5, top_pos, rows = [], [], [], [], []
     top_neg = {"NEAR": [], "NONE": []}
@@ -279,6 +285,24 @@ def run(config, queries, bank, frame_keys, use, want_rows=False):
     return (res, rows, S) if want_rows else res
 
 
+_set_up = {}
+
+
+def frames_and_queries(name, labels, only):
+    """The model's frames that have labels (and are of the videos in only, if given): their keys,
+    their places in the model's vectors, and the queries against them."""
+    keys = tuple(tuple(k) for k in json.load(open(os.path.join(BENCH, "emb", name, "frames.json"))))
+    if keys not in _set_up:
+        use = [i for i, k in enumerate(keys) if k in labels and (only is None or k[0] in only)]
+        frame_keys = [keys[i] for i in use]
+        queries = load_queries(frame_keys, labels, partial=only is not None)
+        n_pos = sum(1 for q in queries if not q[3])
+        print("# %d frames of %d videos, %d queries with a match, %d without" % (
+            len(frame_keys), len(set(k[0] for k in frame_keys)), n_pos, len(queries) - n_pos))
+        _set_up[keys] = (frame_keys, use, queries)
+    return _set_up[keys]
+
+
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     flags = [a for a in sys.argv[1:] if a.startswith("--")]
@@ -300,22 +324,10 @@ def main():
     for a in args:
         parts = [p.split(",") for p in a.split("|")]
         configs += list(itertools.product(*parts))
-    all_keys = None
-    frame_keys = None
-    queries = None
-    use = None
     cols = ["mAP", "S1", "P5", "uAP", "F1", "AUCn", "AUCf", "Qc", "mPc", "mRc"]
     print("%-52s " % "config" + " ".join("%-5s" % c for c in cols) + " cut")
     for c in configs:
-        keys = [tuple(k) for k in json.load(open(os.path.join(BENCH, "emb", c[0], "frames.json")))]
-        if keys != all_keys:
-            all_keys = keys
-            use = [i for i, k in enumerate(keys) if k in labels and (only is None or k[0] in only)]
-            frame_keys = [keys[i] for i in use]
-            queries = load_queries(frame_keys, labels, partial=only is not None)
-            n_pos = sum(1 for q in queries if not q[3])
-            print("# %d frames of %d videos, %d queries with a match, %d without" % (
-                len(frame_keys), len(set(k[0] for k in frame_keys)), n_pos, len(queries) - n_pos))
+        frame_keys, use, queries = frames_and_queries(c[0], labels, only)
         res, rows, S = run(c, queries, bank, frame_keys, use, want_rows=True)
         print("%-52s " % "|".join(c) + " ".join("%.3f" % res[k] for k in cols) + " %.3f" % res["cut"], flush=True)
         if "--perquery" in flags:

@@ -19,6 +19,8 @@ the public test sets (`esc50`, `flickr1k`).
 - `bank.txt`: words that could be about anything, for taking out what a frame scores for any words.
 - `eval.py CONFIG...`: scores each way of searching against the labels (the top of the file says
   how to write a config and what the numbers mean).
+- `clips.py CONFIG...`: the list the program would show for each search (clips made of the
+  frames' scores as `search.c` makes them, the weak ones left out), judged row by row.
 - `flickr.py MODEL...`: 1000 captioned photographs (Flickr30k's test split): whether each model
   finds a caption's photograph as often as its makers say, and pictures of other things for
   `eval.py` to set a search's scores against.
