@@ -8,7 +8,7 @@ its best frame.
 `THM_Thumbs` (thumbs.c), one, made in `_EntryPoint` and kept in
 `App_State.thumbs`.
 
-- `slots`: `THM_CAP` (256) thumbnails, each free, wanted, being decoded,
+- `slots`: `THM_CAP` (64: bgz's renderer holds 128 textures in all) thumbnails, each free, wanted, being decoded,
   decoded, ready (has its texture) or failed. A slot is found by a key made
   of the video's path and the second.
 - A thread of its own, which takes the wanted slot asked for last, opens the

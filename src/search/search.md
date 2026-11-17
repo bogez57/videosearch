@@ -44,8 +44,8 @@ through the sound model's text half (`EMB_SoundTextVector`), a dot product
 with every stretch of sound. So that clips found by picture and by sound can
 be in one list, a score is the model's own stretched over its band:
 `SRCH_PICTURE_LOW` to `SRCH_PICTURE_HIGH` (0.18 to 0.33) becomes 0 to 1, and
-`SRCH_SOUND_LOW` to `SRCH_SOUND_HIGH` likewise. The sound's band is a first
-guess, to be set from real videos.
+`SRCH_SOUND_LOW` to `SRCH_SOUND_HIGH` likewise. The sound's band (0.20 to
+0.55) is from a handful of test searches, and wants setting from more.
 
 Then, per video, the frames become clips: the best frame not yet in a clip
 starts one, which takes in its neighbours each side for as long as they

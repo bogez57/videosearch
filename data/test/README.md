@@ -6,8 +6,9 @@ program without anyone's own videos: `bin\videosearch.exe data\test`.
 - `testsrc_12s.mp4`: 12 s at 30 fps, 640x360. Should give 12 frames.
 - `mandelbrot_7s.mp4`: 7 s at 25 fps, 320x240. Should give 7 frames.
 - `sound_tone_silence_noise_15s.mp4`: a grey picture with 5 s of a steady
-  tone, 5 s of silence and 5 s of hiss. Should give 15 frames and 2
-  stretches of sound (the silence is left out).
+  tone, 5 s of silence and 5 s of hiss. Should give 15 frames and 3
+  stretches of sound (a truly silent stretch would be left out, but the
+  tone runs a few hundredths of a second into this one).
 - `broken.mp4`: not a video. Should count as one that could not be decoded.
 
 Made with:

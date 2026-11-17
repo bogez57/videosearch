@@ -16,7 +16,10 @@
 
 // How many are kept. The one asked for longest ago goes when another is
 // wanted.
-#define THM_CAP 256
+// bgz's renderer has room for 128 textures in all (sokol's default, which
+// render_sokol.c leaves as it is), the fonts' and the player's among them,
+// and making one too many stops the program: so well under that.
+#define THM_CAP 64
 
 typedef struct THM_Thumbs THM_Thumbs;
 

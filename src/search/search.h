@@ -26,11 +26,13 @@
 // band: CLIP's is about 0.18 when they have nothing to do with each other
 // and about 0.33 when they match well. A hit's score is that band stretched
 // so its low end is 0 and its high end 1 - CLIP's and the sound model's each
-// by its own, which is what makes the two comparable.
+// by its own, which is what makes the two comparable. The sound model's
+// band is from a handful of test searches (a tone scored 0.48 for "a beep",
+// sound that had nothing to do with the words up to about 0.4).
 #define SRCH_PICTURE_LOW  0.18f
 #define SRCH_PICTURE_HIGH 0.33f
-#define SRCH_SOUND_LOW    0.10f
-#define SRCH_SOUND_HIGH   0.50f
+#define SRCH_SOUND_LOW    0.20f
+#define SRCH_SOUND_HIGH   0.55f
 
 // How far below a clip's best frame its other frames may score, in the
 // model's own score.
