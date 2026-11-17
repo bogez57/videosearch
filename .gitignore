@@ -31,3 +31,6 @@
 # Models: downloaded, not kept in the repo (data/models/README.md says which)
 /data/models/*
 !/data/models/README.md
+
+# The bench scripts' Python cache
+/bench/__pycache__/

@@ -1,0 +1,19 @@
+# The tags a frame can be given in labels.tsv. Lower case, comma separated, a trailing ? for "not sure".
+# Give a frame every tag that is clearly true of what can be seen in it.
+# people
+person man woman child crowd two_people face_closeup soldier
+# what they are doing
+running walking standing sitting lying screaming crying smiling laughing singing dancing kissing hugging
+fighting shooting falling swimming crawling climbing riding flying looking_up talking_on_phone
+playing_guitar playing_piano
+# things
+gun helmet uniform microphone guitar piano car truck tank airplane helicopter boat bicycle
+horse cat dog monkey tiger bird elephant camel monster
+flag lamp carpet sword book phone treasure flowers barbed_wire corpse blood
+fire explosion smoke dust water
+# places
+trench battlefield field forest river sea desert mountain sky
+city_street skyline ruins interior tunnel cave palace market stage audience bridge subway theater church farmhouse
+night daylight sunset rain snow fog underwater
+# the shot
+title_text lyrics_text logo black_frame credits aerial_view wide_shot closeup
