@@ -3,7 +3,10 @@
 #   python sound.py embed MODEL [--cpu]     the vectors, kept in BENCH/emb/<MODEL>/sound_*.npy
 #   python sound.py esc MODEL               ESC-50: 2000 five-second clips of 50 kinds of sound
 #   python sound.py mix MODEL               ESC-50 sounds mixed into the test videos' own sound
-#   python sound.py words MODEL             which words the model's text half takes to be about sound
+#   python sound.py words MODEL [--all]     which words the model's text half takes to be about sound
+#                                           (--all: every search's number, for choosing where to cut)
+#   python sound.py band MODEL              where scores fall as the program scores sound: for sound
+#                                           that is there, sound that is not, and words about pictures
 #   python sound.py real MODEL              the test videos' own sound, searched for what the labels
 #                                           say can be seen where a sound goes with it (singing, ...)
 #
@@ -407,26 +410,95 @@ def mix(name, argv):
                       % (template, win, norm, *maps, *recalls[0], *recalls[1]))
 
 
-def words(name):
-    """Does the text half alone tell words about sound from words about what is seen?"""
-    m = SoundModel(name, True)
-    bank_s = read_lines(os.path.join(HERE, "bank_sound.txt"))
-    bank_v = read_lines(os.path.join(HERE, "bank.txt"))
-    qs = [l.split("\t")[0].strip() for l in read_lines(os.path.join(HERE, "queries.txt"))]
-    groups = {"sound (mixed-in kinds)": list(MIX.values()), "seen": SEEN, "picture queries": qs}
-    TS, TV = m.texts(bank_s), m.texts(bank_v)
+def _about_sound(m, texts):
+    """How much nearer words are to words about sound than to words about anything, to the model's
+    text half: the five nearest of each (not the very nearest, which may be the words themselves)."""
+    TS = m.texts(read_lines(os.path.join(HERE, "bank_sound.txt")))
+    TV = m.texts(read_lines(os.path.join(HERE, "bank.txt")))
     c = np.concatenate([TS, TV]).mean(0, keepdims=True)
     TSc, TVc = _unit(TS - c), _unit(TV - c)
+    T = _unit(m.texts(texts) - c)
+    a = np.sort(T @ TSc.T, axis=1)[:, -6:-1].mean(1)
+    b = np.sort(T @ TVc.T, axis=1)[:, -6:-1].mean(1)
+    return a - b
+
+
+def _picture_queries():
+    return [l.split("\t")[0].strip() for l in read_lines(os.path.join(HERE, "queries.txt"))]
+
+
+def words(name, everything=False):
+    """Does the text half alone tell words about sound from words about what is seen?"""
+    m = SoundModel(name, True)
+    groups = {"sound (mixed-in kinds)": list(MIX.values()), "sound (real)": [w for w, _ in REAL], "seen": SEEN,
+              "picture queries": _picture_queries()}
     for g, ws in groups.items():
-        T = _unit(m.texts(ws) - c)
-        a = np.sort(T @ TSc.T, axis=1)[:, -6:-1].mean(1)  # the five nearest sound words, not itself
-        b = np.sort(T @ TVc.T, axis=1)[:, -6:-1].mean(1)
-        sc = a - b
+        sc = _about_sound(m, ws)
         print("%s: n=%d  sound-nearness less picture-nearness: p10 %.2f p50 %.2f p90 %.2f" % (g, len(ws), *np.percentile(sc, [10, 50, 90])))
-        if g != "sound (mixed-in kinds)":
-            order = np.argsort(-sc)
+        order = np.argsort(-sc)
+        if everything:
+            for i in order:
+                print("   %+.3f  %s" % (sc[i], ws[i]))
+        elif not g.startswith("sound"):
             print("   most sound-like: " + "; ".join("%s %.2f" % (ws[i], sc[i]) for i in order[:12]))
             print("   least:           " + "; ".join("%s %.2f" % (ws[i], sc[i]) for i in order[-12:]))
+    print("share let through at each cut:")
+    scores = {g: _about_sound(m, ws) for g, ws in groups.items()}
+    for cut in (-0.20, -0.15, -0.12, -0.10, -0.08, -0.06, -0.04, -0.02, 0.0, 0.03):
+        print("   %+.2f  " % cut + "  ".join("%s %.2f" % (g, (sc >= cut).mean()) for g, sc in scores.items()))
+
+
+def band(name):
+    """Scores as the program makes them ("This is a sound of X.", less the sound bank's mean), for
+    setting the band in search.h: what a search with nothing to find scores at best, and what sound
+    that is there scores."""
+    d = os.path.join(BENCH, "emb", name)
+    m = SoundModel(name, True)
+    fmt = TEMPLATES["this_is"]
+    bank = m.texts([fmt.format(t) for t in read_lines(os.path.join(HERE, "bank_sound.txt"))]).mean(0, keepdims=True)
+    A = np.load(os.path.join(d, "sound_bg5.npy"))
+    at = json.load(open(os.path.join(d, "sound_bg.json")))
+    kinds = list(MIX)
+    meta = json.load(open(os.path.join(d, "sound_mix.json")))
+    y = np.array([kinds.index(x[0]) for x in meta])
+    pc = [5, 25, 50, 75, 95]
+
+    def q(texts):
+        return m.texts([fmt.format(t) for t in texts]) - bank
+
+    print(name, "- the band,", len(at), "stretches")
+    Q = q([MIX[k] for k in kinds])
+    bg = Q @ A.T
+    print("  sounds not in the videos (%d searches): every stretch p50 %.2f p95 %.2f p99 %.2f | a search's best: p5/25/50/75/95 %s max %.2f"
+          % (len(kinds), *np.percentile(bg, [50, 95, 99]), " ".join("%.2f" % v for v in np.percentile(bg.max(1), pc)), bg.max()))
+    for s in SNRS:
+        mx = Q @ np.load(os.path.join(d, "sound_mix5_%d.npy" % s)).T
+        pos = mx[y, np.arange(len(y))]
+        print("  the same sounds mixed in at %+d dB: p5/25/50/75/95 %s | share over its search's best without it: %.2f"
+              % (s, " ".join("%.2f" % v for v in np.percentile(pos, pc)), (pos > bg.max(1)[y]).mean()))
+
+    labels = load_labels()
+    R = q([w for w, _ in REAL]) @ A.T
+    for qi, (w, expr) in enumerate(REAL):
+        code = compile(expr, "<real>", "eval")
+        rel = np.zeros(len(at), bool)
+        for i, (v, t) in enumerate(at):
+            rel[i] = any(matches(code, *labels[(v, t + k)])[0] for k in range(5) if (v, t + k) in labels)
+        if rel.any():
+            print("  %-22s there (n=%d): p25/50/75 %s max %.2f | not there: p50 %.2f p95 %.2f max %.2f"
+                  % (w, rel.sum(), " ".join("%.2f" % v for v in np.percentile(R[qi][rel], [25, 50, 75])), R[qi][rel].max(),
+                     *np.percentile(R[qi][~rel], [50, 95]), R[qi][~rel].max()))
+
+    for g, ws in (("seen", SEEN), ("picture queries", _picture_queries())):
+        best = (q(ws) @ A.T).max(1)
+        about = _about_sound(m, ws)
+        print("  %s (%d): a search's best p5/25/50/75/95 %s max %.2f" % (g, len(ws), " ".join("%.2f" % v for v in np.percentile(best, pc)), best.max()))
+        for cut in (-0.12, -0.08, -0.04, 0.0):
+            keep = about >= cut
+            if keep.any():
+                print("     let through at %+.2f: %d, their best p50 %.2f p95 %.2f max %.2f" % (cut, keep.sum(), *np.percentile(best[keep], [50, 95]), best[keep].max()))
+        order = np.argsort(-best)[:15]
+        print("     highest: " + "; ".join("%s %.2f (%+.2f)" % (ws[i], best[i], about[i]) for i in order))
 
 
 # Sounds that go with something the labels say can be seen: words, the frames' tags.
@@ -487,7 +559,9 @@ def main():
     elif cmd == "mix":
         mix(name, sys.argv[3:])
     elif cmd == "words":
-        words(name)
+        words(name, "--all" in sys.argv)
+    elif cmd == "band":
+        band(name)
     elif cmd == "real":
         real(name)
 
