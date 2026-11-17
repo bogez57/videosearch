@@ -1,0 +1,779 @@
+# What is in each frame of the test videos: video <tab> second <tab> tags <tab> a line of description.
+# Tags as in tags.txt, a trailing ? for "not sure". How they were given: LABELING.md.
+v0	0	black_frame	An all black frame.
+v0	1	title_text,logo	Green MPAA rating card: "The following preview has been approved for appropriate audiences".
+v0	2	title_text,logo	Green MPAA rating card: "The following preview has been approved for appropriate audiences".
+v0	3	title_text,logo	Green MPAA rating card: "The following preview has been approved for appropriate audiences".
+v0	4	title_text,logo	Green MPAA rating card: "The following preview has been approved for appropriate audiences".
+v0	5	title_text,logo	Green MPAA rating card: "The following preview has been approved for appropriate audiences".
+v0	6	black_frame	An all black frame.
+v0	7	black_frame	An all black frame.
+v0	8	logo	Universal studio logo: the word UNIVERSAL over the Earth in starry space.
+v0	9	logo,sky	DreamWorks SKG logo: the word DREAMWORKS among white clouds in a blue sky.
+v0	10	logo,city_street?,night	New Republic Pictures logo: a small city skyline at night with searchlights, on black.
+v0	11	black_frame,soldier?	A nearly black frame, a faint dark silhouette at right.
+v0	12	person,soldier,helmet,interior,tunnel	Silhouette of a soldier in a helmet from behind in a dim wooden dugout passage.
+v0	13	person,soldier,helmet,interior,tunnel	Silhouette of a helmeted soldier from behind walking down a dim wooden dugout passage.
+v0	14	person,soldier,helmet,interior,tunnel	Silhouette of a helmeted soldier from behind walking down a dim wooden dugout passage.
+v0	15	person,soldier,helmet,interior,tunnel	Silhouette of a helmeted soldier from behind walking down a dim wooden dugout passage.
+v0	16	person,soldier,helmet,interior,tunnel	Silhouette of a helmeted soldier from behind in a lit wooden dugout passage.
+v0	17	person,soldier,helmet,interior,tunnel	Silhouette of a helmeted soldier from behind going toward lit wooden steps in a dugout.
+v0	18	person,soldier,helmet,interior,tunnel	Silhouette of a helmeted soldier at the foot of wooden steps in a lit dugout.
+v0	19	person,soldier,helmet,interior,tunnel	Silhouette of a helmeted soldier at the foot of wooden steps in a lit dugout.
+v0	20	person,soldier,helmet,interior,tunnel	Silhouette of a helmeted soldier holding something up in a chalk-walled dugout passage.
+v0	21	interior,tunnel,person?	Very dark dugout passage with a dark figure, light catching a wooden beam at right.
+v0	22	interior,tunnel	Very dark dugout passage, light catching a wooden beam at right.
+v0	23	interior,tunnel,soldier?,helmet?	Very dark dugout passage, a faint helmeted silhouette at top right.
+v0	24	interior,soldier?,helmet?	Nearly black dugout with a faint helmeted silhouette and bunk beds.
+v0	25	person,soldier,helmet,interior,two_people	Two helmeted soldiers in silhouette in a dark dugout dormitory with metal bunk beds and a candle.
+v0	26	person,soldier,helmet,interior,two_people	Helmeted soldiers in silhouette among metal bunk beds in a dark timbered dugout.
+v0	27	person,soldier,helmet,interior,two_people	Helmeted soldiers in silhouette among metal bunk beds in a dark timbered dugout.
+v0	28	person,soldier?,interior	Dark timbered dugout with metal bunk beds and a dark figure in the foreground.
+v0	29	person,soldier,helmet,interior	A soldier in silhouette among metal bunk beds in a dark dugout.
+v0	30	person,soldier,helmet,interior	Helmeted soldiers in silhouette among metal bunk beds lit by a candle in a dugout.
+v0	31	person,man,soldier,helmet,interior,uniform	A young soldier in a helmet beside a bunk bed lit by a candle in a dark dugout.
+v0	32	person,man,soldier,helmet,interior,uniform	A young soldier in a helmet looks down beside a candlelit bunk bed in a dark dugout.
+v0	33	person,man,soldier,helmet,interior,uniform	A young soldier in a helmet looks down beside a candlelit bunk bed in a dark dugout.
+v0	34	person,man,soldier,helmet,interior,uniform	A young soldier looks down by a candlelit bunk bed, another soldier silhouetted behind.
+v0	35	person,man,soldier,helmet,interior,uniform	A young soldier looks down by a candlelit bunk bed, another soldier silhouetted behind.
+v0	36	smoke?,fog?	A blurred brownish yellow haze filling the frame.
+v0	37	title_text	"FROM SAM MENDES" in large gold letters on black.
+v0	38	title_text	"FROM SAM MENDES" in large gold letters on black.
+v0	39	title_text	"FROM SAM MENDES" in large gold letters on black.
+v0	40	black_frame	An all black frame.
+v0	41	black_frame	An all black frame.
+v0	42	black_frame	An all black frame.
+v0	43	person,soldier,helmet,interior,two_people?	Two helmeted soldiers in a dark dugout, one reading a paper by a lamp's glow.
+v0	44	black_frame	An all black frame.
+v0	45	person,soldier,helmet,interior,tunnel	Silhouette of a helmeted soldier against bright light at the end of a dark dugout passage.
+v0	46	title_text	"THE DIRECTOR OF SKYFALL" in large grey letters on black.
+v0	47	black_frame	An all black frame.
+v0	48	person,man,soldier,uniform,interior,helmet	A general in uniform with a belt stands among helmeted soldiers in a dim candlelit dugout.
+v0	49	person,man,soldier,uniform,interior,helmet,two_people	Two young soldiers in helmets and uniform stand side by side in a dim candlelit dugout.
+v0	50	person,man,soldier,uniform,interior,helmet,two_people	Two young soldiers in helmets and uniform stand side by side in a dim candlelit dugout.
+v0	51	person,man,soldier,uniform,interior,helmet	A general in uniform with a belt stands among helmeted soldiers in a dim candlelit dugout.
+v0	52	person,man,soldier,uniform,interior,helmet	A general in uniform with a belt stands among helmeted soldiers in a dim candlelit dugout.
+v0	53	black_frame,forest?	A nearly black frame, faint trees.
+v0	54	person,man,soldier,helmet,uniform,crowd,forest,sitting,gun,daylight	Many soldiers in helmets sit with rifles in a forest, one young soldier in front.
+v0	55	person,man,soldier,helmet,uniform,crowd,forest,sitting,gun,daylight	Many soldiers in helmets sit with rifles in a forest, one young soldier in front.
+v0	56	person,man,soldier,helmet,uniform,crowd,forest,sitting,gun,daylight	Many soldiers in helmets sit with rifles in a forest, one young soldier in front.
+v0	57	person,soldier,helmet,crowd,forest,sitting	Dim shot of many soldiers sitting in a forest.
+v0	58	person,man,soldier,uniform,interior,helmet,two_people	Two young soldiers in helmets stand in a very dim candlelit dugout.
+v0	59	person,man,soldier,uniform,interior,helmet,two_people	Two young soldiers in helmets stand in a dim candlelit dugout.
+v0	60	person,man,soldier,uniform,interior,helmet,two_people	Two young soldiers in helmets stand in a dim candlelit dugout.
+v0	61	person,man,soldier,helmet,uniform,trench,gun,crowd?,daylight,walking	Soldiers with rifles and packs push along a crowded sandbagged trench, a ruined building beyond.
+v0	62	person,man,soldier,helmet,uniform,trench,gun,crowd?,daylight,walking	Soldiers with rifles and packs push along a crowded sandbagged trench, a ruined building beyond.
+v0	63	person,man,soldier,uniform,trench,lying,blood,daylight	A wounded soldier with a bloody bandaged head lies in a muddy trench as soldiers pass.
+v0	64	person,soldier,uniform,trench,lying,blood,daylight	A wounded soldier with a bloody bandage lies in a trench with wicker walls, soldiers passing.
+v0	65	person,man,soldier,helmet,uniform,trench,walking,daylight	A young soldier in a helmet walks along a trench with wicker and sandbag walls.
+v0	66	person,man,soldier,helmet,uniform,trench,daylight	A young soldier in a helmet looks back in a sandbagged trench.
+v0	67	person,man,soldier,uniform,interior,helmet,two_people	Two young soldiers in helmets stand in a dim candlelit dugout.
+v0	68	person,man,soldier,uniform,interior,helmet,two_people	Two young soldiers in helmets stand in a dim candlelit dugout.
+v0	69	title_text,soldier,gun,battlefield	The word "TIME" in giant letters on black, soldiers with rifles seen through them.
+v0	70	title_text,soldier,helmet,fire?	The word "TIME" in giant letters on black, a helmeted soldier and flames seen through them.
+v0	71	title_text,soldier,trench	The word "TIME" filling the frame, soldiers climbing a chalky trench seen through it.
+v0	72	person,soldier,helmet,uniform,gun,climbing,trench,smoke,explosion?,daylight,crowd?	Soldiers with rifles climb out over a white chalk trench slope as smoke rises.
+v0	73	person,soldier,helmet,uniform,walking,farmhouse,daylight,smoke	Two soldiers with packs walk toward a farmhouse across open ground, smoke in the distance.
+v0	74	person,soldier,helmet,uniform,climbing,bridge,daylight	A soldier with a pack climbs across the steel girders of a wrecked bridge.
+v0	75	person,man,soldier,helmet,uniform,gun,shooting,daylight,ruins	A soldier aims his rifle from behind a wall at a ruined stone building.
+v0	76	title_text,soldier,helmet	The word "IS" in giant letters on black, a helmeted soldier seen through them.
+v0	77	title_text,soldier,trench	The word "IS" in giant letters on black, a soldier by sandbags seen through them.
+v0	78	title_text,soldier,helmet,trench,crowd?	The word "IS" in giant letters on black, a line of soldiers in a trench seen through them.
+v0	79	title_text,soldier,helmet,trench	The word "IS" filling the frame, soldiers in a chalky trench seen through it.
+v0	80	person,soldier,uniform,lying,corpse,water,river,daylight,crawling?	A soldier crawls out of a river over the bodies of dead soldiers by a fallen tree.
+v0	81	person,soldier,uniform,lying,corpse,water,river,daylight	Water splashes over a fallen tree onto bodies of dead soldiers lying in a river.
+v0	82	person,soldier,helmet,uniform,trench,barbed_wire,daylight,climbing?	Soldiers grip hands among broken wood and barbed wire at a trench edge.
+v0	83	person,soldier?,interior,night?,gun?	Very dark scene, a man's face lit orange beside a glowing rifle barrel.
+v0	84	title_text	The word "THE" in giant letters on black, a grey scene seen through them.
+v0	85	title_text	The word "THE" in giant letters on black, a grey scene seen through them.
+v0	86	title_text,soldier,man	The word "THE" filling the frame, a soldier's face seen through the letters.
+v0	87	person,man,soldier,helmet,uniform,face_closeup?,closeup,trench	An officer with a moustache in a helmet and uniform speaks in a trench.
+v0	88	title_text,soldier,field,battlefield,running	The word "ENEMY" in giant letters on black, soldiers running across a green field seen through them.
+v0	89	title_text,soldier,field,battlefield,running	The word "ENEMY" in giant letters on black, soldiers running across a green field seen through them.
+v0	90	title_text,soldier,field,battlefield,running	The word "ENEMY" in giant letters on black, soldiers running across a green field seen through them.
+v0	91	title_text,soldier,field,battlefield,running	The letters "NEM" filling the frame, soldiers running across a green field seen through them.
+v0	92	person,soldier,uniform,running,explosion,smoke,field,battlefield,daylight,crowd,wide_shot	Soldiers run across a green field as a shell explodes behind them in a burst of black smoke.
+v0	93	person,soldier,uniform,running,explosion,smoke,field,battlefield,daylight,crowd,wide_shot	A soldier runs toward the camera across a field as a huge explosion of black smoke rises behind.
+v0	94	person,soldier,uniform,running,explosion,smoke,field,battlefield,daylight,crowd	A soldier runs across a battlefield field in front of a towering cloud of dark smoke.
+v0	95	person,soldier,uniform,running,explosion,smoke,field,battlefield,daylight	A soldier runs across a battlefield past other soldiers, black smoke behind, edges of a letter mask.
+v0	96	person,soldier,uniform,running,smoke,field,battlefield,daylight,title_text?	A soldier runs across a green field past smoke, seen through a tall letter shape on black.
+v0	97	person,soldier,uniform,running,field,battlefield,daylight,title_text?	A soldier runs across a green field, seen through a tall letter shape on black.
+v0	98	person,soldier,helmet,uniform,running,field,battlefield,daylight,title_text	Soldiers run across a field, seen through the shapes of giant numbers on black.
+v0	99	person,soldier,uniform,running,explosion,smoke,field,battlefield,daylight,title_text	A soldier runs across a field past an explosion, seen through giant number shapes on black.
+v0	100	title_text,soldier,running,field,battlefield,smoke	The numbers "1917" in giant shapes on black, a soldier running through smoke on a field inside them.
+v0	101	title_text,soldier?,fog	"1917" in giant pale letters filling the frame, a misty scene inside them.
+v0	102	title_text,soldier,fog	"1917" in giant pale letters filling the frame, a soldier faint in the mist inside them.
+v0	103	title_text,soldier,fog	"1917" in giant pale letters, a soldier walking in mist inside them.
+v0	104	title_text	"1917" in large gold and grey lettering on black.
+v0	105	title_text	"1917" in large gold and grey lettering on black.
+v0	106	title_text	"1917" in large gold and grey lettering on black.
+v0	107	title_text	"1917" in large gold and grey lettering on black.
+v0	108	black_frame,interior?	A nearly black frame of a dark room with faint figures.
+v0	109	person,soldier,interior,sitting?,crowd?	An officer at a candlelit table in a dark dugout, soldiers standing behind.
+v0	110	person,soldier,interior,sitting?	An officer writes at a candlelit table in a dark dugout, soldiers standing behind.
+v0	111	person,man,soldier,uniform,interior,helmet,two_people	Two young soldiers in helmets stand in a dim candlelit dugout.
+v0	112	person,man,soldier,uniform,interior,helmet,two_people	Two young soldiers in helmets stand in a dim candlelit dugout.
+v0	113	person,man,soldier,uniform,interior,helmet,two_people	Two young soldiers in helmets in a dim dugout, a blurred hand moving across the frame.
+v0	114	title_text	"DECEMBER" in large gold letters on black.
+v0	115	title_text	"DECEMBER" in large gold letters on black.
+v0	116	title_text,credits	"WRITTEN BY SAM MENDES & KRYSTY WILSON-CAIRNS" in large letters on black.
+v0	117	title_text,credits,logo	"DIRECTED BY SAM MENDES" and "www.1917.movie" on black, small studio logos and credits below.
+v0	118	title_text,credits,logo	"DIRECTED BY SAM MENDES" and "www.1917.movie" on black, small studio logos and credits below.
+v0	119	black_frame	An all black frame.
+v1	0	black_frame	An all black frame.
+v1	1	title_text,logo	Green MPAA rating card: "The following preview has been approved for appropriate audiences".
+v1	2	title_text,logo	Green MPAA rating card: "The following preview has been approved for appropriate audiences".
+v1	3	title_text,logo	Green MPAA rating card: "The following preview has been approved for appropriate audiences".
+v1	4	title_text,logo	Green MPAA rating card: "The following preview has been approved for appropriate audiences".
+v1	5	title_text,logo	Green MPAA rating card: "The following preview has been approved for appropriate audiences".
+v1	6	black_frame	An all black frame.
+v1	7	person,man,soldier,uniform,sitting,lying,helmet,field,flowers,daylight	Two young soldiers rest against a tree in a field of yellow flowers, one lying back, an officer standing over them.
+v1	8	person,man,soldier,uniform,sitting,lying,helmet,field,flowers,daylight	Two young soldiers rest against a tree in a field of yellow flowers, one with a helmet over his face.
+v1	9	person,man,soldier,uniform,sitting,lying,helmet,field,flowers,daylight	Two young soldiers rest against a tree in a field of yellow flowers, an officer's legs beside them.
+v1	10	person,man,soldier,uniform,sitting,lying,helmet,field,flowers,daylight	Two young soldiers rest against a tree in a field of yellow flowers, an officer's legs beside them.
+v1	11	person,man,soldier,uniform,sitting,lying,field,flowers,daylight	Two young soldiers rest against a tree in a field of yellow flowers, one rubbing his face.
+v1	12	person,man,soldier,helmet,uniform,standing,field,ruins,smoke,daylight	A soldier with a pack stands looking over a green field at ruined walls, smoke in the distance.
+v1	13	person,man,soldier,helmet,uniform,standing,field,ruins,smoke,daylight	A soldier with a pack stands looking over a green field at ruined walls, smoke in the distance.
+v1	14	person,man,soldier,helmet,uniform,standing,field,ruins,smoke,daylight	A soldier with a pack stands looking over a green field at ruined walls, smoke in the distance.
+v1	15	person,man,soldier,helmet,uniform,two_people,ruins,farmhouse,water,daylight	Two helmeted soldiers at a doorway in a stone ruin, a farmhouse and flooded field beyond.
+v1	16	person,man,soldier,helmet,uniform,two_people,ruins,farmhouse,water,daylight	Two helmeted soldiers at a doorway in a stone ruin, a farmhouse and flooded field beyond.
+v1	17	person,soldier,helmet,uniform,ruins,farmhouse,water,daylight	Soldiers pass through a doorway in a stone ruin toward a farmhouse by water.
+v1	18	person,soldier,helmet,uniform,ruins,farmhouse,daylight	A soldier steps through a doorway in a stone ruin toward a farmhouse.
+v1	19	person,soldier,helmet,uniform,ruins,farmhouse,daylight	Soldiers seen from behind going through a dark doorway in a stone ruin toward a farmhouse.
+v1	20	person,man,soldier,helmet,uniform,closeup,trench	An officer with a moustache in a helmet and uniform speaks in a trench.
+v1	21	logo	Universal studio logo: the word UNIVERSAL over the Earth in starry space.
+v1	22	logo,sky	DreamWorks logo: the word DREAMWORKS among clouds, Universal fading out.
+v1	23	logo,night	New Republic Pictures logo: a small city skyline at night with searchlights, on black.
+v1	24	black_frame	A nearly black frame.
+v1	25	person,man,soldier,uniform,interior,helmet	A general in uniform with a belt stands among helmeted soldiers in a dim candlelit dugout.
+v1	26	person,man,soldier,helmet,uniform,trench,lying,blood,crowd?,daylight	Soldiers stand in a sandbagged trench beside a wounded soldier lying on a stretcher.
+v1	27	person,man,soldier,uniform,trench,lying,blood,daylight	A wounded soldier with a bloody bandaged head lies in a muddy trench as soldiers pass.
+v1	28	person,man,soldier,uniform,interior,helmet,two_people	Two young soldiers in helmets stand in a dim candlelit dugout.
+v1	29	person,man,soldier,helmet,uniform,crowd,walking,trench,field,daylight,gun	A column of soldiers with packs and rifles files along a white chalk trench across green fields.
+v1	30	person,man,soldier,helmet,uniform,crowd,walking,trench,field,daylight,gun	A column of soldiers with packs and rifles files along a white chalk trench across green fields.
+v1	31	person,soldier,helmet,uniform,crowd,walking,trench,field,daylight,gun,wide_shot	A long column of soldiers files along a winding white chalk trench across green fields.
+v1	32	person,soldier,helmet,uniform,crowd,walking,trench,field,daylight,gun,wide_shot	A long column of soldiers files along a winding white chalk trench across green fields.
+v1	33	person,soldier,helmet,uniform,crowd,walking,trench,field,gun,wide_shot	A long column of soldiers in a winding chalk trench, the picture darkening.
+v1	34	black_frame,soldier?	A nearly black frame, faint figures.
+v1	35	person,man,soldier,helmet,uniform,crowd,forest,sitting,gun,daylight	Many soldiers in helmets sit with rifles in a forest, one young soldier in front.
+v1	36	person,man,soldier,helmet,uniform,crowd,forest,sitting,gun,daylight	Many soldiers in helmets sit with rifles in a forest, one young soldier in front.
+v1	37	person,man,soldier,helmet,uniform,crowd,forest,sitting,gun,daylight	Many soldiers in helmets sit with rifles in a forest, one young soldier in front.
+v1	38	person,man,soldier,uniform,interior,helmet,two_people	Two young soldiers in helmets stand in a dim candlelit dugout.
+v1	39	person,man,soldier,uniform,interior	A general in uniform leans over a candlelit table in a dark dugout, an officer behind.
+v1	40	person,man,soldier,uniform,interior	A general in uniform leans over a candlelit table in a dark dugout, an officer behind.
+v1	41	person,man,soldier,uniform,interior,helmet,two_people	Two young soldiers in helmets stand in a dim candlelit dugout.
+v1	42	person,man,soldier,uniform,interior,helmet,two_people	Two young soldiers in helmets stand in a dim candlelit dugout.
+v1	43	person,man,soldier,uniform,interior,helmet,two_people	Two young soldiers in helmets stand in a dim candlelit dugout.
+v1	44	person,man,soldier,helmet,uniform,trench,two_people,daylight	Two young soldiers in helmets crouch at a trench wall, one talking urgently.
+v1	45	person,man,soldier,helmet,uniform,trench,two_people,daylight	Two young soldiers in helmets crouch at a trench wall, heads down.
+v1	46	person,soldier,helmet,uniform,battlefield,barbed_wire,mud,water,daylight,running?,two_people	Two soldiers scramble across a muddy no man's land full of barbed wire and puddles.
+v1	47	barbed_wire,battlefield,daylight	A close blur of barbed wire and broken posts on a battlefield.
+v1	48	person,soldier,helmet,barbed_wire,battlefield,crawling?,daylight	A soldier crawls through tangled barbed wire on a grey battlefield.
+v1	49	person,man,soldier,uniform,interior,gun	A soldier sits in a dark dugout among standing soldiers with rifles.
+v1	50	person,man,soldier,uniform,interior,gun	A soldier sits in a dark dugout among standing soldiers with rifles, one gesturing.
+v1	51	person,man,soldier,helmet,uniform,trench,gun,daylight,crowd?	An older soldier in a helmet with a pistol in a white chalk trench, soldiers climbing out behind.
+v1	52	black_frame	An all black frame.
+v1	53	person?,soldier,battlefield,daylight	A soldier's back at right looking over a white chalky battlefield with a bare tree.
+v1	54	battlefield,daylight,wide_shot,ruins?	A white chalky battlefield strewn with piles of shell cases and debris, a bare tree beyond.
+v1	55	person,man,soldier,helmet,uniform,trench,daylight	A soldier in a helmet hurries along a narrow trench with wicker walls.
+v1	56	person,soldier,barbed_wire,trench,daylight,wide_shot,running?	Two small soldiers cross the top of a sandbagged trench under coils of barbed wire.
+v1	57	person,soldier,helmet,uniform,trench,gun,shooting,daylight	A soldier fires his rifle in a sandbagged trench, another soldier in the foreground.
+v1	58	person,man,soldier,helmet,uniform,trench,gun,daylight	A young soldier with a rifle and bayonet in a sandbagged trench.
+v1	59	person,man,soldier,helmet,uniform,trench,screaming,daylight	A young soldier in a helmet shouts with his mouth wide open in a narrow trench, soldiers behind.
+v1	60	person,man,soldier,helmet,uniform,trench,gun,daylight,two_people	Two soldiers with rifles move through a sandbagged trench by a dugout door with a sign.
+v1	61	person,man,soldier,helmet,uniform,trench,gun,daylight	A soldier with a rifle and bayonet moves along a sandbagged trench by a dugout door.
+v1	62	person,man,soldier,helmet,uniform,trench,gun,daylight	A soldier with a rifle and bayonet moves along a sandbagged trench by a dugout door.
+v1	63	person,man,soldier,helmet,uniform,trench,gun,daylight	A soldier with a rifle crouches at a dugout door in a sandbagged trench.
+v1	64	person,man,soldier,helmet,uniform,trench,gun,daylight	A young soldier with a rifle goes into a dark dugout doorway in a sandbagged trench.
+v1	65	person,man,soldier,helmet,uniform,trench,daylight	A young soldier in a helmet goes into a dark dugout doorway.
+v1	66	person,soldier,trench,tunnel	A soldier's back disappearing into a dark dugout doorway.
+v1	67	black_frame,title_text	A nearly black frame with a very faint title "SKYFALL".
+v1	68	title_text	"FROM THE DIRECTOR OF SKYFALL" in gold letters on black.
+v1	69	title_text	"FROM THE DIRECTOR OF SKYFALL" in gold letters on black.
+v1	70	person,soldier,helmet,interior,tunnel,gun?	Silhouette of a helmeted soldier holding something up in a lit chalk-walled dugout passage.
+v1	71	interior,tunnel,person?	Very dark dugout passage with a dark figure, light catching a wooden beam at right.
+v1	72	interior,tunnel	Very dark dugout passage, light catching a wooden beam at right.
+v1	73	person,soldier,uniform,interior,field,daylight	Through a dark open window a soldier stands on a muddy field outside.
+v1	74	person,soldier,uniform,interior,field	Through a dark open window a soldier stands on a field outside, the room darkening.
+v1	75	person,soldier,interior,climbing?,fighting?	Dark stairwell with a soldier on the stairs, another figure above.
+v1	76	person,soldier,interior,fighting?	Dark stairwell with an arched window, a soldier struggling with a figure on the stairs.
+v1	77	person,soldier,helmet,interior	A soldier in a helmet in a dark room by a window.
+v1	78	person,soldier,helmet,interior,gun	A helmeted soldier with a rifle in a dark room, another soldier visible through the window.
+v1	79	person,soldier,interior,falling,fighting?	Two men grapple and tumble down a dark staircase.
+v1	80	black_frame,person?	A nearly black frame, a faint figure at left.
+v1	81	person,soldier,helmet,uniform,gun,field,airplane,smoke,daylight	A soldier with a rifle watches from a barn door as a plane trails smoke over a field, another soldier beyond.
+v1	82	person,soldier,helmet,uniform,gun,field,airplane,smoke,daylight	A soldier watches from a barn door as a biplane trailing smoke comes down toward a field.
+v1	83	person,soldier,helmet,uniform,gun,field,airplane,smoke,daylight	A soldier watches from a barn door as a smoking biplane comes down over a field.
+v1	84	person,soldier,helmet,uniform,gun,field,airplane,smoke,daylight	A soldier watches from a barn door as a smoking biplane flies low over a field, another soldier there.
+v1	85	person,soldier,helmet,uniform,gun,field,airplane,smoke,daylight,running	A soldier with a rifle runs out of a barn as a smoking biplane comes in low over a field.
+v1	86	person,soldier,helmet,uniform,gun,field,airplane,running,daylight	A soldier with a bayoneted rifle runs out of a barn, a biplane and another soldier behind.
+v1	87	person,soldier,helmet,uniform,running,fire?,daylight	A soldier runs through a wooden barn gate.
+v1	88	black_frame	An all black frame.
+v1	89	person,man,soldier,uniform,two_people,trench	A young soldier with head bowed faces an officer in a dark sandbagged trench.
+v1	90	person,man,soldier,uniform,two_people,trench	A young soldier with head bowed faces an officer in a dark sandbagged trench.
+v1	91	person,man,soldier,helmet,uniform,two_people,daylight	One soldier helps another up by the hand in a white chalk quarry.
+v1	92	person,man,soldier,helmet,uniform,two_people,hugging?,daylight	One soldier holds another up in a white chalk quarry.
+v1	93	person,soldier,helmet,uniform,water,river,smoke,daylight,ruins	A soldier with a pack and rifle crouches by a stone wall over a river, black smoke rising beyond.
+v1	94	person,man,soldier,uniform,gun,running,ruins,city_street,night	A soldier with a rifle runs along a street of bombed ruins at night.
+v1	95	person,soldier,gun,ruins,night,city_street,fire?	A soldier with a rifle against a wall in a ruined street lit orange by fire.
+v1	96	person,soldier,interior,ruins,night	A dark ruined room, a soldier standing at right.
+v1	97	person?,interior,explosion?,smoke,fire?	A dark doorway and a burst of light and smoke as a figure moves.
+v1	98	smoke,dust	Brownish smoke and dust filling the frame.
+v1	99	person?,smoke,dust,ruins	Dust and rubble with a faint figure in brown smoky light.
+v1	100	person,soldier,gun,running,ruins,church?,sunset?,smoke	A soldier with a rifle runs through stone arches toward a cross, lit gold through smoke.
+v1	101	person,man,soldier,helmet,uniform,crawling,lying,battlefield,two_people,daylight	Two helmeted soldiers crawl on their bellies across muddy ground.
+v1	102	person,soldier,bird,corpse,water,battlefield,daylight,lying	A crow on a body lying in a muddy pool, two soldiers crossing the slope beyond.
+v1	103	person,soldier,water,river,bridge,walking	A soldier's legs balancing along the rail of a wrecked bridge over dark water.
+v1	104	person,soldier,uniform,climbing,bridge,water,river,daylight	A soldier climbs through the wrecked girders of a bridge in a river.
+v1	105	person,man,soldier,helmet,uniform,gun,shooting,daylight,ruins	A soldier aims his rifle from behind a wall at a ruined stone building.
+v1	106	person,soldier,helmet,uniform,walking,farmhouse,water,daylight,two_people	Two soldiers with packs walk past floodwater toward a farmhouse.
+v1	107	person,soldier,interior,fire,smoke,night?	Silhouette of a soldier in a smoky orange room lit by flames.
+v1	108	person,soldier,ruins,night,fire,city_street?	A town of ruins silhouetted at night against fires, a soldier in the dark.
+v1	109	person,soldier,running,ruins,night,fire	A soldier leaps across ruins at night, a fire glowing below.
+v1	110	water,river	Rushing white water of a river, blue tinted.
+v1	111	person,man,soldier,helmet,uniform,battlefield,daylight	A young soldier in a helmet crouches and looks up across a battlefield.
+v1	112	person,man,soldier,helmet,uniform,trench,battlefield,daylight	A young soldier in a helmet crouches by sandbags looking out, another soldier behind.
+v1	113	person,soldier,gun,interior,fire?	Soldiers with rifles in a dark room lit orange by firelight.
+v1	114	person,soldier,woman?,interior,sitting,fire?	A soldier and a woman crouch by firelight in a dark cellar.
+v1	115	person,man,soldier,helmet,interior	A soldier in a dark barn, a figure in silhouette in front.
+v1	116	person,soldier,helmet,battlefield,barbed_wire,running,two_people,daylight,wide_shot	Two soldiers run across a churned battlefield with barbed wire stakes.
+v1	117	person,man,soldier,helmet,uniform,gun,battlefield,crawling?,two_people,daylight	Two young soldiers crouch low with rifles on a battlefield, one looking ahead.
+v1	118	fire,airplane	Flames sweep over the metal of a burning airplane.
+v1	119	person,soldier,helmet,airplane,fire	A soldier pulls a pilot from the cockpit of a burning airplane in a barn.
+v1	120	person,soldier,fire,night,ruins,church?,smoke	Silhouette of a soldier facing a burning building and a stone cross, a small figure in the flames beyond.
+v1	121	person,soldier,fire,night,ruins,church?,smoke	Silhouette of a soldier facing a burning building and a stone cross, a small figure in the flames beyond.
+v1	122	person,man,soldier,helmet,uniform,interior,screaming,gun?	A soldier in a helmet shouts with his mouth open in a dark dugout, lit from below.
+v1	123	person,man,soldier,uniform,running,dust,smoke,fog	A young soldier runs toward the camera through bright hazy dust.
+v1	124	person,soldier,helmet,uniform,barbed_wire,trench,gun,daylight,climbing	A soldier with a rifle reaches out a hand among barbed wire and broken wood at a trench edge.
+v1	125	person,soldier,helmet,uniform,trench,gun,climbing,daylight	A soldier climbs up a sandbagged trench wall with his rifle, another soldier crouched below.
+v1	126	person,man,soldier,uniform,trench,gun,climbing,daylight,crowd	A young soldier scrambles up out of a white chalk trench full of soldiers.
+v1	127	person,man,soldier,uniform,trench,gun,climbing,daylight,crowd	A young soldier scrambles up out of a white chalk trench full of soldiers, looking ahead.
+v1	128	black_frame	An all black frame.
+v1	129	person,man,soldier,uniform,interior,helmet	A very dim dugout, a general standing among helmeted soldiers.
+v1	130	person,man,soldier,uniform,interior,helmet	A general in uniform with a belt stands among helmeted soldiers in a dim candlelit dugout.
+v1	131	person,man,soldier,uniform,interior,helmet,two_people	Two young soldiers in helmets stand in a dim candlelit dugout.
+v1	132	person,man,soldier,uniform,interior,helmet,two_people	Two young soldiers in helmets stand in a dim candlelit dugout.
+v1	133	person,man,soldier,uniform,interior,helmet,two_people	Two young soldiers in helmets in a dim dugout, a blurred hand moving across the frame.
+v1	134	person,soldier,helmet,uniform,running,explosion,smoke,field,battlefield,daylight,crowd	Soldiers run across a green field as a shell bursts into black smoke behind them.
+v1	135	person,soldier,uniform,running,explosion,smoke,field,battlefield,daylight,crowd,wide_shot	Soldiers run across a green field as a shell explodes in a burst of black smoke and fire.
+v1	136	person,soldier,uniform,running,explosion,smoke,field,battlefield,daylight,crowd,wide_shot	A soldier runs toward the camera across a field as explosions of smoke rise behind.
+v1	137	person,soldier,uniform,running,explosion,smoke,field,battlefield,daylight,crowd,wide_shot	A soldier runs toward the camera across a field through clouds of smoke from explosions.
+v1	138	person,soldier,uniform,running,explosion,smoke,field,battlefield,daylight,crowd,fire	A soldier runs across a field past an explosion with sparks and black smoke.
+v1	139	person,soldier,uniform,running,explosion,smoke,field,battlefield,daylight	A soldier runs across a battlefield in front of a towering cloud of black smoke.
+v1	140	person,soldier,helmet,uniform,running,explosion,smoke,field,battlefield,daylight,crowd	A soldier runs across a field as shells explode, other soldiers running beside him.
+v1	141	person,soldier,helmet,uniform,running,explosion,smoke,field,battlefield,daylight,crowd	A soldier runs across a field past a shell burst, a blurred soldier crossing in front.
+v1	142	person,soldier,helmet,uniform,running,explosion,smoke,field,battlefield,daylight	Soldiers run across a field as a shell explodes, seen through a tall mask on black.
+v1	143	person,soldier,running,field,battlefield,smoke,fog	A soldier runs through smoke on a field, seen through a tall mask on black.
+v1	144	title_text?,fog,soldier?	A tall pale misty strip on black, a faint figure in it.
+v1	145	title_text,fog,soldier	Parts of giant numbers on black with a faint soldier in mist inside them.
+v1	146	title_text,fog,soldier	Parts of giant numbers on black with a faint soldier in mist inside them.
+v1	147	title_text,fog,soldier,running,crowd?	"917" in giant pale numbers, soldiers running in mist inside them.
+v1	148	title_text,fog,soldier,running	"1917" in giant pale numbers, soldiers running in mist inside them.
+v1	149	title_text	"1917" in large grey lettering on black, a faint scene inside it.
+v1	150	title_text	"1917" in large orange and gold lettering on black.
+v1	151	title_text	"1917" in large orange and gold lettering on black.
+v1	152	title_text	"1917" in large orange and gold lettering on black.
+v1	153	title_text,black_frame?	"1917" fading out, very dark on black.
+v1	154	title_text,credits	"DIRECTED BY SAM MENDES" in orange letters on black.
+v1	155	title_text,credits	"WRITTEN BY SAM MENDES & KRYSTY WILSON-CAIRNS" in orange letters on black.
+v1	156	title_text,credits,logo	"DECEMBER" and "www.1917.movie" on black, small studio logos and credits below.
+v1	157	black_frame	An all black frame.
+v2	0	black_frame	An all black frame.
+v2	1	black_frame	An all black frame.
+v2	2	black_frame	An all black frame.
+v2	3	black_frame	An all black frame.
+v2	4	logo,mountain,sky,sunset	Paramount logo: a snowy mountain peak ringed by stars against a sunset sky.
+v2	5	logo,mountain,sky,sunset	Paramount logo: a snowy mountain peak ringed by stars against a sunset sky.
+v2	6	logo,mountain,sky,sunset	Paramount logo: a snowy mountain peak ringed by stars against a sunset sky.
+v2	7	person,man,interior,closeup	A bearded man in headphones rests his head on his hand by radio equipment in a dim room.
+v2	8	person,man,interior,closeup	A bearded man in headphones rests his head on his hand by radio equipment in a dim room.
+v2	9	title_text	"DAY 471" in small white letters on black.
+v2	10	title_text	"DAY 472" in small white letters on black.
+v2	11	title_text,interior	"DAY 472" over candles and hands clasped in prayer at a table.
+v2	12	person,man,woman,child,interior,sitting,aerial_view?	A family eats at a candlelit table in a barn, seen from above.
+v2	13	person,woman,interior,sitting	A blonde woman sits at a dinner table in a dim barn, a child's head in the foreground.
+v2	14	person,woman,interior,sitting	A blonde woman signs with her hands at a dinner table in a dim barn.
+v2	15	person,man,child,interior,sitting	A bearded man signs with his hands at a candlelit dinner table, a girl drinking beside him.
+v2	16	person,man,child,interior,sitting	A bearded man at a candlelit dinner table puts a hand to his mouth, a girl beside him.
+v2	17	title_text	"DAY 473" in small white letters on black.
+v2	18	title_text	"DAY 476" in small white letters on black.
+v2	19	person,woman,bridge,forest,daylight	A blonde woman in a patterned shirt stands on an iron bridge among trees.
+v2	20	person,woman,forest,daylight	A blonde woman reaches up to hold a rope among trees, looking up.
+v2	21	black_frame,forest?	A nearly black frame of dark trees.
+v2	22	person,man,screaming,running,daylight,field	A bearded man runs toward the camera screaming, a park behind him.
+v2	23	person,man,screaming,running,daylight,field	A wild-eyed bearded man runs toward the camera with his mouth open, a park behind him.
+v2	24	person,man,screaming,face_closeup,closeup,daylight	A bearded man screams with his mouth wide open, trees and grass behind him.
+v2	25	title_text	"DAY 43" in small white letters on black.
+v2	26	title_text	"DAY 2" in small white letters on black.
+v2	27	title_text	"DAY 1" in small white letters on black.
+v2	28	skyline,aerial_view,city_street,sunset,water,river	Aerial view of the Manhattan skyline and the Empire State Building at sunset, a river beyond.
+v2	29	person,woman,man,cat,city_street,car,daylight	A woman in a yellow coat holding a cat stands on a Chinatown street as a man in a suit passes.
+v2	30	person,woman,cat,city_street,car,daylight	A woman in a yellow coat holding a cat stands on a busy Chinatown street.
+v2	31	person,woman,man,cat,city_street,car,daylight	A woman in a yellow coat holding a cat on a Chinatown street, a man in a suit passing.
+v2	32	person,woman,cat,city_street,car,daylight	A woman in a yellow coat holding a cat on a Chinatown street with red signs.
+v2	33	person,woman,cat,city_street,car,daylight	A woman in a yellow coat holding a cat on a busy Chinatown street with red signs.
+v2	34	person,woman,man,cat,city_street,car,daylight	A woman in a yellow coat holding a cat as people pass on a Chinatown street.
+v2	35	black_frame	An all black frame.
+v2	36	city_street,sky,looking_up?,daylight	Looking up between apartment buildings with paper lanterns as streaks fall from the sky.
+v2	37	city_street,sky,daylight	Looking up between apartment buildings with paper lanterns as streaks fall from the sky.
+v2	38	city_street,sky,daylight	Looking up between apartment buildings with paper lanterns as streaks fall from the sky.
+v2	39	person,crowd,city_street,smoke,explosion,fire,daylight	People on a city street as a fiery object crashes down trailing smoke at the far end.
+v2	40	black_frame	A nearly black frame.
+v2	41	person,woman,car,city_street,fire,smoke,daylight	A woman in a yellow coat crouches by an overturned car on a smoky street with a small fire.
+v2	42	person,woman,car,truck,city_street,smoke,daylight	A woman in a yellow coat crouches by an overturned car on a smoke-filled street, a truck beyond.
+v2	43	person,woman,truck,car,city_street,smoke,daylight	A woman in a yellow coat crouches on a smoke-filled street, a truck and car beyond.
+v2	44	person,woman,city_street,smoke,dust,daylight	A woman in a yellow coat bends over on a street filled with smoke and debris.
+v2	45	person,woman,city_street,smoke,dust,daylight	A woman in a yellow coat crouches looking down a street filled with white smoke.
+v2	46	person,woman,city_street,smoke,dust,daylight,running?	A woman in a yellow coat on a smoke-filled street, a figure running in the haze beyond.
+v2	47	person,woman,city_street,smoke,dust,running,daylight	A woman in a yellow coat runs through white smoke on a city street.
+v2	48	car,flying,city_street,sky,smoke,daylight	An upside-down car flies through the air between buildings with debris.
+v2	49	person,crowd,city_street,explosion,fire,running,daylight	A crowd on a city street flinches from a fiery explosion ahead.
+v2	50	person,crowd,city_street,monster,running,smoke,daylight	A creature leaps over a panicked crowd running on a hazy city street.
+v2	51	person,car,city_street,crawling?,lying?	A low dark view under a car, a person scrambling on the ground.
+v2	52	person,woman,closeup,face_closeup,lying,screaming?	A woman in a knit hat lies on the ground with her mouth open in fear, cheek to the pavement.
+v2	53	person,woman,closeup,lying,crawling	A woman in a knit hat crawls on the ground, her face pressed down.
+v2	54	person,woman,crawling,lying,car	A woman crawls under a car in the dark.
+v2	55	person,crawling?,car	A blurred dark view under a car of a person moving.
+v2	56	person,woman,crawling,lying,car	Seen from under a car, a woman in a yellow coat crawls toward the camera.
+v2	57	title_text	"THIS" in small white letters on black.
+v2	58	title_text	"THIS SUMMER" in small white letters on black.
+v2	59	interior,subway,blood?	A dark subway station wall of white tiles with dark stains, lit by a single light.
+v2	60	title_text	"DISCOVER WHY" in small white letters on black.
+v2	61	person,crowd,city_street,aerial_view,car,fire?,daylight,wide_shot	Seen from above, a huge crowd fills a city street between buildings.
+v2	62	title_text	"OUR WORLD" in small white letters on black.
+v2	63	person,man,interior,walking	A man seen from behind walks down a hospital corridor lit by red lights.
+v2	64	monster,smoke,dust,city_street?,sunset?	Silhouettes of creatures in orange haze and dust.
+v2	65	black_frame	An all black frame.
+v2	66	person,interior,dust,smoke,sitting?	A person in a yellow coat ducks low inside a bus as debris and dust blast past the windows.
+v2	67	airplane,flying,sky	Four fighter jets fly in formation in a grey sky.
+v2	68	person,fire,night,smoke,bridge?,city_street?	People silhouetted watching a burning structure collapse at night through smoke.
+v2	69	person,woman,closeup,dust	A woman covers her mouth with her sweater in a dim orange room.
+v2	70	title_text	"WENT QUIET" in white and red letters on black.
+v2	71	title_text	"WENT QUIET" in white and red letters on black.
+v2	72	person,man,face_closeup,closeup,dust	A man's face caked in white dust, eyes closed, in a dark room.
+v2	73	person,man,face_closeup,closeup,dust	A man's face caked in white dust, eyes closed, in a dark room.
+v2	74	person,man,face_closeup,closeup,dust	A man's face caked in white dust, eyes open, mouth slightly open.
+v2	75	person,man,closeup,dust	A hand covers a dusty man's mouth in the dark.
+v2	76	person,man,woman,closeup,two_people,dust	A woman holds a finger to her lips to hush a dust-covered man, close up.
+v2	77	person,man,woman,closeup,two_people,dust	A woman holds a finger to her lips to hush a dust-covered man, close up.
+v2	78	person,man,woman,closeup,two_people,dust	A woman holds a finger to her lips to hush a dust-covered man, close up.
+v2	79	person,interior,lamp?	Bright round lights shine through haze in a dark room, a person at right.
+v2	80	person,man,interior,hugging?	A man shelters someone against a wall in a dim red room with lit display cases.
+v2	81	person,man,interior	A man crouches in a dark red room by a lit display case.
+v2	82	person,woman,man,interior,closeup	A frightened woman in a yellow sweater held by a man in a dim room.
+v2	83	person,interior,theater?,stage?,lamp	A person crouches in a dark hall facing a row of bright round lights shining through haze.
+v2	84	person,interior,theater?,stage?,lamp	A person crouches in a dark hall facing a row of bright round lights shining through haze.
+v2	85	person,interior,theater?,stage?,lamp	A person crouches in a dark hall facing a row of bright round lights shining through haze.
+v2	86	person,interior,theater?,stage?,lamp	A person crouches in a dark hall facing a row of bright round lights shining through haze.
+v2	87	person,man,woman,two_people,closeup,interior,hugging	A man holds a frightened woman close in a dim red room, both staring ahead.
+v2	88	person,man,woman,two_people,closeup,interior,hugging	A man holds a frightened woman close in a dim red room, both staring ahead.
+v2	89	person,man,woman,two_people,closeup,interior,hugging	A man holds a frightened woman close in a dim red room, both staring ahead.
+v2	90	person,man,woman,two_people,closeup,interior,hugging	A man holds a frightened woman close in a dim red room, both staring ahead.
+v2	91	black_frame	An all black frame.
+v2	92	black_frame	An all black frame.
+v2	93	title_text	"A QUIET PLACE" in small spaced grey letters on black.
+v2	94	title_text	"A QUIET PLACE DAY ONE" in grey and large red letters on black.
+v2	95	title_text	"A QUIET PLACE DAY ONE" in grey and large red letters on black.
+v2	96	person,man,city_street,skyline,fog,daylight,running?	A man seen from behind and below among tall glass office towers in fog.
+v2	97	person,man,city_street,skyline,fog,daylight,looking_up	Looking up at glass skyscrapers in fog, a man in a suit at the bottom.
+v2	98	interior,monster?,looking_up	Looking up through the glass roof of an atrium, dark shapes moving on it.
+v2	99	interior,monster,looking_up	Looking up through the glass roof of an atrium, creatures crawling on it.
+v2	100	person,man,woman,running,interior,cat?	A man in a suit and a woman in a yellow coat clutching a bag run down a glass corridor.
+v2	101	title_text,credits,logo	"ONLY IN THEATRES JUNE" on black with a text-message line, small logos and web addresses.
+v2	102	title_text,credits,logo	"ONLY IN THEATRES JUNE" on black with a text-message line, small logos and web addresses.
+v2	103	title_text,credits,logo	"ONLY IN THEATRES JUNE" on black with a text-message line, small logos and web addresses.
+v2	104	black_frame	An all black frame.
+v3	0	person,man,stage,audience,crowd,night?,interior	A long-haired man seen from behind on a concert stage facing a large dark audience under teal light.
+v3	1	person,man,stage,audience,crowd,microphone,interior	A long-haired man on stage at a microphone, a large audience beyond in teal light.
+v3	2	person,man,stage,audience,crowd,microphone,lyrics_text,interior	A man speaks into a microphone on stage before a large audience, subtitle "Thank you very much."
+v3	3	person,man,stage,audience,crowd,microphone,lyrics_text,interior	A man raises his hand on stage before a large audience, subtitle "Thank you very much."
+v3	4	person,man,stage,microphone,guitar,lyrics_text,lamp,interior	A man with a guitar raises a hand at a microphone under orange stage lights, subtitle "Thank you very much."
+v3	5	person,man,stage,microphone,guitar,lyrics_text,lamp,interior	A man with a guitar talks into a microphone under orange stage lights, subtitle "That was great."
+v3	6	person,man,stage,microphone,guitar,lyrics_text,lamp,interior	A man with a guitar talks into a microphone under orange stage lights, subtitle "That was great."
+v3	7	person,man,stage,microphone,guitar,lamp,interior	A man with a guitar at a microphone under orange stage lights.
+v3	8	person,man,stage,microphone,guitar,lamp,interior	A man with a guitar at a microphone under orange stage lights.
+v3	9	person,man,stage,microphone,guitar,lyrics_text,lamp,interior	A man with a guitar talks into a microphone on stage, subtitle "There's a friend of mine, who came a long way to be here,".
+v3	10	person,man,stage,microphone,guitar,lyrics_text,lamp,interior	A man with a guitar talks into a microphone on stage, subtitle "There's a friend of mine, who came a long way to be here,".
+v3	11	person,man,stage,microphone,guitar,lyrics_text,lamp,interior	A man with a guitar talks into a microphone on stage, subtitle "There's a friend of mine, who came a long way to be here,".
+v3	12	person,man,stage,microphone,guitar,lyrics_text,lamp,interior	A man with a guitar talks into a microphone on stage, subtitle "and she wrote a great song,".
+v3	13	person,man,stage,microphone,guitar,lyrics_text,lamp,interior	A man with a guitar talks into a microphone on stage, subtitle "and I'd just like her to sing it."
+v3	14	person,man,stage,microphone,guitar,lyrics_text,lamp,interior	A man with a guitar talks into a microphone on stage, subtitle "and I'd just like her to sing it."
+v3	15	person,man,stage,microphone,guitar,lyrics_text,lamp,interior	A man with a guitar at a microphone on stage, subtitle "I think it's pretty fucking good."
+v3	16	person,man,stage,microphone,closeup,interior	Close up of a bearded long-haired man on stage turning from the microphone, blurred lights.
+v3	17	person,man,stage,guitar,closeup,interior	Close blur of a bearded man swinging a guitar on stage.
+v3	18	person,man,stage,audience,crowd,guitar,wide_shot,interior,lamp	Wide view from above of a band on a concert stage before a huge audience, a man holding up a guitar.
+v3	19	person,man,stage,audience,crowd,guitar,wide_shot,interior,lamp	Wide view of a band on a concert stage before a huge audience under stage lights.
+v3	20	person,man,stage,audience,crowd,guitar,wide_shot,interior,lamp	Wide view of a man walking off a concert stage past band members before a huge audience.
+v3	21	person,man,interior,stage,lamp	A man seen from behind walks backstage toward a bright light in red-lit gloom.
+v3	22	person,man,interior,stage,lamp	A man seen from behind walks backstage toward a bright light as a man waves.
+v3	23	person,man,woman,crowd,interior,lyrics_text	A man walks toward a crowd of people standing backstage in red light, subtitle "How are you? You made it!".
+v3	24	person,man,woman,crowd,interior,lyrics_text	A man greets a woman among people backstage in red light, subtitle "How are you? You made it!".
+v3	25	person,man,woman,crowd,interior,lyrics_text	A man greets a woman among people backstage in red light, subtitle "It's so good to see you."
+v3	26	person,man,woman,crowd,interior,lyrics_text,smiling	A smiling woman greets a man among people backstage, subtitle "How are you? It was so good."
+v3	27	person,man,woman,crowd,interior,lyrics_text	A man talks with a woman among people backstage, subtitle "Everything all right? The trip was fine?".
+v3	28	person,man,woman,crowd,interior,lyrics_text	A man talks with a woman among people backstage, subtitle "Everything all right? The trip was fine?".
+v3	29	person,man,woman,crowd,interior,lyrics_text	A man talks with a woman among people backstage, subtitle "Yeah, yeah. Phil was all right?".
+v3	30	person,man,crowd,interior,lyrics_text,smiling	A smiling man among people backstage behind a long-haired man, subtitle "Didn't bother you at all? Gail was so nice."
+v3	31	person,man,crowd,interior,lyrics_text,laughing	A laughing man among people backstage behind a long-haired man, subtitle "Didn't bother you at all? Gail was so nice."
+v3	32	person,man,woman,two_people,interior,lyrics_text,closeup	A man leans close to talk to a woman backstage, subtitle "So, listen, we're gonna sing that song, all right?".
+v3	33	person,man,woman,two_people,interior,lyrics_text,closeup	A man leans close to talk to a woman backstage, subtitle "So, listen, we're gonna sing that song, all right?".
+v3	34	person,man,woman,two_people,interior,lyrics_text,closeup	A woman listens to a man close to her backstage, subtitle "I did an arrangement, it was kind of not so great,".
+v3	35	person,man,woman,two_people,interior,lyrics_text,closeup	A woman listens to a man close to her backstage, subtitle "I did an arrangement, it was kind of not so great,".
+v3	36	person,man,woman,two_people,interior,lyrics_text,closeup	A woman looks at a man close to her backstage, subtitle "but maybe you could just stick with it."
+v3	37	person,man,woman,two_people,interior,lyrics_text,closeup	A woman looks at a man close to her backstage, subtitle "but maybe you could just stick with it."
+v3	38	person,man,woman,crowd,interior,lyrics_text	A woman shakes her head among people backstage, subtitle "No, I can't do that. I'm sorry. No, Jack, please."
+v3	39	person,man,woman,crowd,interior,lyrics_text	A startled woman among people backstage, subtitle "Yeah, you're coming. Here we go."
+v3	40	person,man,woman,crowd,interior,smiling	A smiling woman and man in a crowd backstage in red light, a long-haired man in the foreground.
+v3	41	person,man,woman,crowd,interior,lyrics_text,smiling	A woman laughs nervously in a crowd backstage, subtitle "It's not funny. Jack, don't fuck around."
+v3	42	person,man,woman,crowd,interior,smiling	A woman smiles uneasily in a crowd backstage in red light.
+v3	43	person,man,woman,crowd,interior,lyrics_text	A long-haired man leans close to a woman in a crowd backstage, subtitle "All you gotta do is trust me."
+v3	44	person,man,woman,crowd,interior,lyrics_text	A long-haired man leans close to a woman in a crowd backstage, subtitle "All you gotta do is trust me."
+v3	45	person,man,woman,crowd,interior,lyrics_text	A long-haired man leans close to a woman in a crowd backstage, subtitle "All you gotta do is trust me."
+v3	46	person,man,woman,crowd,interior,lyrics_text	A woman looks up at a man in a crowd backstage, subtitle "That's all you gotta do."
+v3	47	person,man,woman,crowd,interior,lyrics_text	A woman looks after a man in a crowd backstage, subtitle "That's all you gotta do."
+v3	48	person,man,woman,crowd,interior	A woman stands among a crowd of people backstage in red light.
+v3	49	person,crowd,interior	A blurred pan across people and equipment backstage in red light.
+v3	50	person,man,crowd,interior,stage,lyrics_text	A blurred man with an arm out walking onto a stage past people, subtitle "I'm gonna sing it either way, so...".
+v3	51	person,man,stage,interior,lyrics_text	A bearded man on stage holds out his arm, subtitle "I'm gonna sing it either way, so...".
+v3	52	person,man,stage,interior	A bearded man on stage in teal light holds out his arm toward the audience.
+v3	53	person,man,stage,interior,audience?	A man on stage seen from behind with arms spread wide in teal light.
+v3	54	person,man,stage,interior,audience?	A man on stage seen from behind with an arm raised in teal light.
+v3	55	person,man,stage,interior,lamp	A long-haired man on stage seen from behind, stage lights at right.
+v3	56	person,man,stage,microphone,guitar,interior	A man on stage takes a guitar from a band member by a microphone.
+v3	57	person,man,stage,microphone,guitar,interior	A man on stage swings a guitar strap over his head as a band member helps.
+v3	58	person,man,stage,guitar,interior	A long-haired man on stage seen from behind with a guitar strap on his shoulder in teal light.
+v3	59	person,man,stage,guitar,interior	A long-haired man on stage seen from behind pulling a guitar strap over his head in teal light.
+v3	60	person,man,stage,guitar,microphone,interior	A long-haired man with a guitar at a microphone on stage in teal haze.
+v3	61	person,man,stage,guitar,microphone,interior,smiling	A bearded man with a guitar smiles back over his shoulder on stage in teal light.
+v3	62	person,man,stage,guitar,microphone,interior,smiling	A bearded man with a guitar grins over his shoulder on stage in teal light.
+v3	63	person,man,stage,guitar,interior,smiling,closeup,lyrics_text	A bearded man grins over his shoulder on stage in teal light, subtitle "Steve...".
+v3	64	person,woman,man,crowd,interior,lyrics_text	A woman with clasped hands at her mouth stands among people backstage, subtitle "Steve...".
+v3	65	person,woman,man,crowd,interior,lyrics_text	A woman with clasped hands at her mouth stands among people backstage, subtitle "You lost your mind. Okay."
+v3	66	person,woman,man,crowd,interior,lyrics_text	A woman with clasped hands at her mouth stands among people backstage, subtitle "You lost your mind. Okay."
+v3	67	person,woman,man,crowd,interior,lyrics_text	A woman with her hands to her face among people backstage, subtitle "You lost your mind. Okay."
+v3	68	person,woman,man,crowd,interior,lyrics_text,two_people?	A man talks to a woman backstage, subtitle "You have to go sing. I'm not going out there, no."
+v3	69	person,woman,man,crowd,interior,lyrics_text,two_people?	A man talks to a woman backstage, subtitle "You have to go sing. I'm not going out there, no."
+v3	70	person,man,stage,guitar,playing_guitar,lamp,lyrics_text,interior	A man plays an acoustic guitar on a dark stage beside a bright spotlight, subtitle "You have to go sing."
+v3	71	person,man,stage,guitar,playing_guitar,lamp,interior	A man plays an acoustic guitar on a dark stage beside a bright spotlight in blue haze.
+v3	72	person,man,stage,guitar,playing_guitar,lamp,interior	A man plays an acoustic guitar on a dark stage beside a bright spotlight in blue haze.
+v3	73	person,man,stage,guitar,playing_guitar,lamp,interior	A man plays an acoustic guitar on a dark stage beside a bright spotlight in blue haze.
+v3	74	person,man,stage,guitar,playing_guitar,lamp,interior	A man plays an acoustic guitar on a dark stage beside a bright spotlight in blue haze.
+v3	75	person,man,stage,guitar,playing_guitar,lamp,interior	A man plays an acoustic guitar on a dark stage beside a bright spotlight in blue haze.
+v3	76	person,man,stage,guitar,playing_guitar,lamp,interior	A man plays an acoustic guitar on a dark stage beside a bright spotlight in blue haze.
+v3	77	person,man,stage,guitar,playing_guitar,lamp,interior	A man plays an acoustic guitar on a dark stage beside a bright spotlight in blue haze.
+v3	78	person,man,stage,guitar,playing_guitar,interior	A man plays an acoustic guitar on a dark stage.
+v3	79	person,man,stage,guitar,playing_guitar,interior	A man plays an acoustic guitar on a dark stage, looking up.
+v3	80	person,woman,man,crowd,interior	A woman and a man stare toward the stage among people backstage.
+v3	81	person,woman,man,crowd,interior	A woman and a man stare toward the stage among people backstage in green light.
+v3	82	person,woman,man,crowd,interior	A woman and a man watch the stage among people backstage in green light.
+v3	83	person,woman,man,crowd,interior	A woman watches the stage among people backstage in green light.
+v3	84	person,woman,man,crowd,interior	A woman watches the stage among people backstage in teal light.
+v3	85	person,woman,man,crowd,interior	A woman watches the stage among people backstage in teal light.
+v3	86	person,woman,man,crowd,interior,lyrics_text	A woman watches the stage among people backstage in teal light, lyric "Tell me something, girl".
+v3	87	person,woman,man,crowd,interior,lyrics_text	A woman watches the stage among people backstage in teal light, lyric "Tell me something, girl".
+v3	88	person,woman,man,crowd,interior,lyrics_text	A woman watches the stage among people backstage in teal light, lyric "Tell me something, girl".
+v3	89	person,man,stage,guitar,playing_guitar,lamp,interior	A man seen from behind plays guitar on a dark stage under a single spotlight.
+v3	90	person,man,stage,guitar,playing_guitar,lamp,interior	A man seen from behind plays guitar on a dark stage under a single spotlight.
+v3	91	person,man,stage,guitar,playing_guitar,lamp,lyrics_text,interior	A man seen from behind plays guitar under a spotlight, lyric "Are you happy in this modern world".
+v3	92	person,man,stage,guitar,playing_guitar,lamp,lyrics_text,interior	A man seen from behind plays guitar under a spotlight, lyric "Are you happy in this modern world".
+v3	93	person,man,stage,microphone,singing,flag,closeup,lyrics_text,interior	A bearded man sings into a microphone, a flag behind him in red light, lyric "Are you happy in this modern world".
+v3	94	person,man,stage,microphone,singing,flag,closeup,lyrics_text,interior	A bearded man sings into a microphone, a flag behind him in red light, lyric "Are you happy in this modern world".
+v3	95	person,man,stage,microphone,singing,flag,closeup,lyrics_text,interior	A bearded man sings into a microphone, a flag behind him, lyric "Are you happy in this modern world".
+v3	96	person,man,stage,microphone,singing,flag,closeup,lyrics_text,interior	A long-haired man sings into a microphone, a flag behind him, lyric "Or do you need more".
+v3	97	person,man,stage,microphone,singing,closeup,lyrics_text,interior	A long-haired man sings into a microphone in red and blue light, lyric "Or do you need more".
+v3	98	person,man,stage,microphone,singing,closeup,lyrics_text,interior	A long-haired man sings into a microphone in red and blue light, lyric "Or do you need more".
+v3	99	person,man,stage,microphone,flag,closeup,interior,smiling	A bearded man at a microphone smiles, a flag behind him.
+v3	100	person,man,stage,microphone,singing,flag,closeup,interior	A bearded man sings into a microphone, a flag behind him.
+v3	101	person,man,stage,microphone,singing,flag,closeup,lyrics_text,interior	A bearded man sings into a microphone, a flag behind him, lyric "Is there something else you're searching for".
+v3	102	person,man,stage,microphone,singing,flag,closeup,lyrics_text,interior	A bearded man sings into a microphone, a flag behind him, lyric "Is there something else you're searching for".
+v3	103	person,man,stage,microphone,singing,flag,closeup,lyrics_text,interior	A bearded man sings into a microphone, a flag behind him, lyric "Is there something else you're searching for".
+v3	104	person,man,stage,microphone,singing,flag,closeup,lyrics_text,interior	A bearded man sings into a microphone, a flag behind him, lyric "Is there something else you're searching for".
+v3	105	person,man,stage,microphone,singing,flag,closeup,lyrics_text,interior	A bearded man sings into a microphone, a flag behind him, lyric "I'm falling".
+v3	106	person,man,stage,microphone,singing,flag,closeup,lyrics_text,interior	A bearded man sings into a microphone in red light, lyric "I'm falling".
+v3	107	person,woman,crowd,interior,lyrics_text	A woman watches with a hand at her chin among people in red light, lyric "I'm falling".
+v3	108	person,woman,crowd,interior,lyrics_text	A woman covers her face with both hands among people in red light, lyric "I'm falling".
+v3	109	person,woman,crowd,interior,lyrics_text	A woman covers her face with both hands among people in red light, lyric "I'm falling".
+v3	110	person,woman,crowd,interior	A woman covers her face with both hands among people in red light.
+v3	111	person,woman,crowd,interior,lyrics_text	A woman with hands at her mouth among people in red light, lyric "In all the good times I find myself longing".
+v3	112	person,woman,crowd,interior,lyrics_text	A woman with hands pressed together at her mouth among people in red light, lyric "In all the good times I find myself longing".
+v3	113	person,woman,crowd,interior,lyrics_text	A woman with hands pressed together at her mouth among people in red light, lyric "In all the good times I find myself longing".
+v3	114	person,woman,crowd,interior,lyrics_text	A woman with hands pressed together at her mouth among people in red light, lyric "In all the good times I find myself longing".
+v3	115	person,woman,crowd,interior,lyrics_text	A woman with hands pressed together at her mouth among people in red light, lyric "In all the good times I find myself longing".
+v3	116	person,woman,crowd,interior	A woman with eyes closed and hands pressed together at her mouth among people.
+v3	117	person,woman,crowd,interior,lyrics_text	A woman with hands pressed together at her mouth among people in teal light, lyric "For change".
+v3	118	person,woman,crowd,interior,lyrics_text	A woman looks to the side among people in teal light, lyric "For change".
+v3	119	person,woman,crowd,interior,lyrics_text	A woman looks down among people in teal light, lyric "For change".
+v3	120	person,woman,crowd,interior,lyrics_text	A woman stares ahead among people in teal light, lyric "And in the bad times, I fear myself".
+v3	121	person,woman,crowd,interior,lyrics_text	A woman looks ahead among people in teal light, lyric "And in the bad times, I fear myself".
+v3	122	person,woman,crowd,interior,lyrics_text	A woman looks ahead among people in teal light, lyric "And in the bad times, I fear myself".
+v3	123	person,woman,crowd,interior,lyrics_text	A woman looks down among people in teal light, lyric "And in the bad times, I fear myself".
+v3	124	person,woman,crowd,interior,lyrics_text	A woman looks down among people in teal light, lyric "And in the bad times, I fear myself".
+v3	125	person,woman,crowd,interior	A woman walks forward among people in teal light, a man with hands pressed together behind.
+v3	126	person,woman,crowd,interior	A woman walks toward the stage among people in dim red light.
+v3	127	person,woman,interior,stage?	A woman in red light looks down in the dark.
+v3	128	person,woman,interior,stage?	A woman in red light looks down in the dark.
+v3	129	person,woman,interior,stage?	A woman in red light looks down in the dark.
+v3	130	person,woman,interior,stage	A woman looks ahead as she steps onto a dark stage.
+v3	131	person,woman,man,interior,stage	A woman in profile on stage, a man in a hat behind her among equipment.
+v3	132	person,woman,stage,microphone,interior	A woman in profile at a microphone on stage, a drummer and drums behind.
+v3	133	person,woman,stage,microphone,interior,lamp	A woman in profile at a microphone on stage in teal light, drums behind.
+v3	134	person,woman,stage,microphone,interior,lamp	A woman in profile at a microphone on stage under teal lights.
+v3	135	person,woman,stage,microphone,interior,lamp	A woman in profile at a microphone on stage under teal lights.
+v3	136	person,woman,man,stage,microphone,guitar,lyrics_text,interior,lamp	A woman at a microphone on stage, a man with a guitar behind, lyric "Tell me something, boy".
+v3	137	person,woman,man,stage,microphone,guitar,lyrics_text,interior,lamp	A woman at a microphone on stage, a man with a guitar behind, lyric "Tell me something, boy".
+v3	138	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone on stage in red and teal light, lyric "Tell me something, boy".
+v3	139	person,woman,stage,microphone,singing,closeup,interior	A woman sings into a microphone on stage in red and teal light.
+v3	140	person,woman,stage,microphone,singing,closeup,interior	A woman sings into a microphone on stage in red and teal light.
+v3	141	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone, lyric "Aren't you tired, trying to fill that void".
+v3	142	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone, lyric "Aren't you tired, trying to fill that void".
+v3	143	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone, lyric "Aren't you tired, trying to fill that void".
+v3	144	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone, lyric "Aren't you tired, trying to fill that void".
+v3	145	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone, lyric "Aren't you tired, trying to fill that void".
+v3	146	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone with eyes down, lyric "Or do you need more".
+v3	147	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone, lyric "Or do you need more".
+v3	148	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone with eyes down, lyric "Or do you need more".
+v3	149	person,woman,stage,microphone,singing,closeup,interior	A woman sings into a microphone with eyes down.
+v3	150	person,woman,stage,microphone,singing,closeup,interior	A woman sings into a microphone with eyes down.
+v3	151	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone, lyric "Ain't it hard, keeping it so hardcore".
+v3	152	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone in red light, lyric "Ain't it hard, keeping it so hardcore".
+v3	153	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone in red light, lyric "Ain't it hard, keeping it so hardcore".
+v3	154	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone, lyric "Ain't it hard, keeping it so hardcore".
+v3	155	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone in red light, lyric "I'm falling".
+v3	156	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone in red light, lyric "I'm falling".
+v3	157	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone, lyric "I'm falling".
+v3	158	person,man,stage,lamp,interior	A bearded man and band members on stage in front of bright red stage lights.
+v3	159	person,man,stage,lamp,interior	A man and a band member on stage in front of bright red stage lights.
+v3	160	person,man,stage,guitar,playing_guitar,lamp,interior	A bearded man and a long-haired guitarist play guitars on stage under bright red lights.
+v3	161	person,man,stage,guitar,playing_guitar,microphone,lamp,lyrics_text,interior	A bearded man and a guitarist play acoustic guitars on stage in pink light, lyric "In all the good times I find myself longing".
+v3	162	person,man,stage,guitar,playing_guitar,microphone,lamp,lyrics_text,interior	A bearded man and a guitarist play acoustic guitars on stage in teal light, lyric "In all the good times I find myself longing".
+v3	163	person,man,stage,guitar,playing_guitar,lamp,lyrics_text,interior	Two men play guitars on stage in bright teal light, lyric "In all the good times I find myself longing".
+v3	164	person,man,stage,guitar,lamp,lyrics_text,interior	Two men on stage in bright teal light, lyric "In all the good times I find myself longing".
+v3	165	person,woman,stage,microphone,singing,closeup,interior	A woman sings into a microphone in red and teal light.
+v3	166	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone in red and teal light, lyric "For change".
+v3	167	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone, lyric "For change".
+v3	168	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone, lyric "For change".
+v3	169	person,woman,stage,microphone,singing,closeup,interior	A woman sings into a microphone with eyes closed.
+v3	170	person,woman,stage,microphone,singing,closeup,interior	A woman sings into a microphone with eyes closed.
+v3	171	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone, lyric "And in the bad times, I fear myself".
+v3	172	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone in red light, lyric "And in the bad times, I fear myself".
+v3	173	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone in red light, lyric "And in the bad times, I fear myself".
+v3	174	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone, lyric "And in the bad times, I fear myself".
+v3	175	person,woman,stage,microphone,singing,closeup,lyrics_text,interior,screaming?	A woman belts into a microphone in red light, lyric "I'm off the deep end Watch as I dive in".
+v3	176	person,woman,stage,microphone,singing,closeup,lyrics_text,interior,smiling	A woman sings smiling into a microphone, lyric "I'm off the deep end Watch as I dive in".
+v3	177	person,man,stage,singing,lamp,lyrics_text,interior	A man sings with his head back on a hazy stage, lyric "I'm off the deep end Watch as I dive in".
+v3	178	person,man,stage,lamp,lyrics_text,interior,guitar?	A man on stage in bright teal light, lyric "I'm off the deep end Watch as I dive in".
+v3	179	person,woman,stage,microphone,singing,closeup,lyrics_text,interior,screaming?	A woman belts into a microphone in bright white-blue light, lyric "I'm off the deep end Watch as I dive in".
+v3	180	person,woman,stage,microphone,singing,closeup,lyrics_text,interior,screaming?	A woman belts into a microphone with mouth wide open, lyric "I never meet the ground".
+v3	181	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone, lyric "I never meet the ground".
+v3	182	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone with eyes closed, lyric "I never meet the ground".
+v3	183	person,woman,stage,microphone,singing,closeup,lyrics_text,interior,screaming?	A woman belts into a microphone with mouth wide open, lyric "I never meet the ground".
+v3	184	person,woman,stage,microphone,closeup,lyrics_text,interior	A woman covers her eyes with both hands at a microphone, lyric "I never meet the ground".
+v3	185	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone in red light, lyric "Crash through the surface Where they can't hurt us".
+v3	186	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone, lyric "Crash through the surface Where they can't hurt us".
+v3	187	person,woman,stage,microphone,singing,closeup,lyrics_text,interior,screaming?	A woman belts into a microphone with mouth wide open, lyric "Crash through the surface Where they can't hurt us".
+v3	188	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone with eyes closed, lyric "Crash through the surface Where they can't hurt us".
+v3	189	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone, lyric "Crash through the surface Where they can't hurt us".
+v3	190	person,woman,stage,microphone,singing,closeup,lyrics_text,interior,screaming?	A woman belts into a microphone with mouth wide open, lyric "We're far from the shallow now".
+v3	191	person,woman,stage,microphone,singing,closeup,lyrics_text,interior,screaming?	A woman belts into a microphone with mouth wide open, lyric "We're far from the shallow now".
+v3	192	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone, lyric "We're far from the shallow now".
+v3	193	person,woman,stage,microphone,singing,closeup,lyrics_text,interior,screaming?	A woman belts into a microphone with mouth wide open, lyric "We're far from the shallow now".
+v3	194	person,woman,stage,microphone,closeup,interior	A woman at a microphone in red light, looking down.
+v3	195	person,woman,stage,microphone,closeup,interior	A woman at a microphone in red light, looking to the side.
+v3	196	person,man,stage,guitar,microphone,singing,lamp,lyrics_text,interior	A man with a guitar sings at a microphone under a spotlight in a dark hazy hall, lyric "In the shallow Shallow".
+v3	197	person,man,stage,guitar,microphone,singing,lamp,lyrics_text,interior	A man with a guitar sings at a microphone under a spotlight in a dark hazy hall, lyric "In the shallow Shallow".
+v3	198	person,man,stage,guitar,microphone,singing,lamp,lyrics_text,interior	A man with a guitar sings at a microphone under a spotlight in a dark hazy hall, lyric "In the shallow Shallow".
+v3	199	person,man,stage,guitar,microphone,singing,lamp,lyrics_text,interior	A man with a guitar sings at a microphone under a spotlight in a dark hazy hall, lyric "In the shallow Shallow".
+v3	200	person,woman,stage,microphone,singing,lamp,lyrics_text,interior	A woman sings in profile into a microphone under red stage lights, lyric "In the shallow Shallow".
+v3	201	person,woman,stage,microphone,singing,lamp,lyrics_text,interior	A woman sings in profile into a microphone under red stage lights, lyric "In the shallow Shallow".
+v3	202	person,woman,stage,microphone,singing,lamp,lyrics_text,interior	A woman sings in profile into a microphone under red stage lights, lyric "In the shallow Shallow".
+v3	203	person,woman,stage,microphone,singing,lamp,lyrics_text,interior	A woman sings in profile into a microphone under teal stage lights, lyric "In the shallow Shallow".
+v3	204	person,woman,stage,microphone,singing,lamp,lyrics_text,interior	A woman sings in profile into a microphone under white stage lights, lyric "In the shallow Shallow".
+v3	205	person,woman,stage,microphone,singing,lamp,lyrics_text,interior	A woman sings in profile into a microphone under red stage lights, lyric "In the shallow Shallow".
+v3	206	person,man,stage,guitar,microphone,singing,lamp,lyrics_text,interior	A man with a guitar sings at a microphone under a spotlight in a dark hazy hall, lyric "In the shallow Shallow".
+v3	207	person,man,stage,guitar,microphone,singing,lamp,lyrics_text,interior	A man with a guitar sings at a microphone under a spotlight in a dark hazy hall, lyric "In the shallow Shallow".
+v3	208	person,man,stage,guitar,microphone,singing,lamp,lyrics_text,interior	A man with a guitar sings at a microphone under a spotlight in a dark hazy hall, lyric "In the shallow Shallow".
+v3	209	person,man,stage,guitar,microphone,singing,lamp,lyrics_text,interior	A man with a guitar sings at a microphone under a spotlight in a dark hazy hall, lyric "In the shallow Shallow".
+v3	210	person,man,stage,guitar,microphone,singing,lamp,lyrics_text,interior	A man with a guitar sings at a microphone under a spotlight, lyric "We're far from the shallow now".
+v3	211	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone in red light, lyric "We're far from the shallow now".
+v3	212	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone, lyric "We're far from the shallow now".
+v3	213	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone, lyric "We're far from the shallow now".
+v3	214	person,man,stage,guitar,playing_guitar,lamp,interior	A man plays guitar on a dark stage beside a bright spotlight.
+v3	215	person,man,stage,guitar,playing_guitar,lamp,interior	A man plays an acoustic guitar on a dark stage beside a bright spotlight.
+v3	216	person,woman,stage,microphone,interior,lamp	A woman in profile at a microphone in red light, drums and a drummer behind.
+v3	217	person,woman,stage,microphone,interior,lamp	A woman in profile at a microphone in red light, drums and a drummer behind.
+v3	218	person,man,woman,two_people,stage,interior,lamp	A man and a woman face each other on stage in front of drums under teal lights.
+v3	219	person,man,woman,two_people,stage,interior,lamp	A man with a guitar and a woman face each other on stage under teal lights.
+v3	220	person,man,woman,two_people,stage,guitar,interior,lamp,smiling	A smiling man with a guitar watches a woman on stage under teal lights.
+v3	221	person,man,woman,two_people,stage,microphone,interior,flag	A woman walks to a microphone on stage past a smiling man, a flag behind.
+v3	222	person,woman,man,stage,microphone,interior,flag	A woman reaches for a microphone stand on stage, a flag behind.
+v3	223	person,woman,man,two_people,stage,microphone,guitar,singing,interior,lamp	A woman sings into a microphone held in both hands as a man plays guitar behind her.
+v3	224	person,woman,man,two_people,stage,microphone,guitar,singing,interior,lamp	A woman sings into a microphone as a man plays guitar behind her under red lights.
+v3	225	person,woman,man,two_people,stage,microphone,guitar,playing_guitar,singing,interior,lamp	A woman sings into a microphone as a man plays guitar behind her under red lights.
+v3	226	person,woman,man,two_people,stage,microphone,guitar,playing_guitar,singing,interior,lamp	A woman sings into a microphone as a man plays guitar behind her under red lights.
+v3	227	person,woman,man,two_people,stage,microphone,guitar,playing_guitar,singing,interior,lamp	A woman sings into a microphone as a man plays guitar behind her.
+v3	228	person,woman,man,two_people,stage,microphone,guitar,playing_guitar,singing,interior,lamp,smiling	A woman sings into a microphone as a smiling man plays guitar behind her.
+v3	229	person,woman,man,two_people,stage,microphone,guitar,playing_guitar,singing,interior,lamp,screaming?	A woman belts into a microphone as a man plays guitar behind her under red lights.
+v3	230	person,woman,man,two_people,stage,microphone,guitar,playing_guitar,singing,interior,lamp,screaming?	A woman belts into a microphone as a man plays guitar behind her under red lights.
+v3	231	person,woman,man,two_people,stage,microphone,guitar,singing,interior,lamp,screaming?	A woman belts into a microphone with mouth open as a man plays guitar behind her.
+v3	232	person,woman,man,two_people,stage,microphone,guitar,singing,interior,lamp,screaming?	A woman sings with her head back and mouth wide open into a microphone, a man with a guitar behind.
+v3	233	person,woman,man,two_people,stage,microphone,guitar,singing,interior,lamp,screaming?	A woman sings with her head back and mouth wide open into a microphone, a man with a guitar behind.
+v3	234	person,woman,man,two_people,stage,microphone,guitar,singing,interior,lamp,screaming?	A woman belts into a microphone with head back as a man plays guitar behind her.
+v3	235	person,woman,man,two_people,stage,microphone,guitar,singing,interior,lamp,lyrics_text,screaming?	A woman belts into a microphone as a man plays guitar, lyric "I'm off the deep end Watch as I dive in".
+v3	236	person,woman,man,two_people,stage,microphone,guitar,singing,interior,lamp,lyrics_text	A woman sings into a microphone as a man plays guitar, lyric "I'm off the deep end Watch as I dive in".
+v3	237	person,woman,man,two_people,stage,microphone,guitar,singing,interior,lamp,lyrics_text,screaming?	A woman belts into a microphone as a man plays guitar, lyric "I'm off the deep end Watch as I dive in".
+v3	238	person,woman,man,two_people,stage,microphone,singing,interior,lamp,lyrics_text	A woman sings into a microphone in a flare of red light, a man behind, lyric "I'm off the deep end Watch as I dive in".
+v3	239	person,woman,man,two_people,stage,microphone,singing,interior,lamp,lyrics_text	A woman sings into a microphone in red light, a man behind, lyric "I'm off the deep end Watch as I dive in".
+v3	240	person,woman,man,two_people,stage,microphone,guitar,playing_guitar,singing,interior,lamp,lyrics_text,screaming?	A woman belts into a microphone as a smiling man plays guitar, lyric "I never meet the ground".
+v3	241	person,woman,man,two_people,stage,microphone,guitar,playing_guitar,singing,interior,lamp,lyrics_text,screaming?	A woman belts into a microphone in teal light as a man plays guitar, lyric "I never meet the ground".
+v3	242	person,woman,man,two_people,stage,microphone,guitar,singing,interior,lamp,lyrics_text	A woman sings into a microphone in pink light as a man plays guitar, lyric "I never meet the ground".
+v3	243	person,woman,man,two_people,stage,microphone,guitar,playing_guitar,singing,interior,lamp,lyrics_text	A woman sings with eyes closed in pink light as a man plays guitar, lyric "I never meet the ground".
+v3	244	person,woman,man,two_people,stage,microphone,guitar,playing_guitar,singing,interior,lamp,lyrics_text	A woman sings into a microphone as a man plays guitar under red lights, lyric "I never meet the ground".
+v3	245	person,woman,man,two_people,stage,microphone,guitar,playing_guitar,singing,interior,lamp,lyrics_text	A woman sings into a microphone as a man plays guitar, lyric "Crash through the surface Where they can't hurt us".
+v3	246	person,stage,audience,crowd,wide_shot,interior,lamp,lyrics_text,two_people?	Wide view of two singers small on a huge stage before a vast dark audience, lyric "Crash through the surface Where they can't hurt us".
+v3	247	person,stage,audience,crowd,wide_shot,interior,lamp,lyrics_text,two_people?	Wide view of two singers small on a huge stage before a vast dark audience, lyric "Crash through the surface Where they can't hurt us".
+v3	248	person,stage,audience,crowd,wide_shot,interior,lamp,lyrics_text,two_people?	Wide view of two singers on a stage before a vast dark audience, lyric "Crash through the surface Where they can't hurt us".
+v3	249	person,stage,audience,crowd,wide_shot,interior,lamp,lyrics_text,two_people?	Wide view of two singers on a stage before a vast dark audience, lyric "Crash through the surface Where they can't hurt us".
+v3	250	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone in red light, lyric "We're far from the shallow now".
+v3	251	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone in red light, lyric "We're far from the shallow now".
+v3	252	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings into a microphone, drums behind, lyric "We're far from the shallow now".
+v3	253	person,woman,stage,microphone,singing,closeup,lyrics_text,interior	A woman sings with hands at her throat at a microphone, lyric "We're far from the shallow now".
+v3	254	person,woman,stage,microphone,closeup,interior	A woman covers her mouth with her hands at a microphone, drums behind.
+v3	255	person,woman,man,stage,microphone,closeup,interior	A woman with hands at her face at a microphone, a man beside her.
+v3	256	person,woman,man,two_people,stage,microphone,singing,closeup,lyrics_text,interior	A man and a woman sing close together at one microphone, lyric "In the shallow Shallow".
+v3	257	person,woman,man,two_people,stage,microphone,singing,closeup,lyrics_text,interior,screaming?	A man and a woman sing close together at one microphone, mouths open, lyric "In the shallow Shallow".
+v3	258	person,woman,man,two_people,stage,microphone,singing,closeup,lyrics_text,interior,screaming?	A man and a woman sing close together at one microphone, lyric "In the shallow Shallow".
+v3	259	person,woman,man,two_people,stage,microphone,lamp,interior	A woman and a man face each other at a microphone, silhouetted against a bright spotlight in blue haze.
+v3	260	person,woman,man,two_people,stage,microphone,singing,lamp,interior	A woman and a man sing face to face at one microphone against a bright spotlight in blue haze.
+v3	261	person,woman,man,two_people,stage,microphone,singing,lamp,lyrics_text,interior	A woman and a man sing face to face at one microphone against a spotlight, lyric "In the shallow Shallow".
+v3	262	person,woman,man,two_people,stage,microphone,singing,lamp,lyrics_text,interior	A woman and a man sing face to face at one microphone against a spotlight, lyric "In the shallow Shallow".
+v3	263	person,woman,man,two_people,stage,microphone,singing,lamp,lyrics_text,interior	A woman and a man sing face to face at one microphone against a spotlight, lyric "In the shallow Shallow".
+v3	264	person,woman,man,two_people,stage,microphone,singing,lamp,lyrics_text,interior	A woman and a man sing face to face at one microphone against a spotlight, lyric "In the shallow Shallow".
+v3	265	person,woman,man,two_people,stage,microphone,singing,guitar,lamp,lyrics_text,interior	A woman and a man with a guitar sing face to face at one microphone, lyric "In the shallow Shallow".
+v3	266	person,woman,man,two_people,stage,microphone,singing,lamp,lyrics_text,interior	A woman and a man sing face to face at one microphone against a spotlight, lyric "In the shallow Shallow".
+v3	267	person,woman,man,two_people,stage,microphone,singing,lamp,lyrics_text,interior	A woman and a man sing face to face at one microphone against a spotlight, lyric "In the shallow Shallow".
+v3	268	person,woman,man,two_people,stage,microphone,singing,lamp,lyrics_text,interior	A woman and a man sing face to face at one microphone against a spotlight, lyric "In the shallow Shallow".
+v3	269	person,woman,man,two_people,stage,microphone,singing,lamp,lyrics_text,interior	A woman and a man sing face to face at one microphone against a spotlight, lyric "In the shallow Shallow".
+v3	270	person,woman,man,two_people,stage,microphone,singing,lamp,lyrics_text,interior	A woman and a man sing face to face at one microphone, lyric "We're far from the shallow now".
+v3	271	person,woman,man,two_people,stage,microphone,singing,lamp,lyrics_text,interior	A woman and a man sing face to face at one microphone, lyric "We're far from the shallow now".
+v3	272	person,woman,man,two_people,stage,microphone,singing,lamp,lyrics_text,interior	A woman and a man sing face to face at one microphone, lyric "We're far from the shallow now".
+v3	273	person,woman,man,two_people,stage,microphone,singing,lamp,lyrics_text,interior	A woman and a man sing face to face at one microphone, lyric "We're far from the shallow now".
+v3	274	person,woman,man,two_people,stage,guitar,playing_guitar,lamp,interior	A woman and a man playing guitar on stage in blue haze, the man smiling.
+v3	275	person,man,woman,stage,guitar,playing_guitar,microphone,interior	A bearded man plays an electric guitar in red light, a blonde woman at a microphone in the foreground.
+v3	276	person,man,woman,stage,guitar,microphone,interior	A man with a guitar gestures on stage in teal light, a blonde woman at a microphone in the foreground.
+v3	277	person,man,woman,stage,guitar,playing_guitar,microphone,interior	A man plays guitar on stage in teal light, a blonde woman at a microphone in the foreground.
+v3	278	person,man,woman,stage,guitar,playing_guitar,microphone,interior,smiling	A smiling man plays guitar on stage, a blonde woman at a microphone in the foreground.
+v3	279	person,woman,man,stage,microphone,interior,closeup	A blonde woman at a microphone on stage in teal light, a man with a guitar behind.
+v3	280	person,woman,man,stage,microphone,closeup,lyrics_text,interior	A blonde woman at a microphone on stage, a man with a guitar behind, subtitle "Oh, my God!".
+v3	281	person,woman,man,two_people,stage,closeup,lyrics_text,interior,laughing	A bearded man presses his face to a laughing woman's on stage, subtitle "Oh, my God!".
+v3	282	person,woman,man,two_people,stage,closeup,lyrics_text,interior,laughing,hugging	A bearded man and a laughing woman press their heads together on stage, subtitle "Pretty fucking good, man. There's so many people."
+v3	283	person,woman,man,two_people,stage,closeup,lyrics_text,interior,hugging	A woman with hands clasped leans her head against a man on stage in red light, subtitle "Pretty fucking good."
+v3	284	logo,lyrics_text	A logo animation: a red bar on a white and dark background, a faded subtitle "Pretty fucking good."
+v3	285	logo	A logo animation: a red bar and a red line drawing a rectangle on white.
+v3	286	logo	A logo animation: a red bar and a red line drawing a rectangle on white.
+v3	287	logo	A logo animation: a red bar and an almost closed red rectangle outline on white.
+v3	288	logo	A red bar beside a white panel with an empty red rectangle outline.
+v3	289	logo	A red bar beside a white panel with an empty red rectangle outline.
+v3	290	logo	A red bar beside a white panel with an empty red rectangle outline.
+v3	291	logo	A red bar beside a white panel with an empty red rectangle outline.
+v3	292	logo	A red bar beside a white panel with an empty red rectangle outline.
+v3	293	logo	A red bar beside a white panel with an empty red rectangle outline.
+v3	294	logo	A red bar beside a white panel with an empty red rectangle outline.
+v3	295	logo	A red bar beside a white panel with an empty red rectangle outline.
+v3	296	logo	A red bar beside a white panel with an empty red rectangle outline.
+v3	297	logo	A red bar beside a white panel with an empty red rectangle outline.
+v3	298	logo	A red bar beside a white panel with an empty red rectangle outline.
+v4	0	title_text,logo	Bright green MPAA rating card: "The following preview has been approved for appropriate audiences".
+v4	1	title_text,logo	Bright green MPAA rating card: "The following preview has been approved for appropriate audiences".
+v4	2	title_text,logo	Bright green MPAA rating card: "The following preview has been approved for appropriate audiences".
+v4	3	title_text,logo	Bright green MPAA rating card: "The following preview has been approved for appropriate audiences".
+v4	4	title_text,logo	Bright green MPAA rating card: "The following preview has been approved for appropriate audiences".
+v4	5	black_frame	An all black frame.
+v4	6	black_frame	An all black frame.
+v4	7	black_frame	An all black frame.
+v4	8	black_frame	An all black frame.
+v4	9	black_frame,desert?	A nearly black frame, a faint dune shape.
+v4	10	desert,sunset,mountain	The crest of a sand dune at dusk, hazy hills beyond in dim orange light.
+v4	11	desert,sunset,mountain	The crest of a sand dune at sunset, hazy hills beyond in orange light.
+v4	12	desert,sunset,mountain,daylight	The sharp crest of a sand dune in golden light, hazy hills and valleys beyond.
+v4	13	desert,sunset,mountain,daylight	The sharp crest of a sand dune in golden light, hazy hills and valleys beyond.
+v4	14	desert,sunset,mountain,daylight	The sharp crest of a sand dune in golden light, hazy hills and valleys beyond.
+v4	15	desert,sunset,mountain,daylight	The sharp crest of a sand dune in golden light, hazy hills and valleys beyond.
+v4	16	desert,sunset,mountain,daylight	The sharp crest of a sand dune in golden light, hazy hills and valleys beyond.
+v4	17	desert,sunset,mountain,daylight	The sharp crest of a sand dune in golden light, hazy hills and valleys beyond.
+v4	18	desert,sunset,mountain,daylight	The sharp crest of a sand dune in golden light, hazy hills and valleys beyond.
+v4	19	desert,sunset,mountain,daylight,camel?,wide_shot	The crest of a sand dune in golden light, tiny figures crossing the desert far below.
+v4	20	desert,camel?,daylight,sunset,aerial_view?,wide_shot	A golden sand dune slope, a small line of camels crossing the desert far below.
+v4	21	desert,camel?,daylight,sunset,aerial_view?,wide_shot	A golden sand dune slope, a small line of camels crossing the desert far below.
+v4	22	desert,camel?,daylight,sunset,aerial_view?,wide_shot	A golden sand dune slope, a small line of camels crossing the desert far below.
+v4	23	desert,camel?,daylight,sunset,aerial_view?,wide_shot,bird?	A golden sand dune slope, a small line of camels far below, a bird's shadow on the sand.
+v4	24	desert,camel?,bird?,daylight,sunset,aerial_view?,wide_shot	A golden sand dune slope with a bird's shadow on it, a line of camels far below.
+v4	25	desert,camel?,bird?,daylight,sunset,aerial_view?,wide_shot	A golden sand dune slope with a bird's shadow on it, a line of camels far below.
+v4	26	desert,palace,city_street?,sunset,daylight,wide_shot,dust	Rolling sand dunes in golden haze with a distant walled city and palace on the horizon.
+v4	27	desert,palace,bird,sunset,daylight,wide_shot,dust	Rolling sand dunes in golden haze, a distant palace city on the horizon and a bird in the sky.
+v4	28	desert,palace,bird,sunset,daylight,wide_shot,dust	Rolling sand dunes in golden haze, a distant palace city on the horizon and a bird in the sky.
+v4	29	desert,palace,bird,sunset,daylight,wide_shot,dust	Rolling sand dunes in golden haze, a distant palace city on the horizon and a bird in the sky.
+v4	30	desert,palace,bird,sunset,daylight,wide_shot,dust	Rolling sand dunes in golden haze, a distant palace city on the horizon and a bird in the sky.
+v4	31	desert,palace,bird,sunset,daylight,wide_shot,dust	Rolling sand dunes in golden haze, a distant palace city on the horizon and a bird in the sky.
+v4	32	desert,palace,sunset,daylight,wide_shot,dust	Rolling sand dunes in golden haze, a distant palace city on the horizon.
+v4	33	desert,palace,wide_shot	Darkening sand dunes with a distant palace city on the horizon.
+v4	34	black_frame	An all black frame.
+v4	35	black_frame	An all black frame.
+v4	36	black_frame	An all black frame.
+v4	37	black_frame	An all black frame.
+v4	38	black_frame	An all black frame.
+v4	39	logo,title_text	"FROM DISNEY" in gold script on a dark blue background.
+v4	40	logo,title_text	"FROM DISNEY" in gold script on a dark background.
+v4	41	fire?,smoke?	A swirl of glowing golden sand or smoke on black.
+v4	42	bird,flying,city_street?,skyline,night,palace?	A red parrot flies over a city of lights at night.
+v4	43	bird,flying,city_street?,skyline,night,sky	A red bird flies through a dark blue night sky over a distant city.
+v4	44	bird,flying,night,sky	A red bird flies through a dark blue night sky.
+v4	45	bird,flying,night,sky	A small red bird flies through a dark night sky.
+v4	46	bird,flying,night,sky	A small red bird flies through a dark night sky.
+v4	47	bird,flying,night,sky	A bird flies through a dark night sky.
+v4	48	bird,flying,night,sky,mountain?	A bird flies past dark rocks in a night sky.
+v4	49	bird,flying,night,sky,mountain?	A bird flies past dark rocks in a night sky.
+v4	50	desert,night,mountain?,bird?	Moonlit desert rocks and dunes at night, a small bird swooping low.
+v4	51	desert,night,cave?	A natural rock arch over moonlit sand at night.
+v4	52	desert,night,cave,bird?	A rock arch frames a huge carved rock shaped like a beast's head in the moonlit desert.
+v4	53	desert,night,cave,tiger?,person?	A huge rock carved like a tiger's head with glowing eyes under a rock arch at night, tiny figures below.
+v4	54	desert,night,cave,tiger?,person,fire?	A huge rock shaped like a tiger's head with glowing eyes and mouth, tiny figures with torches below.
+v4	55	desert,night,cave,tiger?,person,fire?	A huge rock shaped like a tiger's head with glowing eyes and mouth, tiny figures below.
+v4	56	desert,night,cave,tiger?,person,fire?	A huge rock shaped like a tiger's head with glowing eyes and mouth, tiny figures below.
+v4	57	cave,night,person,fire?	A glowing orange cave mouth in dark rock, a figure standing in it and another in front.
+v4	58	cave,night,person,fire?	A glowing orange cave mouth in dark rock, a figure standing in it and another in front.
+v4	59	cave,night,person,fire?	A glowing orange cave mouth in dark rock, a figure standing in it and another in front.
+v4	60	cave,night,person,fire?	A glowing orange cave mouth in dark rock, a figure standing in it.
+v4	61	cave,night,person,fire?	A glowing orange cave mouth in dark rock, a figure standing in it.
+v4	62	smoke?,night,black_frame?	A very dark blue frame with faint swirling smoke.
+v4	63	black_frame	An all black frame.
+v4	64	black_frame	An all black frame.
+v4	65	black_frame	An all black frame.
+v4	66	black_frame	An all black frame.
+v4	67	title_text	"NEXT SUMMER" in gold letters on a dark blue background.
+v4	68	title_text	"NEXT SUMMER" in gold letters on a dark blue background.
+v4	69	title_text,smoke?	"NEXT SUMMER" in gold letters dissolving into sparks on dark blue.
+v4	70	black_frame	A nearly black frame with a faint golden glow.
+v4	71	cave,treasure,interior	A vast dark cavern heaped with glittering treasure and rock pillars.
+v4	72	cave,treasure,interior	A vast dark cavern heaped with glittering treasure and rock pillars.
+v4	73	cave,treasure,interior	A vast dark cavern heaped with glittering treasure and rock pillars.
+v4	74	cave,treasure,interior	A darkening cavern heaped with glittering treasure.
+v4	75	title_text?	A close golden ornate curve of a lettered shape against black.
+v4	76	title_text?	Close golden ornate ribbons turning against black.
+v4	77	title_text?	Golden ornate ribbons crossing against black.
+v4	78	title_text?	Golden ornate ribbons crossing against black.
+v4	79	title_text	The golden ornate title "Aladdin" forming from ribbons on black.
+v4	80	title_text,logo	The gold title "Aladdin" with a small Disney logo on black.
+v4	81	title_text,logo	The gold title "Aladdin" with a small Disney logo on black.
+v4	82	title_text,logo	The gold title "Aladdin" with a small Disney logo on black.
+v4	83	person,man,cave,treasure,lamp,interior	A young man in a red vest reaches for a golden oil lamp on a rock in a cave of treasure.
+v4	84	person,man,cave,treasure,lamp,interior	A young man in a red vest reaches for a golden oil lamp on a rock in a cave of treasure.
+v4	85	person,man,cave,treasure,lamp,interior	A young man in a red vest reaches for a golden oil lamp on a rock in a cave of treasure.
+v4	86	title_text,credits	"5/24/19" in gold on a dark blue background, small print below.
+v4	87	title_text,credits	"5/24/19" in gold on a dark blue background, small print below.
+v4	88	title_text,credits	"5/24/19" in gold on a dark blue background, small print below.
+v4	89	title_text,smoke?	"5/24/19" in gold dissolving into golden smoke on dark blue.
+v4	90	smoke	A wisp of golden smoke on a dark blue background.
+v4	91	black_frame,smoke?	A nearly black frame with a faint golden wisp.
+v4	92	black_frame	An all black frame.
+v4	93	black_frame	An all black frame.
+v4	94	black_frame	An all black frame.

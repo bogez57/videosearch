@@ -3,6 +3,9 @@
 #   python sound.py embed MODEL [--cpu]     the vectors, kept in BENCH/emb/<MODEL>/sound_*.npy
 #   python sound.py esc MODEL               ESC-50: 2000 five-second clips of 50 kinds of sound
 #   python sound.py mix MODEL               ESC-50 sounds mixed into the test videos' own sound
+#   python sound.py words MODEL             which words the model's text half takes to be about sound
+#   python sound.py real MODEL              the test videos' own sound, searched for what the labels
+#                                           say can be seen where a sound goes with it (singing, ...)
 #
 # MODEL is a folder in BENCH/models with onnx/audio_model.onnx, onnx/text_model.onnx and CLAP's
 # tokenizer files. The sound is got ready as the program does it (embed_sound.c, ported below).
@@ -20,7 +23,7 @@ import wave
 
 import numpy as np
 
-from common import BENCH, HERE, read_lines
+from common import BENCH, HERE, load_labels, matches, read_lines
 from models import _session, _unit
 
 RATE = 48000
@@ -98,6 +101,26 @@ class SoundModel:
             feeds = {inp.name: enc[inp.name].astype(np.int64) for inp in self.text.get_inputs()}
             out.append(self.text.run(["text_embeds"], feeds)[0])
         return _unit(np.concatenate(out).astype(np.float32))
+
+    def texts(self, texts):
+        """As embed_texts, kept in BENCH/emb/<name>/sound_texts.* between runs."""
+        d = os.path.join(BENCH, "emb", self.name)
+        os.makedirs(d, exist_ok=True)
+        keys_path, vec_path = os.path.join(d, "sound_texts.json"), os.path.join(d, "sound_texts.npy")
+        keys, vecs = [], None
+        if os.path.exists(keys_path) and os.path.exists(vec_path):
+            keys = json.load(open(keys_path, encoding="utf-8"))
+            vecs = np.load(vec_path)
+        at = {k: i for i, k in enumerate(keys)}
+        new = [t for t in dict.fromkeys(texts) if t not in at]
+        if new:
+            add = self.embed_texts(new)
+            vecs = add if vecs is None else np.concatenate([vecs, add])
+            keys += new
+            at = {k: i for i, k in enumerate(keys)}
+            np.save(vec_path, vecs)
+            json.dump(keys, open(keys_path, "w", encoding="utf-8"))
+        return vecs[[at[t] for t in texts]]
 
 
 # ---- the sound
@@ -200,26 +223,47 @@ def _rms(x):
     return float(np.sqrt(np.mean(np.square(x)) + 1e-12))
 
 
-def embed(name, cpu):
+TEMPLATES = {"plain": "{}", "sound_of": "the sound of {}", "this_is": "This is a sound of {}."}
+
+
+def _halves(w):
+    h = len(w) // 2
+    return [w[:h], w[h:]]
+
+
+def embed(name, cpu, force=False):
     m = SoundModel(name, cpu)
     d = os.path.join(BENCH, "emb", name)
     os.makedirs(d, exist_ok=True)
 
+    def keep(fname, make):
+        path = os.path.join(d, fname)
+        if force or not os.path.exists(path):
+            np.save(path, make())
+            print(fname, flush=True)
+
     clips = esc_clips()
-    path = os.path.join(d, "sound_esc.npy")
-    if not os.path.exists(path):
+
+    def esc_all():
         vecs = []
         for i in range(0, len(clips), 64):
             vecs.append(m.embed_audio([esc_wave(p) for p, _ in clips[i : i + 64]]))
-            print("esc", i, flush=True)
-        np.save(path, np.concatenate(vecs))
+        return np.concatenate(vecs)
+
+    keep("sound_esc.npy", esc_all)
 
     st = stretches()
-    np.save(os.path.join(d, "sound_bg5.npy"), m.embed_audio([s for _, _, s in st]))
-    json.dump([[v, t] for v, t, _ in st], open(os.path.join(d, "sound_bg.json"), "w"))
+    at = [[v, t] for v, t, _ in st]
+    bg_json = os.path.join(d, "sound_bg.json")
+    if os.path.exists(bg_json) and json.load(open(bg_json)) != at:
+        force = True  # the videos have changed
+    json.dump(at, open(bg_json, "w"))
+    keep("sound_bg5.npy", lambda: m.embed_audio([s for _, _, s in st]))
     # Ten seconds at a time: each stretch with the one after it in the same video.
     pairs = [i for i in range(len(st) - 1) if st[i][0] == st[i + 1][0] and st[i + 1][1] == st[i][1] + 5]
-    np.save(os.path.join(d, "sound_bg10.npy"), m.embed_audio([np.concatenate([st[i][2], st[i + 1][2]]) for i in pairs]))
+    keep("sound_bg10.npy", lambda: m.embed_audio([np.concatenate([st[i][2], st[i + 1][2]]) for i in pairs]))
+    # Two and a half seconds at a time: [stretches, 2, D].
+    keep("sound_bg2.npy", lambda: m.embed_audio([h for _, _, s in st for h in _halves(s)]).reshape(len(st), 2, -1))
 
     rng = np.random.default_rng(1)
     meta = []
@@ -241,21 +285,9 @@ def embed(name, cpu):
                 w10[s].append(np.concatenate([x, st[j + 1][2]]))
     json.dump(meta, open(os.path.join(d, "sound_mix.json"), "w"))
     for s in SNRS:
-        np.save(os.path.join(d, "sound_mix5_%d.npy" % s), m.embed_audio(w5[s]))
-        np.save(os.path.join(d, "sound_mix10_%d.npy" % s), m.embed_audio(w10[s]))
-        print("mix", s, flush=True)
-
-    texts = {}
-    kinds = sorted(set(k for _, k in clips))
-    for k in kinds:
-        w = k.replace("_", " ")
-        for t in (w, "the sound of " + w, "This is a sound of " + w + "."):
-            texts[t] = 1
-    for t in list(MIX.values()) + SEEN + NOTHING + read_lines(os.path.join(HERE, "bank_sound.txt")):
-        texts[t] = 1
-    keys = list(texts)
-    np.save(os.path.join(d, "sound_texts.npy"), m.embed_texts(keys))
-    json.dump(keys, open(os.path.join(d, "sound_texts.json"), "w"))
+        keep("sound_mix5_%d.npy" % s, lambda: m.embed_audio(w5[s]))
+        keep("sound_mix10_%d.npy" % s, lambda: m.embed_audio(w10[s]))
+        keep("sound_mix2_%d.npy" % s, lambda: m.embed_audio([h for x in w5[s] for h in _halves(x)]).reshape(len(w5[s]), 2, -1))
     print("done", name)
 
 
@@ -266,24 +298,18 @@ def _ap(s, rel):
     return float((hits[r] / (np.nonzero(r)[0] + 1)).mean())
 
 
-def _load_texts(d):
-    keys = json.load(open(os.path.join(d, "sound_texts.json")))
-    vecs = np.load(os.path.join(d, "sound_texts.npy"))
-    return {k: vecs[i] for i, k in enumerate(keys)}
-
-
 def esc(name):
     d = os.path.join(BENCH, "emb", name)
+    m = SoundModel(name, True)
     clips = esc_clips()
     A = np.load(os.path.join(d, "sound_esc.npy"))
-    T = _load_texts(d)
     kinds = sorted(set(k for _, k in clips))
     y = np.array([kinds.index(k) for _, k in clips])
-    bank = np.stack([T[t] for t in read_lines(os.path.join(HERE, "bank_sound.txt"))])
-    nothing = np.stack([T[t] for t in NOTHING])
     print(name, "ESC-50,", len(clips), "clips")
-    for label, fmt in (("the kind's name", "{}"), ("the sound of ...", "the sound of {}"), ("This is a sound of ... .", "This is a sound of {}.")):
-        Q = np.stack([T[fmt.format(k.replace("_", " "))] for k in kinds])
+    for label, fmt in TEMPLATES.items():
+        Q = m.texts([fmt.format(k.replace("_", " ")) for k in kinds])
+        bank = m.texts([fmt.format(t) for t in read_lines(os.path.join(HERE, "bank_sound.txt"))])
+        nothing = m.texts(NOTHING)
         S = Q @ A.T  # [50, 2000]
         acc = float((S.argmax(0) == y).mean())
         for norm, X in (("raw", S), ("less nothing-words", S - (nothing @ A.T).mean(0)), ("less the bank", S - (bank @ A.T).mean(0))):
@@ -291,55 +317,179 @@ def esc(name):
             rel = (y[None, :] == np.arange(len(kinds))[:, None]).ravel()
             pos, neg = X.ravel()[rel], X.ravel()[~rel]
             print(
-                "  %-26s %-19s right kind %.3f  mAP %.3f  uAP %.3f | match p5/p50 %.2f %.2f  no match p50/p95/p99.9 %.2f %.2f %.2f"
+                "  %-9s %-19s right kind %.3f  mAP %.3f  uAP %.3f | match p5/p50 %.2f %.2f  no match p50/p95/p99.9 %.2f %.2f %.2f"
                 % (label, norm, acc, np.mean(aps), _ap(X.ravel(), rel), *np.percentile(pos, [5, 50]), *np.percentile(neg, [50, 95, 99.9]))
             )
 
 
-def mix(name):
+def _centered(T, TB):
+    c = TB.mean(0, keepdims=True)
+    return _unit(T - c), _unit(TB - c)
+
+
+def _norm(norm, S, SB, W):
+    """S [Q, N]: the queries' scores. SB [K, N]: the bank's. W [Q, K]: 1 where a bank entry may stand
+    against the query (it does not say nearly the same)."""
+    if norm == "raw":
+        return S
+    if norm == "fb":  # less the bank's mean
+        return S - SB.mean(0, keepdims=True)
+    if norm.startswith("sm"):  # the query against the bank, as a softmax at this temperature
+        tau = float(norm[2:])
+        mx = (tau * SB).max(0, keepdims=True)
+        E = np.exp(tau * SB - mx)
+        return tau * S - (mx + np.log(np.maximum(W @ E, 1e-30)))
+    if norm.startswith("mk"):  # how far over the bank's k-th best
+        k = int(norm[2:])
+        out = np.empty_like(S)
+        for q in range(len(S)):
+            B = SB[W[q] > 0]
+            out[q] = S[q] - np.sort(B, axis=0)[-k]
+        return out
+    raise ValueError(norm)
+
+
+def mix(name, argv):
     d = os.path.join(BENCH, "emb", name)
-    T = _load_texts(d)
+    m = SoundModel(name, True)
     meta = json.load(open(os.path.join(d, "sound_mix.json")))
     kinds = list(MIX)
-    y = np.array([kinds.index(m[0]) for m in meta])
-    Q = np.stack([T[MIX[k]] for k in kinds])
-    seen = np.stack([T[t] for t in SEEN])
-    bank = np.stack([T[t] for t in read_lines(os.path.join(HERE, "bank_sound.txt"))])
-    nothing = np.stack([T[t] for t in NOTHING])
-    print(name, "- ESC-50 sounds mixed into the videos' sound,", len(meta), "mixes at each loudness")
-    for win in ("5", "10"):
-        BG = np.load(os.path.join(d, "sound_bg%s.npy" % win))
-        for norm, base in (("raw", None), ("less nothing-words", nothing), ("less the bank", bank)):
-            def sc(q, a):
-                s = q @ a.T
-                return s if base is None else s - (base @ a.T).mean(0, keepdims=True)
+    y = np.array([kinds.index(x[0]) for x in meta])
+    thr = 0.6
+    templates = ["plain", "this_is"]
+    windows = ["5", "2", "10"]
+    norms = ["raw", "fb", "sm15", "sm30", "sm60", "mk1", "mk3", "mk5"]
+    for a in argv:
+        if a.startswith("--templates="):
+            templates = a.split("=")[1].split(",")
+        if a.startswith("--windows="):
+            windows = a.split("=")[1].split(",")
+        if a.startswith("--norms="):
+            norms = a.split("=")[1].split(",")
+        if a.startswith("--thr="):
+            thr = float(a.split("=")[1])
+    bank_words = read_lines(os.path.join(HERE, "bank_sound.txt"))
+    print(name, "- ESC-50 sounds mixed into the videos' sound,", len(meta), "mixes at each loudness; bank of", len(bank_words))
+    print("  columns: mAP at +10 / 0 / -10 dB | of the mixes at +10 and at 0 dB, the share scoring over 99% of: stretches without the sound (R-no), words about what is seen (R-seen)")
+    for template in templates:
+        fmt = TEMPLATES[template]
+        Q = m.texts([fmt.format(MIX[k]) for k in kinds])
+        seen = m.texts([fmt.format(t) for t in SEEN])
+        bank = m.texts([fmt.format(t) for t in bank_words])
+        Qc, Bc = _centered(Q, bank)
+        Sc, _ = _centered(seen, bank)
+        WQ = ((Qc @ Bc.T) < thr).astype(np.float32)
+        WS = ((Sc @ Bc.T) < thr).astype(np.float32)
+        print("  template %s: bank entries left out as saying the same, a query: %.1f (sound words), %.1f (seen words)"
+              % (template, (1 - WQ).sum(1).mean(), (1 - WS).sum(1).mean()))
+        for win in windows:
+            def sims(q, file):
+                A = np.load(os.path.join(d, file))
+                if A.ndim == 3:  # halves: the better of the two
+                    return np.maximum(q @ A[:, 0].T, q @ A[:, 1].T)
+                return q @ A.T
 
-            bg = sc(Q, BG)  # the videos' own sound, for the sounds' words
-            bg_seen = sc(seen, BG)  # and for words about what is seen
-            line = "  %2s s  %-19s" % (win, norm)
-            for s in SNRS:
-                MX = np.load(os.path.join(d, "sound_mix%s_%d.npy" % (win, s)))
-                mx = sc(Q, MX)  # [kinds, mixes]
-                aps = []
-                for c in range(len(kinds)):
-                    scores = np.concatenate([mx[c], bg[c]])
-                    rel = np.concatenate([y == c, np.zeros(bg.shape[1], bool)])
-                    aps.append(_ap(scores, rel))
-                pos = mx[y, np.arange(len(y))]
-                line += " | %+3d dB mAP %.2f match p10/p50 %.2f %.2f" % (s, np.mean(aps), *np.percentile(pos, [10, 50]))
-            line += " | no match p50/p99/max %.2f %.2f %.2f | seen-words p50/p99/max %.2f %.2f %.2f" % (
-                *np.percentile(bg, [50, 99]), bg.max(), *np.percentile(bg_seen, [50, 99]), bg_seen.max())
-            print(line)
+            for norm in norms:
+                bg = _norm(norm, sims(Q, "sound_bg%s.npy" % win), sims(bank, "sound_bg%s.npy" % win), WQ)
+                bg_seen = _norm(norm, sims(seen, "sound_bg%s.npy" % win), sims(bank, "sound_bg%s.npy" % win), WS)
+                cut_no, cut_seen = np.percentile(bg, 99), np.percentile(bg_seen, 99)
+                maps, recalls = [], []
+                for s in SNRS:
+                    f = "sound_mix%s_%d.npy" % (win, s)
+                    mx = _norm(norm, sims(Q, f), sims(bank, f), WQ)
+                    aps = []
+                    for c in range(len(kinds)):
+                        aps.append(_ap(np.concatenate([mx[c], bg[c]]), np.concatenate([y == c, np.zeros(bg.shape[1], bool)])))
+                    maps.append(np.mean(aps))
+                    pos = mx[y, np.arange(len(y))]
+                    recalls.append((float((pos > cut_no).mean()), float((pos > cut_seen).mean())))
+                print("    %-8s %3s s %-5s mAP %.2f %.2f %.2f | +10: R-no %.2f R-seen %.2f | 0: R-no %.2f R-seen %.2f"
+                      % (template, win, norm, *maps, *recalls[0], *recalls[1]))
+
+
+def words(name):
+    """Does the text half alone tell words about sound from words about what is seen?"""
+    m = SoundModel(name, True)
+    bank_s = read_lines(os.path.join(HERE, "bank_sound.txt"))
+    bank_v = read_lines(os.path.join(HERE, "bank.txt"))
+    qs = [l.split("\t")[0].strip() for l in read_lines(os.path.join(HERE, "queries.txt"))]
+    groups = {"sound (mixed-in kinds)": list(MIX.values()), "seen": SEEN, "picture queries": qs}
+    TS, TV = m.texts(bank_s), m.texts(bank_v)
+    c = np.concatenate([TS, TV]).mean(0, keepdims=True)
+    TSc, TVc = _unit(TS - c), _unit(TV - c)
+    for g, ws in groups.items():
+        T = _unit(m.texts(ws) - c)
+        a = np.sort(T @ TSc.T, axis=1)[:, -6:-1].mean(1)  # the five nearest sound words, not itself
+        b = np.sort(T @ TVc.T, axis=1)[:, -6:-1].mean(1)
+        sc = a - b
+        print("%s: n=%d  sound-nearness less picture-nearness: p10 %.2f p50 %.2f p90 %.2f" % (g, len(ws), *np.percentile(sc, [10, 50, 90])))
+        if g != "sound (mixed-in kinds)":
+            order = np.argsort(-sc)
+            print("   most sound-like: " + "; ".join("%s %.2f" % (ws[i], sc[i]) for i in order[:12]))
+            print("   least:           " + "; ".join("%s %.2f" % (ws[i], sc[i]) for i in order[-12:]))
+
+
+# Sounds that go with something the labels say can be seen: words, the frames' tags.
+REAL = [
+    ("a woman singing", "woman and singing"),
+    ("a man singing", "man and singing"),
+    ("singing", "singing"),
+    ("an acoustic guitar", "playing_guitar"),
+    ("a crowd cheering", "audience"),
+    ("an explosion", "explosion"),
+    ("gunshots", "shooting"),
+    ("a man shouting", "man and screaming"),
+]
+
+
+def real(name):
+    d = os.path.join(BENCH, "emb", name)
+    m = SoundModel(name, True)
+    labels = load_labels()
+    at = json.load(open(os.path.join(d, "sound_bg.json")))
+    A = np.load(os.path.join(d, "sound_bg5.npy"))
+    use = [i for i, (v, t) in enumerate(at) if (v, t) in labels]
+    at, A = [at[i] for i in use], A[use]
+    bank_words = read_lines(os.path.join(HERE, "bank_sound.txt"))
+    print(name, "- the videos' own sound,", len(at), "five-second stretches of", len(set(v for v, _ in at)), "videos")
+    for template in ("plain", "this_is"):
+        fmt = TEMPLATES[template]
+        Q = m.texts([fmt.format(w) for w, _ in REAL])
+        bank = m.texts([fmt.format(t) for t in bank_words])
+        for norm, S in (("raw", Q @ A.T), ("fb", Q @ A.T - (bank @ A.T).mean(0, keepdims=True))):
+            aps = []
+            lines = []
+            for qi, (w, expr) in enumerate(REAL):
+                code = compile(expr, "<real>", "eval")
+                rel = np.zeros(len(at), bool)
+                keep = np.ones(len(at), bool)
+                for i, (v, t) in enumerate(at):
+                    got = [matches(code, *labels[(v, t + k)][:2]) for k in range(5) if (v, t + k) in labels]
+                    rel[i] = any(r for r, _ in got)
+                    keep[i] = rel[i] or all(sure for _, sure in got)
+                if not rel.any():
+                    continue
+                ap = _ap(S[qi][keep], rel[keep])
+                aps.append(ap)
+                order = np.argsort(-S[qi], kind="stable")[:5]
+                lines.append("      %-28s n=%-3d AP %.2f  best: %s" % (
+                    w, rel.sum(), ap, " ".join("v%d:%d%s %.2f" % (*at[i], "+" if rel[i] else "", S[qi][i]) for i in order)))
+            print("  %-8s %-4s mAP %.3f" % (template, norm, np.mean(aps)))
+            print("\n".join(lines))
 
 
 def main():
     cmd, name = sys.argv[1], sys.argv[2]
     if cmd == "embed":
-        embed(name, "--cpu" in sys.argv)
+        embed(name, "--cpu" in sys.argv, "--force" in sys.argv)
     elif cmd == "esc":
         esc(name)
     elif cmd == "mix":
-        mix(name)
+        mix(name, sys.argv[3:])
+    elif cmd == "words":
+        words(name)
+    elif cmd == "real":
+        real(name)
 
 
 if __name__ == "__main__":

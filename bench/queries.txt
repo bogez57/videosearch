@@ -1,0 +1,170 @@
+# Searches: words <tab> what a frame must have to match.
+#   an expression over the labels' tags (python: and, or, not)
+#   NEAR   something these videos could well have had, but that is in none of them
+#   NONE   something far from anything in them
+# A tag a frame is "not sure" of (a trailing ? in labels.tsv) leaves that frame out of the search's sums.
+# -- people and what they do
+a man screaming	man and screaming
+person screaming	screaming
+a woman singing	woman and singing
+a man singing	man and singing
+a man playing guitar	playing_guitar
+a guitar	guitar
+a microphone	microphone
+a singer on a stage	singing and stage
+a concert	stage or audience
+an audience at a concert	audience
+a crowd of people	crowd
+a woman	woman
+two people hugging	hugging
+a soldier	soldier
+soldiers running	soldier and running
+soldiers in a trench	soldier and trench
+soldiers sitting in a forest	soldier and sitting and forest
+a wounded soldier lying on the ground	soldier and lying and blood
+a person smiling	smiling
+a person laughing	laughing
+a child	child
+a family eating dinner at a table	sitting and interior and (child or woman) and not soldier
+a close up of a face	closeup
+a person climbing	climbing
+a person crawling on the ground	crawling
+a person lying down	lying
+a man wearing a helmet	helmet
+a man with a gun	gun
+someone shooting a gun	shooting
+a dead body	corpse
+two soldiers	soldier and two_people
+a man and a woman	man and woman and two_people
+# -- places
+a trench	trench
+a battlefield	battlefield
+a river	river
+water	water
+a forest	forest
+a field of grass	field
+a desert	desert
+sand dunes	desert and not cave
+a city street	city_street
+a city skyline	skyline
+ruined buildings	ruins
+a bridge	bridge
+a palace	palace
+a cave	cave
+a tunnel	tunnel
+a farmhouse	farmhouse
+a stage	stage
+a snowy mountain	mountain and logo
+the sky	sky
+a night sky	sky and night
+at night	night
+a sunset	sunset
+fog	fog
+# -- things
+an explosion	explosion
+fire	fire
+smoke	smoke
+dust and debris	dust
+blood	blood
+a cat	cat
+a woman holding a cat	woman and cat
+a bird	bird
+a bird flying	bird and flying
+a monster	monster
+an airplane	airplane
+a burning airplane	airplane and fire
+fighter jets	airplane and flying and sky
+a car	car
+a car flying through the air	car and flying
+a truck	truck
+a flag	flag
+an oil lamp	lamp and treasure
+stage lights	lamp and stage
+gold and treasure	treasure
+yellow flowers	flowers
+barbed wire	barbed_wire
+# -- the shot
+words on the screen	title_text or lyrics_text or credits
+a title card	title_text
+song lyrics on the screen	lyrics_text
+a company logo	logo
+a black screen	black_frame
+an aerial view of a city	aerial_view and (city_street or skyline)
+a wide landscape	wide_shot and not stage and not city_street
+# -- more than one thing
+a soldier running across a battlefield	soldier and running and battlefield
+soldiers walking through a trench	soldier and trench and walking
+a woman singing into a microphone	woman and singing and microphone
+a man and a woman singing together	man and woman and singing and two_people
+an explosion in a city street	explosion and city_street
+a crowd of people in a city street	crowd and city_street
+a soldier at night	soldier and night
+a man playing guitar on a stage	playing_guitar and stage
+a woman in a yellow coat on a street	woman and city_street and not crowd
+a soldier silhouetted against a fire	soldier and fire and night
+a biplane flying over a field	airplane and field
+# -- typed as a few bare words
+man screaming	man and screaming
+woman singing	woman and singing
+explosion	explosion
+guitar	guitar
+sunset	sunset
+cat	cat
+desert	desert
+airplane	airplane
+crowd	crowd
+car	car
+trench	trench
+bird flying	bird and flying
+# -- could have been in these videos, but is not
+people dancing	NEAR
+a person riding a horse	NEAR
+a horse	NEAR
+a monkey	NEAR
+a dog	NEAR
+an elephant	NEAR
+a helicopter	NEAR
+a boat	NEAR
+a tank	NEAR
+a sword	NEAR
+a piano	NEAR
+a violin	NEAR
+a book	NEAR
+a beach	NEAR
+a train	NEAR
+a motorcycle	NEAR
+a police officer	NEAR
+a wedding	NEAR
+a ship at sea	NEAR
+a man riding a bicycle	NEAR
+# -- far from anything in them
+a basketball game	NONE
+a kitchen	NONE
+a laptop computer	NONE
+a wedding cake	NONE
+penguins	NONE
+a tennis match	NONE
+sushi	NONE
+a spaceship	NONE
+a classroom	NONE
+a swimming pool	NONE
+a giraffe	NONE
+a bowl of fruit	NONE
+a bicycle race	NONE
+a dentist	NONE
+a skateboard	NONE
+a christmas tree	NONE
+an astronaut	NONE
+a pizza	NONE
+a rainbow	NONE
+a robot	NONE
+a shark	NONE
+a tractor	NONE
+a snowman	NONE
+a chess board	NONE
+a golf course	NONE
+a hospital operating room	NONE
+a supermarket	NONE
+a traffic light	NONE
+a birthday party	NONE
+a bride in a wedding dress	NONE

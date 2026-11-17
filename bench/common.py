@@ -28,7 +28,7 @@ def read_lines(path):
 def load_labels(path=None):
     """labels.tsv: v <tab> second <tab> tags (comma separated, a trailing ? is 'not sure') <tab> caption.
     Returns {(v, second): (set of sure tags, set of unsure tags, caption)}."""
-    path = path or os.path.join(BENCH, "labels.tsv")
+    path = path or os.path.join(HERE, "labels.tsv")
     out = {}
     for line in read_lines(path):
         parts = line.split("\t")
@@ -47,3 +47,20 @@ def save_json(path, obj):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(obj, f)
+
+
+class _Tags(dict):
+    def __init__(self, tags):
+        super().__init__()
+        self.tags = tags
+
+    def __missing__(self, key):
+        return key.lower() in self.tags
+
+
+def matches(code, sure, unsure):
+    """A compiled tag expression (python: and, or, not) against a frame's tags: (it matches, that is
+    certain - no "not sure" tag could change it)."""
+    lo = bool(eval(code, {"__builtins__": {}}, _Tags(sure)))
+    hi = bool(eval(code, {"__builtins__": {}}, _Tags(sure | unsure)))
+    return lo and lo == hi, lo == hi

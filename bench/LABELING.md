@@ -1,6 +1,6 @@
 # Labeling the frames
 
-`labels.tsv`, in the bench folder: one line for every frame,
+`labels.tsv`, here beside the scripts: one line for every frame,
 
     v<video> TAB <second> TAB <tags> TAB <caption>
 
