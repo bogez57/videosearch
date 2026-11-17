@@ -14,6 +14,8 @@ struct IDX_Indexer {
    Thread   thread;
    B32      running; // a thread was started and not joined yet
    U64      library_gen;
+   U64      started_us;
+   B32      reported; // the run's end has been logged
 
    String8* paths;
    String8* names; // pieces of paths
@@ -85,6 +87,15 @@ IDX_Stop(IDX_Indexer* indexer) {
 
 internal void
 IDX_Update(IDX_Indexer* indexer, LIB_Library* library) {
+   // The end of a run, logged once from here: the thread has no log.
+   if (indexer->running && !indexer->reported && InsAtomicU64Eval(&indexer->done) == indexer->count) {
+      indexer->reported = 1;
+      F64 seconds = (F64)(NowTimeUS() - indexer->started_us) / 1000000.0;
+      LogInfoF("Read %llu frames from %llu videos in %.1f s (%llu could not be decoded)",
+               (unsigned long long)InsAtomicU64Eval(&indexer->frames), (unsigned long long)indexer->count, seconds,
+               (unsigned long long)InsAtomicU64Eval(&indexer->failed));
+   }
+
    if (indexer->library_gen == library->generation) {
       return;
    }
@@ -105,6 +116,8 @@ IDX_Update(IDX_Indexer* indexer, LIB_Library* library) {
    indexer->failed = 0;
    indexer->frames = 0;
    indexer->current = 0;
+   indexer->started_us = NowTimeUS();
+   indexer->reported = 0;
 
    if (indexer->count != 0) {
       indexer->thread = ThreadLaunch(_IDX_ThreadEntry, indexer);

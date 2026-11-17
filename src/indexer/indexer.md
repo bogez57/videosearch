@@ -26,6 +26,8 @@ disk; step 3 searches them.
 - `IDX_Alloc`
 - `IDX_Update(indexer, library)`: once a frame, from `FrameWork`. Starts a
   run when the library's generation has changed.
+  When a run has gone through every video, it logs how many frames, how
+  long it took and how many videos failed.
 - `IDX_GetStatus`: how many videos, done, failed, frames taken, and the name
   of the one under way. The status line shows it.
 - `IDX_Stop`: cancels and joins, at the end of the program.
