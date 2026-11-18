@@ -16,6 +16,16 @@ The picture and sound halves run on the graphics card through DirectML when
 The text halves are always on the processor. The vectors come out the same
 either way.
 
+Two things make the card quicker at it (`bench/speed.py` has the numbers,
+on J's RTX 5060). The image half is run in half precision if that file is
+there (`vision_model_fp16.onnx`): 1.8 ms a picture against 4.5, and its
+vectors are the whole one's to four places, so an index made with either is
+searched the same. And ONNX Runtime is told the sizes of what is coming
+before a model is loaded (`_EMB_Size`), which lets DirectML plan for them:
+the image half always gets `EMB_IMAGE_BATCH` (16) pictures, and is nearly
+twice as fast for it in half precision (1.8 ms a picture against 3.4); the
+sound half always gets one stretch, 19 ms against 31.
+
 The model is two files in `data\models\mobileclip_blt\`
 (`data/models/README.md`):
 
@@ -77,13 +87,17 @@ and the words about sound are `data\clap\sound_words.txt`
   the merges and the words that could be about anything, starts ONNX
   Runtime. 0 if it can't (a file missing, an old `onnxruntime.dll`), and why
   is logged.
-- `EMB_Load(model)`: loads both halves, then puts the words that could be
-  about anything through the text half, eight at a time, for their average.
+- `EMB_Load(model)`: loads both halves - the image half from
+  `vision_model_fp16.onnx` if it is there and runs on the card, else from
+  `vision_model.onnx` - then puts the words that could be about anything
+  through the text half, eight at a time, for their average.
   On the indexer's thread. 0 if a file is missing or lacks its output, and
   why is logged.
 - `EMB_IsLoaded`
-- `EMB_ImageVectors(model, images, count, vectors_out)`: a batch through the
-  image half; the vectors made length one. Checks they are count by 512.
+- `EMB_ImageVectors(model, images, vectors_out)`: `EMB_IMAGE_BATCH` pictures
+  through the image half, always that many (with fewer to run, the caller
+  makes the rest zeros); the vectors made length one. Checks they are 16 by
+  512.
 - `EMB_QueryVector(model, text, vector_out)`: the vector a search for
   pictures is made with. The text as it is and after "a photo of ", "a video
   frame of ", "a scene from a movie showing " and "a picture of " goes

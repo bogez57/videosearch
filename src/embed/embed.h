@@ -37,6 +37,10 @@
 // then blue, each EMB_IMAGE_DIM rows from the top.
 #define EMB_IMAGE_FLOATS (3 * EMB_IMAGE_DIM * EMB_IMAGE_DIM)
 
+// Pictures the image model is run on at once, always this many: told ahead
+// how many are coming, the graphics card runs it nearly twice as fast.
+#define EMB_IMAGE_BATCH 16
+
 // The words as the text model reads them: this many numbers, the first
 // EMB_TOKEN_START, EMB_TOKEN_END after the last word, then zeros.
 #define EMB_TEXT_TOKENS  77
@@ -110,10 +114,11 @@ internal B32        EMB_Load(EMB_Model* model);
 internal B32        EMB_IsLoaded(EMB_Model* model);
 internal void       EMB_Close(EMB_Model* model);
 
-// count images, made by EMB_ImageFromFrame and one after another, into count
-// vectors in vectors_out (EMB_DIM each). 0 if the model failed, and why is
-// logged. One thread at a time.
-internal B32 EMB_ImageVectors(EMB_Model* model, F32* images, U64 count, F32* vectors_out);
+// EMB_IMAGE_BATCH images, made by EMB_ImageFromFrame and one after another,
+// into as many vectors in vectors_out (EMB_DIM each). With fewer to run, the
+// rest are zeros, and their vectors nothing. 0 if the model failed, and why
+// is logged. One thread at a time.
+internal B32 EMB_ImageVectors(EMB_Model* model, F32* images, F32* vectors_out);
 
 // The vector to search pictures with for text, into vector_out (EMB_DIM): a
 // frame's dot product with it is how well the frame matches the words. Two

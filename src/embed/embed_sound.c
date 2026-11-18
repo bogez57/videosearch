@@ -19,7 +19,7 @@
 #define _EMB_HOP      480
 
 // Made once, by the first EMB_SoundFeatures. One thread only calls it (the
-// indexer's).
+// indexer's reader).
 global B32 _emb_sound_ready = 0;
 global F64 _emb_window[_EMB_FFT_SIZE];
 global F64 _emb_fft_cos[_EMB_FFT_SIZE / 2];

@@ -34,6 +34,7 @@ struct _EMB_Half {
    String8     inputs[4];
    U64         input_count;
    String8     output;
+   B32         on_gpu;
 };
 
 struct EMB_Model {
@@ -169,13 +170,26 @@ EMB_Open(String8 folder, String8 merges_path, String8 any_words_path, B32 use_gp
    return model;
 }
 
+// A size of a model's input that its file leaves open (a name where a
+// number would be) and that is always the same here. ONNX Runtime is told
+// it before the model is loaded, and DirectML plans for it.
+typedef struct _EMB_Size _EMB_Size;
+struct _EMB_Size {
+   char*   name; // the file's
+   int64_t size;
+};
+
 // A session for the model file at path. With gpu, one that runs on the
 // graphics card: 0 if it can't, and why is logged as something to know.
 internal B32
-_EMB_CreateSession(EMB_Model* model, wchar_t* path, char* file, B32 gpu, OrtSession** session_out) {
+_EMB_CreateSession(EMB_Model* model, wchar_t* path, char* file, B32 gpu, _EMB_Size* sizes, U64 sizes_count,
+                   OrtSession** session_out) {
    OrtSessionOptions* options = 0;
    B32                ok = _EMB_Ok(model, model->ort->CreateSessionOptions(&options), "starting");
    ok = ok && _EMB_Ok(model, model->ort->SetSessionGraphOptimizationLevel(options, ORT_ENABLE_ALL), "starting");
+   for (U64 i = 0; ok && i < sizes_count; i += 1) {
+      ok = _EMB_Ok(model, model->ort->AddFreeDimensionOverrideByName(options, sizes[i].name, sizes[i].size), "starting");
+   }
    if (ok && gpu) {
       // The card that is fastest, if there are two. DirectML wants the two
       // settings after it.
@@ -200,8 +214,10 @@ _EMB_CreateSession(EMB_Model* model, wchar_t* path, char* file, B32 gpu, OrtSess
 
 // Loads file from folder into half, with the names of its inputs and of the
 // output named output. With gpu it runs on the graphics card if it can.
+// sizes are those of its input that are always the same, if any.
 internal B32
-_EMB_LoadHalf(EMB_Model* model, _EMB_Half* half, String8 folder, char* file, char* output, B32 gpu) {
+_EMB_LoadHalf(EMB_Model* model, _EMB_Half* half, String8 folder, char* file, char* output, B32 gpu, _EMB_Size* sizes,
+              U64 sizes_count) {
    Temp    scratch = ScratchBegin(0, 0);
    String8 path = PushStr8F(scratch.arena, "%S\\%s", folder, file);
    B32     ok = 1;
@@ -225,9 +241,9 @@ _EMB_LoadHalf(EMB_Model* model, _EMB_Half* half, String8 folder, char* file, cha
             wide[wide_size++] = (wchar_t)c;
          }
       }
-      B32 on_gpu = (gpu && _EMB_CreateSession(model, wide, file, 1, &half->session));
-      ok = on_gpu || _EMB_CreateSession(model, wide, file, 0, &half->session);
-      if (on_gpu) {
+      half->on_gpu = (gpu && _EMB_CreateSession(model, wide, file, 1, sizes, sizes_count, &half->session));
+      ok = half->on_gpu || _EMB_CreateSession(model, wide, file, 0, sizes, sizes_count, &half->session);
+      if (half->on_gpu) {
          LogInfoF("%s runs on the graphics card\n", file);
       }
    }
@@ -333,15 +349,16 @@ _EMB_Run(EMB_Model* model, _EMB_Half* half, OrtValue** inputs, U64 count, F32* v
 }
 
 internal B32
-EMB_ImageVectors(EMB_Model* model, F32* images, U64 count, F32* vectors_out) {
+EMB_ImageVectors(EMB_Model* model, F32* images, F32* vectors_out) {
    OrtValue* input = 0;
-   int64_t   shape[4] = {(int64_t)count, 3, EMB_IMAGE_DIM, EMB_IMAGE_DIM};
+   int64_t   shape[4] = {EMB_IMAGE_BATCH, 3, EMB_IMAGE_DIM, EMB_IMAGE_DIM};
    B32       ok = EMB_IsLoaded(model);
    ok = ok && _EMB_Ok(model,
-                      model->ort->CreateTensorWithDataAsOrtValue(model->memory, images, count * EMB_IMAGE_FLOATS * sizeof(F32),
-                                                                 shape, 4, ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT, &input),
+                      model->ort->CreateTensorWithDataAsOrtValue(model->memory, images,
+                                                                 (U64)EMB_IMAGE_BATCH * EMB_IMAGE_FLOATS * sizeof(F32), shape, 4,
+                                                                 ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT, &input),
                       "encoding pictures");
-   ok = ok && _EMB_Run(model, &model->image, &input, count, vectors_out, "encoding pictures");
+   ok = ok && _EMB_Run(model, &model->image, &input, EMB_IMAGE_BATCH, vectors_out, "encoding pictures");
    if (input != 0) model->ort->ReleaseValue(input);
    return ok;
 }
@@ -400,8 +417,27 @@ _EMB_TextVectors(EMB_Model* model, String8* texts, U64 count, F32* vectors_out) 
 
 internal B32
 EMB_Load(EMB_Model* model) {
-   B32 ok = _EMB_LoadHalf(model, &model->image, model->folder, "vision_model.onnx", "image_embeds", model->use_gpu);
-   ok = ok && _EMB_LoadHalf(model, &model->text, model->folder, "text_model.onnx", "text_embeds", 0);
+   Temp      scratch = ScratchBegin(0, 0);
+   _EMB_Size image_sizes[] = {{"batch_size", EMB_IMAGE_BATCH}};
+
+   // The image half in half precision, if that file is there and the
+   // graphics card is used: the card runs it more than twice as fast, and
+   // its vectors are the same to four places. Not for the processor, which
+   // would run it slower than the whole one.
+   B32 ok = 0;
+   if (model->use_gpu && FilePathExists(PushStr8F(scratch.arena, "%S\\vision_model_fp16.onnx", model->folder))) {
+      ok = _EMB_LoadHalf(model, &model->image, model->folder, "vision_model_fp16.onnx", "image_embeds", 1, image_sizes,
+                         ArrayCount(image_sizes));
+      if (!ok || !model->image.on_gpu) {
+         if (model->image.session != 0) model->ort->ReleaseSession(model->image.session);
+         MemoryZeroStruct(&model->image);
+         ok = 0;
+      }
+   }
+   ok = ok || _EMB_LoadHalf(model, &model->image, model->folder, "vision_model.onnx", "image_embeds", model->use_gpu, image_sizes,
+                            ArrayCount(image_sizes));
+   ok = ok && _EMB_LoadHalf(model, &model->text, model->folder, "text_model.onnx", "text_embeds", 0, 0, 0);
+   ScratchEnd(scratch);
 
    // The average vector of the words that could be about anything.
    F64 sum[EMB_DIM] = {0};
@@ -519,8 +555,15 @@ _EMB_SoundSentence(Arena* arena, String8 text) {
 internal B32
 EMB_LoadSound(EMB_Model* model) {
    B32 ok = (model != 0 && model->sound_folder.size != 0);
-   ok = ok && _EMB_LoadHalf(model, &model->sound, model->sound_folder, "audio_model.onnx", "audio_embeds", model->use_gpu);
-   ok = ok && _EMB_LoadHalf(model, &model->sound_text, model->sound_folder, "text_model.onnx", "text_embeds", 0);
+   _EMB_Size sound_sizes[] = {
+       {"audio_batch_size", 1},
+       {"num_channels", 1},
+       {"height", EMB_SOUND_FRAMES},
+       {"width", EMB_SOUND_MELS},
+   };
+   ok = ok && _EMB_LoadHalf(model, &model->sound, model->sound_folder, "audio_model.onnx", "audio_embeds", model->use_gpu,
+                            sound_sizes, ArrayCount(sound_sizes));
+   ok = ok && _EMB_LoadHalf(model, &model->sound_text, model->sound_folder, "text_model.onnx", "text_embeds", 0, 0, 0);
    if (ok && model->sound.input_count != 1) {
       LogUserErrorF("The sound model has %llu inputs, not the one known here\n", (unsigned long long)model->sound.input_count);
       ok = 0;

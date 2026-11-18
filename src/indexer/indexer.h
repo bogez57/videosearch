@@ -1,7 +1,7 @@
 ////////////////////////////////
 //~ bgz: indexer
 //
-// Goes through the library's videos on a thread of its own, decoding each,
+// Goes through the library's videos on threads of its own, decoding each,
 // taking a frame every IDX_SAMPLE_SECONDS, running those through the image
 // model (embed.h) and writing what it makes of them to the video's index
 // file (index.h). The model is shown each frame every way it can be
@@ -27,8 +27,9 @@
 // frame is 288 high and one of 2.39:1 is 214, so they are scaled little.
 #define IDX_FRAME_DIM 512
 
-// Frames run through the model at once: EMB_View_COUNT pictures each.
-#define IDX_BATCH 4
+// Frames run through the model at once: EMB_View_COUNT pictures each, which
+// is as many pictures as the model takes (EMB_IMAGE_BATCH).
+#define IDX_BATCH (EMB_IMAGE_BATCH / EMB_View_COUNT)
 
 // How long a stretch of sound is, in seconds and in samples. The sound model
 // takes ten seconds and a shorter sound repeated; at five, a hit says where

@@ -2,6 +2,8 @@
 # getting a frame ready (its decoder, embed.c, the indexer's average of the views) and the model's
 # own way give the same vectors?
 #   python check_index.py [index folder]      (default: the repo's bin\local\index)
+#   python check_index.py --same A B          two index folders against each other, file by file:
+#                                             what a change to the indexer must leave as it was
 # Needs the bench's vectors of the model the index was made with (embed_images.py mobileclip-b).
 # Prints, for each video, how alike the two vectors of each second are (their dot product: 1 is the
 # same): the program's against what the bench makes the program's way, and against each view alone.
@@ -32,7 +34,33 @@ def read_index(path):
     return video, model, times, vecs
 
 
+def same(a, b):
+    """Each index file of folder a, pictures' and sound's, against the one of that name in b."""
+    worst = 1.0
+    for f in sorted(os.listdir(a)):
+        if not f.endswith((".vsi", ".vsa")):
+            continue
+        if not os.path.exists(os.path.join(b, f)):
+            print("%s: not in %s" % (f, b))
+            continue
+        _, _, ta, va = read_index(os.path.join(a, f))
+        _, _, tb, vb = read_index(os.path.join(b, f))
+        if len(ta) != len(tb):
+            print("%s: %d and %d of them" % (f, len(ta), len(tb)))
+            continue
+        if len(ta) == 0:
+            print("%s: nothing in either" % f)
+            continue
+        cos = (va * vb).sum(1) / np.maximum(np.linalg.norm(va, axis=1) * np.linalg.norm(vb, axis=1), 1e-12)
+        worst = min(worst, float(cos.min()))
+        print("%s: %d, times apart by %.3f s at most, vectors the same to the bit for %d, cosine %.5f at least, %.5f in the middle"
+              % (f, len(ta), np.abs(ta - tb).max(), int((va == vb).all(1).sum()), cos.min(), np.median(cos)))
+    print("the least cosine of all: %.5f" % worst)
+
+
 def main():
+    if len(sys.argv) > 3 and sys.argv[1] == "--same":
+        return same(sys.argv[2], sys.argv[3])
     folder = sys.argv[1] if len(sys.argv) > 1 else os.path.join(REPO, "bin", "local", "index")
     names = {}
     for line in open(os.path.join(BENCH, "videos.txt"), encoding="utf-8"):

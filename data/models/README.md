@@ -6,13 +6,19 @@ for them here, beside `bin`.
 ## mobileclip_blt
 
 Apple's MobileCLIP-B (the one trained longer, "LT"), as exported to ONNX by
-Xenova: https://huggingface.co/Xenova/mobileclip_blt. Two files from it, into
-`data\models\mobileclip_blt\`:
+Xenova: https://huggingface.co/Xenova/mobileclip_blt. Three files from it,
+into `data\models\mobileclip_blt\`:
 
-| In the repo on Hugging Face | Size        | What it is     |
-| --------------------------- | ----------- | -------------- |
-| `onnx/vision_model.onnx`    | 345,594,507 | the image half |
-| `onnx/text_model.onnx`      | 253,902,061 | the words half |
+| In the repo on Hugging Face   | Size        | What it is                        |
+| ----------------------------- | ----------- | --------------------------------- |
+| `onnx/vision_model.onnx`      | 345,594,507 | the image half                    |
+| `onnx/vision_model_fp16.onnx` | 172,963,522 | the image half, in half precision |
+| `onnx/text_model.onnx`        | 253,902,061 | the words half                    |
+
+The half-precision file is the one used on a graphics card, where it runs
+more than twice as fast and finds the same things; the whole one is used on
+the processor (`--cpu`), or if the other is not there. The whole one alone
+will do everywhere, the half-precision one alone only on a graphics card.
 
 The `.onnx` files go straight in the folder, not in an `onnx` folder under
 it. Each file is at
@@ -22,8 +28,8 @@ The weights are under Apple's own licence for them (`LICENSE_weights_data`
 in https://github.com/apple/ml-mobileclip), not MIT as CLIP's were: to be
 read before the program is given to anyone else.
 
-Without `vision_model.onnx` the program still runs and searches by file
-name, but indexes nothing, and its status line says so.
+Without an image half the program still runs and searches by file name, but
+indexes nothing, and its status line says so.
 
 ## clap-htsat-unfused (optional: search by sound)
 
