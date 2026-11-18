@@ -28,6 +28,30 @@ LIB_NameIsVideo(String8 name) {
    return result;
 }
 
+// What is in a file, as far as telling a copy from another file of the same
+// size needs: a hash of three pieces of it, its start, its middle and its
+// end. 0 if it can't be read.
+internal U64
+_LIB_Sample(String8 path, U64 size) {
+   Temp scratch = ScratchBegin(0, 0);
+   U64  result = 0;
+   File file = FileOpen(AccessFlag_Read | AccessFlag_ShareRead, path);
+   if (!FileMatch(file, FileZero())) {
+      U64 piece = Min(size, KB(64));
+      U64 at[3] = {0, (size - piece) / 2, size - piece};
+      B32 ok = 1;
+      for (U64 i = 0; i < ArrayCount(at) && ok; i += 1) {
+         String8 data = StringFromFileRange(scratch.arena, file, R1U64(at[i], at[i] + piece));
+         ok = (data.size == piece);
+         result = result * 31 + U64HashFromStr8(data);
+      }
+      result = ok ? Max(result, 1) : 0;
+      FileClose(file);
+   }
+   ScratchEnd(scratch);
+   return result;
+}
+
 internal LIB_Library*
 LIB_Alloc(void) {
    // On an arena of its own: the folders' is emptied when one is taken out.
@@ -75,7 +99,22 @@ LIB_Rescan(LIB_Library* library) {
       U64          depth;
    };
 
+   // A video found, kept by its size: one found again is left out, whether
+   // it is the same path (a folder given that is under another given) or a
+   // copy somewhere else (the same size and the same _LIB_Sample, which is
+   // only read for files whose sizes are the same).
+   typedef struct _LIB_Found _LIB_Found;
+   struct _LIB_Found {
+      _LIB_Found* next; // of those whose sizes share a slot
+      String8     path;
+      U64         size;
+      U64         sample;
+      B32         sampled;
+   };
+   _LIB_Found** found = PushArray(scratch.arena, _LIB_Found*, 4096);
+
    String8List paths = {0};
+   U64         left_out = 0;
    for (String8Node* given = library->folders.first; given != 0; given = given->next) {
       _LIB_ToWalk* first = PushArray(scratch.arena, _LIB_ToWalk, 1);
       first->path = given->string;
@@ -95,7 +134,37 @@ LIB_Rescan(LIB_Library* library) {
                   next = sub;
                }
             } else if (LIB_NameIsVideo(info.name)) {
-               Str8ListPush(scratch.arena, &paths, path);
+               U64         size = info.props.size;
+               _LIB_Found* mine = PushArray(scratch.arena, _LIB_Found, 1);
+               mine->path = path;
+               mine->size = size;
+               _LIB_Found** slot = &found[(size * 0x9E3779B97F4A7C15ull) >> 52];
+               B32          again = 0;
+               for (_LIB_Found* other = *slot; other != 0 && !again; other = other->next) {
+                  if (other->size != size) {
+                     continue;
+                  }
+                  if (Str8Match(other->path, path, StringMatchFlag_CaseInsensitive)) {
+                     again = 1;
+                  } else {
+                     if (!other->sampled) {
+                        other->sample = _LIB_Sample(other->path, size);
+                        other->sampled = 1;
+                     }
+                     if (!mine->sampled) {
+                        mine->sample = _LIB_Sample(path, size);
+                        mine->sampled = 1;
+                     }
+                     again = (mine->sample != 0 && mine->sample == other->sample);
+                  }
+               }
+               if (again) {
+                  left_out += 1;
+               } else {
+                  mine->next = *slot;
+                  *slot = mine;
+                  Str8ListPush(scratch.arena, &paths, path);
+               }
             }
          }
          FileIterEnd(it);
@@ -113,10 +182,11 @@ LIB_Rescan(LIB_Library* library) {
       video->name = Str8SkipLastSlash(video->path);
       video->folder = Str8ChopLastSlash(video->path);
    }
+   library->left_out = left_out;
    library->generation += 1;
 
-   LogInfoF("%llu videos in %llu folders\n", (unsigned long long)library->video_count,
-            (unsigned long long)library->folders.node_count);
+   LogInfoF("%llu videos in %llu folders, %llu more left out as found already\n", (unsigned long long)library->video_count,
+            (unsigned long long)library->folders.node_count, (unsigned long long)left_out);
 
    ScratchEnd(scratch);
 }

@@ -77,6 +77,9 @@ videos and the models are.
 - Folders in the app: the Folders panel (`frame.c`) lists the folders with
   Remove, "Add a folder..." opens Windows' folder window (`src/picker`), and
   "Re-index everything" throws the index files away and makes them again.
+  A video found twice is in the library once (`LIB_Rescan`): the same path
+  from a folder under another, or a copy somewhere else, told by its size
+  and three pieces of what is in it.
 - `main.c` only lists includes: warnings are turned off in `build.bat`, not
   with pragmas around includes.
 - Sound search: CLAP (`data/models/clap-htsat-unfused`, optional; its

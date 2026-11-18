@@ -796,9 +796,13 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
             failed = PushStr8F(scratch.arena, " %llu could not be indexed.", (unsigned long long)idx.videos_failed);
          }
          String8 by_name = results->by_name ? Str8Lit(" Matched by file name: no frames to search yet.") : Str8Lit("");
-         status = PushStr8F(scratch.arena, "%S%llu videos in %llu folders.%S%S%S", hits,
+         String8 left_out = {0};
+         if (library->left_out != 0) {
+            left_out = PushStr8F(scratch.arena, " %llu copies left out.", (unsigned long long)library->left_out);
+         }
+         status = PushStr8F(scratch.arena, "%S%llu videos in %llu folders.%S%S%S%S", hits,
                             (unsigned long long)library->video_count, (unsigned long long)library->folders.node_count,
-                            reading, failed, by_name);
+                            left_out, reading, failed, by_name);
       }
       _FR_BuildBar(R2F32P(0, 0, window_dim.x, bar_h), pad, (notice.size != 0) ? Str8Lit("notice") : Str8Lit("dim"), status,
                    "status");

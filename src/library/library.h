@@ -2,8 +2,9 @@
 //~ bgz: library
 //
 // The videos to search: the folders the user gave, and every video file in
-// them and in the folders under them. Nothing is decoded or opened here -
-// only names, found by walking the folders (library.md).
+// them and in the folders under them, each once: one found a second time,
+// by the same path or as a copy somewhere else, is left out. Nothing is
+// decoded here - only names, found by walking the folders (library.md).
 //
 // All of it is called from the main thread.
 
@@ -28,6 +29,7 @@ struct LIB_Library {
    Arena*     videos_arena;
    LIB_Video* videos;
    U64        video_count;
+   U64        left_out; // found, but the same as one of videos
 
    // Goes up by one whenever the videos are found again: what was worked out
    // from them (a search's results) knows to be worked out again.
