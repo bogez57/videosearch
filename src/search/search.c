@@ -51,11 +51,12 @@ struct SRCH_Search {
 // number at a time.
 __attribute__((target("avx,f16c"))) internal F32
 _SRCH_Dot(F32* q, U16* v) {
+   typedef _Float16 _SRCH_Halves __attribute__((vector_size(16), aligned(1), may_alias));
    __m256 sum_a = {0};
    __m256 sum_b = {0};
    for (U64 j = 0; j < EMB_DIM; j += 16) {
-      sum_a += *(__m256_u*)(q + j) * __builtin_ia32_vcvtph2ps256((__v8hi) * (__m128i_u*)(v + j));
-      sum_b += *(__m256_u*)(q + j + 8) * __builtin_ia32_vcvtph2ps256((__v8hi) * (__m128i_u*)(v + j + 8));
+      sum_a += *(__m256_u*)(q + j) * __builtin_convertvector(*(_SRCH_Halves*)(v + j), __m256);
+      sum_b += *(__m256_u*)(q + j + 8) * __builtin_convertvector(*(_SRCH_Halves*)(v + j + 8), __m256);
    }
    sum_a += sum_b;
    return ((sum_a[0] + sum_a[1]) + (sum_a[2] + sum_a[3])) + ((sum_a[4] + sum_a[5]) + (sum_a[6] + sum_a[7]));
