@@ -2,7 +2,7 @@ diff --git a/src/frame.c b/src/frame.c
 index c50e901..fc24599 100644
 --- a/src/frame.c
 +++ b/src/frame.c
-@@ -1056,6 +1056,57 @@ FrameWork(App_State* app_state) {
+@@ -1056,6 +1056,59 @@ FrameWork(App_State* app_state) {
     SRCH_Update(app_state->search, app_state->library, app_state->indexer);
     _FR_UpdateResults(app_state);
  
@@ -42,9 +42,11 @@ index c50e901..fc24599 100644
 +            }
 +            StringJoin join = {0};
 +            join.sep = Str8Lit(" ");
++            U64          check_begin = NowTimeUS();
 +            SRCH_Results results = SRCH_Run(scratch.arena, app_state->search, app_state->library, query);
-+            LogInfoF("CHECK query\t%S\t%llu\t%.4f\t%S\t%S\n", query, (unsigned long long)results.count, about_sound,
-+                     Str8ListJoin(scratch.arena, &numbers, &join), Str8ListJoin(scratch.arena, &sound_numbers, &join));
++            F64          check_ms = (F64)(NowTimeUS() - check_begin) / 1000.0;
++            LogInfoF("CHECK query\t%S\t%llu\t%.4f\t%S\t%S\t%.1f\n", query, (unsigned long long)results.count, about_sound,
++                     Str8ListJoin(scratch.arena, &numbers, &join), Str8ListJoin(scratch.arena, &sound_numbers, &join), check_ms);
 +            for (U64 i = 0; i < Min(results.count, 10); i += 1) {
 +               SRCH_Hit* hit = &results.v[i];
 +               LogInfoF("CHECK hit\t%S\t%S\t%.1f\t%.1f\t%.1f\t%.3f\t%s\n", query,

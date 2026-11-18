@@ -10,10 +10,11 @@
 # file with --queries; run the program on the test videos' folders and close it when its log
 # (bin\local\logs\videosearch_log.txt) has a line "CHECK done". LOG is that log.
 #
-# Prints how far the program's vectors are from the bench's for the same words (the first 16
-# numbers of each: 0.000 is the same), its about_sound against the bench's, and the list's numbers
-# as clips.py gives them - first, none, quiet - which should come out near clips.py's for
-# mobileclip-b|sq+crop3|vec|ens|fb|0 with search.h's low and high. --rows prints every search's rows.
+# Prints how long a search takes, how far the program's vectors are from the bench's for the same
+# words (the first 16 numbers of each: 0.000 is the same), its about_sound against the bench's, and
+# the list's numbers as clips.py gives them - first, none, quiet - which should come out near
+# clips.py's for mobileclip-b|sq+crop3|vec|ens|fb|0 with search.h's low, high and keep. --rows
+# prints every search's rows.
 import os
 import sys
 
@@ -31,7 +32,7 @@ def queries():
 
 
 def read_log(path):
-    """{words: (hit count, about_sound, [16], [16], [(video name, start, end, best, score, kind)])}"""
+    """{words: (hit count, about_sound, [16], [16], [(video name, start, end, best, score, kind)], ms or None)}"""
     out = {}
     for line in open(path, encoding="utf-8", errors="replace"):
         at = line.find("CHECK ")
@@ -39,7 +40,8 @@ def read_log(path):
             continue
         parts = line[at:].rstrip("\r\n").split("\t")
         if parts[0] == "CHECK query" and len(parts) >= 6:
-            out[parts[1]] = (int(parts[2]), float(parts[3]), np.array(parts[4].split(), np.float32), np.array(parts[5].split(), np.float32), [])
+            out[parts[1]] = (int(parts[2]), float(parts[3]), np.array(parts[4].split(), np.float32), np.array(parts[5].split(), np.float32), [],
+                             float(parts[6]) if len(parts) > 6 else None)
         elif parts[0] == "CHECK hit" and len(parts) >= 8 and parts[1] in out:
             out[parts[1]][4].append((parts[2], float(parts[3]), float(parts[4]), float(parts[5]), float(parts[6]), parts[7]))
     return out
@@ -55,6 +57,9 @@ def main():
     qs = [(w, e) for w, e in queries() if w in log]
     words = [w for w, _ in qs]
     print("%d searches in the log, %d of queries.txt's" % (len(log), len(qs)))
+    ms = [log[w][5] for w in words if log[w][5] is not None]
+    if ms:
+        print("a search takes %.0f ms in the middle, %.0f at most" % (np.median(ms), max(ms)))
 
     # The vectors.
     from eval import model, text_vectors
@@ -100,7 +105,7 @@ def main():
     neg = dict(n=0, quiet=0, rows=[])
     lines = []
     for w, expr in qs:
-        count, about, _, _, hits = log[w]
+        count, about, _, _, hits, _ = log[w]
         if expr in ("NEAR", "NONE"):
             neg["n"] += 1
             neg["quiet"] += count == 0
