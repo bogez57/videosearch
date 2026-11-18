@@ -9,8 +9,9 @@ played, and the foot - built with the UI layer and drawn. `frame.h` has what `ma
 All in `App_State` (app_state.h): the query (`query`, `query_size`), the
 results and what they were found for (`results_arena`, `results_query`,
 `results_library_gen`, `results`, `results_scroll`), the clip being played
-(`play_video`, `play_hit`, `play_name`, `play_path`, `play_to_end`), the notice, the log, and the UI
-layer's state.
+(`play_video`, `play_hit`, `play_name`, `play_path`, `play_to_end`,
+`play_pick`), the picks and their panel (`picks`, `picks_open`,
+`picks_scroll`), the notice, the log, and the UI layer's state.
 
 ## Functions
 
@@ -23,14 +24,22 @@ layer's state.
   name, its stretch, how well it matched as 1 to 100 (the hit's score
   times 100; "sound match" when it was found by its sound, "picture and
   sound match" when by both), its folder. A click plays it.
-- Playing: `_FR_PlayHit` opens the hit's video with the player (`src/video`)
-  in the list's place, from the clip's start; `_FR_UpdatePlaying` stops it
+- Playing: `_FR_PlayClip` opens a hit's or a pick's video with the player
+  (`src/video`) in the list's place, from the clip's start; `_FR_UpdatePlaying` stops it
   at the clip's end, once (`play_to_end`); `_FR_StopPlaying`. While a clip
   is open the keys are the player's: Space (or a click) pauses and plays,
   Left and Right go 5 seconds, Esc goes back to the hits. Under the picture
   is the whole video as a line (`###timeline`, its pieces floating boxes at
   their places): the clip played on it, the search's other clips in the
   same video, and where it is now. A press or a drag on it seeks there.
+  I and O make the clip start or end where the video is, and P puts it
+  among the picks; a clip that is a pick (`play_pick`) is changed there
+  too.
+- The picks (`src/picks`): each hit's row has a Pick button, which puts it
+  among them or takes it out again. The Picks button beside the search bar
+  shows them in the list's place (`picks_open`), in their order, each with
+  Up, Down and Remove; a click plays one. "Send to Resolve..." asks where
+  to save (`PICK_SaveFile`) and writes them as a timeline (`PCK_Export`).
 - The Folders panel, in the list's place when `folders_open` is set (the
   Folders button beside the search bar) or there are no folders: each
   folder with how many videos it has and a Remove button, and "Add a

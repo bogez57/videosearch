@@ -240,22 +240,22 @@ _FR_StopPlaying(App_State* app_state) {
    app_state->play_video = 0;
 }
 
-// Opens the hit's video in place of the list, and plays it from the clip's
-// start.
+// Opens the video at path in place of the list, and plays it from the
+// clip's start: a hit's, or the pick_idx'th pick's (-1: not a pick's).
 internal void
-_FR_PlayHit(App_State* app_state, SRCH_Hit* hit) {
+_FR_PlayClip(App_State* app_state, String8 path, SRCH_Hit* hit, S64 pick_idx) {
    _FR_StopPlaying(app_state);
    app_state->search_focused = 0;
-   LIB_Video* video = &app_state->library->videos[hit->video_idx];
-   app_state->play_video = VID_Open(video->path);
+   app_state->play_video = VID_Open(path);
    if (app_state->play_video == 0) {
       FR_Notice(app_state, Str8Lit("That video could not be opened."));
    } else {
       ArenaClear(app_state->play_arena);
       app_state->play_hit = *hit;
-      app_state->play_name = PushStr8Copy(app_state->play_arena, video->name);
-      app_state->play_path = PushStr8Copy(app_state->play_arena, video->path);
+      app_state->play_path = PushStr8Copy(app_state->play_arena, path);
+      app_state->play_name = Str8SkipLastSlash(app_state->play_path);
       app_state->play_to_end = (hit->end_s > hit->start_s);
+      app_state->play_pick = (U64)(pick_idx + 1);
       if (hit->start_s > 0) {
          VID_Seek(app_state->play_video, hit->start_s);
       }
@@ -309,6 +309,7 @@ _FR_Input(App_State* app_state) {
             app_state->query_size += text.size;
          }
          app_state->folders_open = 0; // typing is searching: back to the hits
+         app_state->picks_open = 0;
          app_state->search_focused = 1;
          app_state->search_caret_us = NowTimeUS();
          ScratchEnd(scratch);
@@ -328,6 +329,39 @@ _FR_Input(App_State* app_state) {
          VID_Seek(video, Max(VID_Position(video) + seek_s, 0.0));
          app_state->play_to_end = 0;
       }
+      // I and O: the clip starts, or ends, where the video is now. P puts
+      // it among the picks; one that is there already is changed with it.
+      SRCH_Hit* clip = &app_state->play_hit;
+      B32       trimmed = 0;
+      if (Core_WM_KeyPress(events, window, 0, WM_Key_I)) {
+         clip->start_s = VID_Position(video);
+         if (clip->end_s <= clip->start_s) {
+            clip->end_s = Max(VID_Duration(video), clip->start_s + 1.0);
+         }
+         trimmed = 1;
+      }
+      if (Core_WM_KeyPress(events, window, 0, WM_Key_O)) {
+         clip->end_s = VID_Position(video);
+         if (clip->end_s <= clip->start_s) {
+            clip->start_s = 0;
+         }
+         trimmed = 1;
+      }
+      if (trimmed) {
+         app_state->play_to_end = 0;
+         clip->best_s = Clamp(clip->start_s, clip->best_s, clip->end_s);
+         if (app_state->play_pick != 0) {
+            PCK_SetRange(app_state->picks, app_state->play_pick - 1, clip->start_s, clip->end_s);
+         }
+      }
+      if (Core_WM_KeyPress(events, window, 0, WM_Key_P) && app_state->play_pick == 0) {
+         if (PCK_Add(app_state->picks, app_state->play_path, app_state->results_query, clip->start_s, clip->end_s, clip->best_s)) {
+            app_state->play_pick = app_state->picks->count;
+            FR_Notice(app_state, Str8Lit("Picked. The Picks button has the list."));
+         } else {
+            FR_Notice(app_state, Str8Lit("Not picked: it is among the picks already, or they are full."));
+         }
+      }
       if (Core_WM_KeyPress(events, window, 0, WM_Key_Esc)) {
          _FR_StopPlaying(app_state);
       }
@@ -344,10 +378,12 @@ _FR_Input(App_State* app_state) {
          app_state->query_size -= 1;
       }
    }
-   // Esc closes the Folders panel if it is up, else empties the search.
+   // Esc closes the Folders panel or the picks if one is up, else empties
+   // the search.
    if (Core_WM_KeyPress(events, window, 0, WM_Key_Esc)) {
-      if (app_state->folders_open) {
+      if (app_state->folders_open || app_state->picks_open) {
          app_state->folders_open = 0;
+         app_state->picks_open = 0;
       } else {
          app_state->query_size = 0;
       }
@@ -744,7 +780,8 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
       UI_Parent(search_row) {
          UI_Spacer(UI_Px(pad, 1));
          F32 folders_w = (F32)(S32)(110.0f * ui);
-         UI_SetNextPrefWidth(UI_Px(Max(window_dim.x - pad * 3.0f - folders_w, 0), 1));
+         F32 picks_w = (F32)(S32)(130.0f * ui);
+         UI_SetNextPrefWidth(UI_Px(Max(window_dim.x - pad * 4.0f - folders_w - picks_w, 0), 1));
          UI_SetNextPrefHeight(UI_Px(search_h - pad, 1));
          UI_SetNextChildLayoutAxis(Axis2_X);
          UI_SetNextColorTag(Str8Lit("search"));
@@ -777,9 +814,18 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
             app_state->search_caret_us = NowTimeUS();
          }
          UI_Spacer(UI_Px(pad, 1));
+         if (_FR_Button(PushStr8F(scratch.arena, "Picks (%llu)", (unsigned long long)app_state->picks->count), picks_w,
+                        search_h - pad, "###picks button")) {
+            app_state->search_focused = 0;
+            app_state->picks_open = !app_state->picks_open;
+            app_state->folders_open = 0;
+            _FR_StopPlaying(app_state);
+         }
+         UI_Spacer(UI_Px(pad, 1));
          if (_FR_Button(Str8Lit("Folders"), folders_w, search_h - pad, "###folders button")) {
             app_state->search_focused = 0;
             app_state->folders_open = !app_state->folders_open;
+            app_state->picks_open = 0;
             _FR_StopPlaying(app_state);
          }
       }
@@ -791,8 +837,13 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
          status = notice;
       } else if (app_state->play_video != 0) {
          VID_Video* video = app_state->play_video;
-         status = PushStr8F(scratch.arena, "%S   %S / %S   %s", app_state->play_name,
-                            _FR_Clock(scratch.arena, VID_Position(video)), _FR_Clock(scratch.arena, VID_Duration(video)),
+         SRCH_Hit* clip = &app_state->play_hit;
+         String8   clip_is = (clip->end_s > clip->start_s)
+                                 ? PushStr8F(scratch.arena, "   %s %S to %S", (app_state->play_pick != 0) ? "pick" : "clip",
+                                             _FR_Clock(scratch.arena, clip->start_s), _FR_Clock(scratch.arena, clip->end_s + 0.5))
+                                 : Str8Lit("");
+         status = PushStr8F(scratch.arena, "%S   %S / %S%S   %s", app_state->play_name,
+                            _FR_Clock(scratch.arena, VID_Position(video)), _FR_Clock(scratch.arena, VID_Duration(video)), clip_is,
                             VID_IsPlaying(video) ? "" : "Paused");
       } else if (library->folders.node_count == 0) {
          status = Str8Lit("No videos yet.");
@@ -892,7 +943,8 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
                if (app_state->results_library_gen == library->generation) {
                   for (U64 i = 0; i < results->count; i += 1) {
                      SRCH_Hit* other = &results->v[i];
-                     if (other->end_s > other->start_s &&
+                     B32 is_played = (other->start_s < app_state->play_hit.end_s && app_state->play_hit.start_s < other->end_s);
+                     if (other->end_s > other->start_s && !is_played &&
                          Str8Match(library->videos[other->video_idx].path, app_state->play_path, 0)) {
                         F32 x0 = pad + (F32)Min(other->start_s, duration_s) * per_s;
                         F32 x1 = Max(pad + (F32)Min(other->end_s, duration_s) * per_s, x0 + 2.0f);
@@ -907,7 +959,7 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
                SRCH_Hit* hit = &app_state->play_hit;
                if (hit->end_s > hit->start_s) {
                   F32 x0 = pad + (F32)Min(hit->start_s, duration_s) * per_s;
-                  F32 x1 = Max(pad + (F32)Min(hit->end_s, duration_s) * per_s, x0 + 3.0f);
+                  F32 x1 = Max(pad + (F32)Min(hit->end_s, duration_s) * per_s, x0 + (F32)(S32)(6.0f * ui));
                   UI_SetNextRect(R2F32P(x0, mid - clip_h * 0.5f, x1, mid + clip_h * 0.5f));
                   UI_SetNextColorTag(Str8Lit("timeline_clip"));
                   UI_BuildBoxFromStringf(UI_BoxFlag_Floating | UI_BoxFlag_DrawBackground, "###timeline_clip");
@@ -1022,8 +1074,176 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
          }
       }
 
+      //- bgz: the picks, in the list's place: the clips picked, in the
+      // order they go into the timeline, each with ways to move it and to
+      // take it out, and the button that writes the timeline. A click on
+      // one plays it, where I and O change where it starts and ends.
+      B32 picks_shown = (app_state->play_video == 0 && !folders_shown && app_state->picks_open);
+      if (picks_shown) {
+         PCK_Picks* picks = app_state->picks;
+         F32        line_h = (F32)(S32)(40.0f * ui);
+         F32        button_h = (F32)(S32)(30.0f * ui);
+         B32        send = 0;
+         B32        clear = 0;
+         S64        remove = -1; // done after the list has been gone through
+         S64        move = -1;
+         S64        move_by = 0;
+         S64        play = -1;
+
+         UI_SetNextPrefWidth(UI_Px(window_dim.x, 1));
+         UI_SetNextPrefHeight(UI_Px(line_h + pad * 1.5f, 1));
+         UI_SetNextChildLayoutAxis(Axis2_Y);
+         UI_Box* head_box = UI_BuildBoxFromStringf(0, "###picks head box");
+         UI_Parent(head_box) {
+            UI_Spacer(UI_Px(pad, 1));
+            UI_SetNextChildLayoutAxis(Axis2_X);
+            UI_SetNextPrefWidth(UI_Pct(1, 0));
+            UI_SetNextPrefHeight(UI_Px(line_h, 1));
+            UI_Box* head = UI_BuildBoxFromStringf(0, "###picks head");
+            UI_Parent(head) UI_PrefHeight(UI_Pct(1, 1)) {
+               UI_Spacer(UI_Px(pad, 1));
+               if (picks->count != 0) {
+                  send = _FR_Button(Str8Lit("Send to Resolve..."), (F32)(S32)(190.0f * ui), button_h, "###picks send");
+                  UI_Spacer(UI_Px(18.0f * ui, 1));
+               }
+               UI_SetNextPrefWidth(UI_Pct(1, 0));
+               UI_SetNextColorTag(Str8Lit("dim"));
+               UI_Label((picks->count == 0)
+                            ? Str8Lit("No picks yet. Pick on a hit's row, or P while it plays, puts it here.")
+                            : PushStr8F(scratch.arena, "%llu clips, %S in all, in the order they go into the timeline.",
+                                        (unsigned long long)picks->count, _FR_Clock(scratch.arena, PCK_Seconds(picks))));
+               if (picks->count != 0) {
+                  clear = _FR_Button(Str8Lit("Clear"), (F32)(S32)(90.0f * ui), button_h, "###picks clear");
+                  UI_Spacer(UI_Px(pad, 1));
+               }
+            }
+         }
+
+         F32                picks_h = Max(rows_h - (line_h + pad * 1.5f), 0);
+         UI_ScrollRowsFlags scroll_flags = UI_ScrollRowsFlag_RowClicks;
+         UI_ScrollRowsFrame rows_frame = UI_ScrollRowsBegin(&app_state->picks_scroll, V2F32(window_dim.x, picks_h),
+                                                            (S64)picks->count, row_h, 0, scroll_flags, "###picks");
+         UI_ScrollRowsEnd(&app_state->picks_scroll, &rows_frame, 0, scroll_flags);
+
+         UI_Parent(rows_frame.rows_box) UI_ColorTag(Str8Lit("row")) {
+            for (S64 row_idx = rows_frame.first_row; row_idx < rows_frame.last_row; row_idx += 1) {
+               PCK_Pick* pick = &picks->v[row_idx];
+               UI_Box*   row_box = UI_ListRow(row_h, 0, UI_BoxFlag_Clickable | UI_BoxFlag_DrawBackground, "###pick %lld", row_idx);
+               B32       button_clicked = 0;
+
+               String8 when = (pick->end_s > pick->start_s)
+                                  ? PushStr8F(scratch.arena, "%S to %S", _FR_Clock(scratch.arena, pick->start_s),
+                                              _FR_Clock(scratch.arena, pick->end_s + 0.5))
+                                  : Str8Lit("whole video");
+               F32       thumb_h = row_h - (F32)(S32)(8.0f * ui);
+               F32       thumb_w = (F32)(S32)(thumb_h * 16.0f / 9.0f);
+               THM_Thumb thumb = THM_Get(app_state->thumbs, pick->path, pick->best_s);
+
+               UI_Parent(row_box) UI_PrefHeight(UI_Pct(1, 1)) {
+                  UI_Spacer(UI_Px(pad, 1));
+                  UI_SetNextPrefWidth(UI_TextDim(1, 1));
+                  UI_SetNextColorTag(Str8Lit("dim"));
+                  UI_Label(PushStr8F(scratch.arena, "%lld", row_idx + 1));
+                  UI_Spacer(UI_Px(14.0f * ui, 1));
+                  UI_SetNextPrefWidth(UI_Px(thumb_w, 1));
+                  UI_SetNextChildLayoutAxis(Axis2_Y);
+                  UI_Box* thumb_box = UI_BuildBoxFromStringf(0, "###pick thumb %lld", row_idx);
+                  if (thumb.size.x > 0 && thumb.size.y > 0) {
+                     F32     shown_x = Min((F32)thumb.size.x, (F32)thumb.size.y * 16.0f / 9.0f);
+                     F32     cut_x = ((F32)thumb.size.x - shown_x) * 0.5f;
+                     F32     picture_w = Min(thumb_w, (F32)(S32)(thumb_h * shown_x / (F32)thumb.size.y));
+                     Rng2F32 region = R2F32P(cut_x, 0, cut_x + shown_x, (F32)thumb.size.y);
+                     UI_Parent(thumb_box) {
+                        UI_Spacer(UI_Px((row_h - thumb_h) * 0.5f, 1));
+                        UI_SetNextPrefWidth(UI_Px(picture_w, 1));
+                        UI_SetNextPrefHeight(UI_Px(thumb_h, 1));
+                        UI_ImageF(thumb.texture, R_Tex2DSampleKind_Linear, region, V4F32(1, 1, 1, 1), 0, "###pick picture %lld",
+                                  row_idx);
+                     }
+                  }
+                  UI_Spacer(UI_Px(14.0f * ui, 1));
+                  UI_SetNextPrefWidth(UI_TextDim(1, 1));
+                  UI_SetNextColorTag(Str8Lit("video"));
+                  UI_Label(Str8SkipLastSlash(pick->path));
+                  UI_Spacer(UI_Px(18.0f * ui, 1));
+                  UI_SetNextPrefWidth(UI_TextDim(1, 1));
+                  UI_SetNextColorTag(Str8Lit("dim"));
+                  UI_Label(when);
+                  UI_Spacer(UI_Px(18.0f * ui, 1));
+                  UI_SetNextPrefWidth(UI_Pct(1, 0));
+                  UI_SetNextColorTag(Str8Lit("dim"));
+                  UI_Label((pick->query.size != 0) ? PushStr8F(scratch.arena, "\"%S\"", pick->query) : Str8Lit(""));
+
+                  // The buttons, in the middle of the row's height.
+                  char* names[] = {"Up", "Down", "Remove"};
+                  for (U64 b = 0; b < ArrayCount(names); b += 1) {
+                     F32 w = (F32)(S32)(((b == 2) ? 90.0f : 70.0f) * ui);
+                     UI_SetNextPrefWidth(UI_Px(w, 1));
+                     UI_SetNextChildLayoutAxis(Axis2_Y);
+                     UI_Box* column = UI_BuildBoxFromStringf(0, "###pick column %llu %lld", (unsigned long long)b, row_idx);
+                     UI_Parent(column) {
+                        UI_Spacer(UI_Px((row_h - button_h) * 0.5f, 1));
+                        if (_FR_Button(Str8CString(names[b]), w, button_h, "###pick button %llu %lld", (unsigned long long)b,
+                                       row_idx)) {
+                           button_clicked = 1;
+                           if (b == 2) {
+                              remove = row_idx;
+                           } else {
+                              move = row_idx;
+                              move_by = (b == 0) ? -1 : 1;
+                           }
+                        }
+                     }
+                     UI_Spacer(UI_Px(((b == 2) ? pad : 8.0f * ui), 1));
+                  }
+               }
+
+               UI_Signal signal = UI_SignalFromBox(row_box);
+               if (UI_Hovering(signal)) {
+                  row_box->background_color = UI_ThemeColor(Str8Lit("hot"), UI_ColorSlot_Background);
+               }
+               if (UI_Clicked(signal) && !button_clicked) {
+                  play = row_idx;
+               }
+            }
+         }
+
+         if (play >= 0) {
+            PCK_Pick* pick = &picks->v[play];
+            SRCH_Hit  clip = {0};
+            clip.start_s = pick->start_s;
+            clip.end_s = pick->end_s;
+            clip.best_s = pick->best_s;
+            _FR_PlayClip(app_state, pick->path, &clip, play);
+         }
+         if (move >= 0) {
+            PCK_Move(picks, (U64)move, move_by);
+         }
+         if (remove >= 0) {
+            PCK_Remove(picks, (U64)remove);
+         }
+         if (clear) {
+            PCK_Clear(picks);
+         }
+         // Windows' window for where to save it: the frame waits here until
+         // it is answered.
+         if (send) {
+            String8 path = PICK_SaveFile(scratch.arena, Str8Lit("Save the picks as a timeline"), Str8Lit("videosearch picks"),
+                                         Str8Lit("Final Cut Pro XML, for Resolve"), Str8Lit("fcpxml"));
+            if (path.size != 0) {
+               PCK_Exported made = PCK_Export(picks, path);
+               FR_Notice(app_state, !made.written
+                                        ? Str8Lit("The timeline could not be written: the log says why.")
+                                        : (made.left_out != 0)
+                                              ? Str8Lit("Timeline written, but some picks' videos could not be read and are not in it. "
+                                                        "In Resolve: File, Import, Timeline.")
+                                              : Str8Lit("Timeline written. In Resolve: File, Import, Timeline."));
+            }
+         }
+      }
+
       //- bgz: the hits
-      if (app_state->play_video == 0 && !folders_shown) {
+      if (app_state->play_video == 0 && !folders_shown && !picks_shown) {
          UI_ScrollRowsFlags scroll_flags = UI_ScrollRowsFlag_RowClicks;
          UI_ScrollRowsFrame rows_frame = UI_ScrollRowsBegin(&app_state->results_scroll, V2F32(window_dim.x, rows_h),
                                                             (S64)results->count, row_h, 0, scroll_flags, "###hits");
@@ -1035,6 +1255,8 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
                LIB_Video* video = &library->videos[hit->video_idx];
 
                UI_Box* row_box = UI_ListRow(row_h, 0, UI_BoxFlag_Clickable | UI_BoxFlag_DrawBackground, "###hit %lld", row_idx);
+               S64     pick_idx = PCK_Find(app_state->picks, video->path, hit->start_s, hit->end_s);
+               B32     pick_clicked = 0;
 
                // How well a clip matched, as 1 to 100, and whether it was
                // by its sound, or by both.
@@ -1088,17 +1310,38 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
                   UI_SetNextColorTag(Str8Lit("dim"));
                   UI_Label(when);
                   UI_Spacer(UI_Px(18.0f * ui, 1));
-                  UI_SetNextPrefWidth(UI_TextDim(1, 0));
+                  UI_SetNextPrefWidth(UI_Pct(1, 0));
                   UI_SetNextColorTag(Str8Lit("dim"));
                   UI_Label(video->folder);
+
+                  // Into the picks, or out of them again; in the middle of
+                  // the row's height.
+                  F32 pick_w = (F32)(S32)(90.0f * ui);
+                  F32 pick_h = (F32)(S32)(30.0f * ui);
+                  UI_SetNextPrefWidth(UI_Px(pick_w, 1));
+                  UI_SetNextChildLayoutAxis(Axis2_Y);
+                  UI_Box* column = UI_BuildBoxFromStringf(0, "###hit pick column %lld", row_idx);
+                  UI_Parent(column) {
+                     UI_Spacer(UI_Px((row_h - pick_h) * 0.5f, 1));
+                     pick_clicked = _FR_Button((pick_idx >= 0) ? Str8Lit("Picked") : Str8Lit("Pick"), pick_w, pick_h,
+                                               "###hit pick %lld", row_idx);
+                  }
+                  UI_Spacer(UI_Px(pad, 1));
                }
 
                UI_Signal signal = UI_SignalFromBox(row_box);
                if (UI_Hovering(signal)) {
                   row_box->background_color = UI_ThemeColor(Str8Lit("hot"), UI_ColorSlot_Background);
                }
-               if (UI_Clicked(signal)) {
-                  _FR_PlayHit(app_state, hit);
+               if (pick_clicked) {
+                  if (pick_idx >= 0) {
+                     PCK_Remove(app_state->picks, (U64)pick_idx);
+                  } else if (!PCK_Add(app_state->picks, video->path, app_state->results_query, hit->start_s, hit->end_s,
+                                      hit->best_s)) {
+                     FR_Notice(app_state, Str8Lit("No room for more picks."));
+                  }
+               } else if (UI_Clicked(signal)) {
+                  _FR_PlayClip(app_state, video->path, hit, pick_idx);
                }
             }
          }
@@ -1107,10 +1350,15 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
       //- bgz: the foot: what can be done
       _FR_BuildBar(R2F32P(0, 0, window_dim.x, bar_h), pad, Str8Lit("dim"),
                    (app_state->play_video != 0)
-                       ? Str8Lit("Space or a click pauses and plays. Left and Right go 5 seconds, a click on the line anywhere. Esc goes back.")
+                       ? Str8Lit("Space or a click pauses and plays. Left and Right go 5 seconds, a click on the line anywhere. I and O "
+                                 "start and end the clip here. P picks it. Esc goes back.")
                        : folders_shown
                              ? Str8Lit("Add a folder to search its videos, or Remove one. Esc or the Folders button goes back.")
-                             : Str8Lit("Type to search. Click a hit to play it. Esc empties the search. Folders adds videos."),
+                             : picks_shown
+                                   ? Str8Lit("Click a pick to play it, where I and O change its start and end. Send to Resolve writes "
+                                             "them as a timeline. Esc goes back.")
+                                   : Str8Lit("Type to search. Click a hit to play it, Pick to keep it for the timeline. Esc empties "
+                                             "the search."),
                    "foot");
    }
 

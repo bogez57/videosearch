@@ -56,6 +56,12 @@ struct App_State {
    // there are no folders, whatever this says.
    B32 folders_open;
 
+   // The clips picked out of the hits (src\picks), and their panel, in the
+   // list's place when it is up and the Folders panel is not.
+   PCK_Picks*    picks;
+   B32           picks_open;
+   UI_ScrollRows picks_scroll;
+
    // The search bar: what is typed, as UTF-8.
    U8  query[APP_QUERY_CAP];
    U64 query_size;
@@ -90,6 +96,7 @@ struct App_State {
    String8    play_name;
    String8    play_path;
    B32        play_to_end;
+   U64        play_pick; // which of the picks it is, plus one. 0: a hit that is not one
 
    // A line of text shown for a few seconds: a folder added, a folder
    // refused. Always a string that lasts (a literal).

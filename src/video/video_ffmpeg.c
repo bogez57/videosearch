@@ -454,6 +454,89 @@ _VID_DecoderOpen(Arena* arena, String8 path, S32 max_dim, S32 sound_rate, VID_De
    return decoder;
 }
 
+internal B32
+VID_DecoderMediaInfo(String8 path, VID_MediaInfo* info_out) {
+   MemoryZeroStruct(info_out);
+   B32  result = 0;
+   Temp scratch = ScratchBegin(0, 0);
+   av_log_set_level(AV_LOG_ERROR);
+
+   AVFormatContext* format = 0;
+   String8          path_z = PushStr8Copy(scratch.arena, path);
+   if (avformat_open_input(&format, (char*)path_z.str, 0, 0) >= 0) {
+      int stream_idx = (avformat_find_stream_info(format, 0) >= 0) ? av_find_best_stream(format, AVMEDIA_TYPE_VIDEO, -1, -1, 0, 0)
+                                                                   : -1;
+      if (stream_idx >= 0) {
+         AVStream* stream = format->streams[stream_idx];
+         F64       width = (F64)stream->codecpar->width;
+         F64       height = (F64)stream->codecpar->height;
+         AVRational pixel_shape = av_guess_sample_aspect_ratio(format, stream, 0);
+         if (pixel_shape.num > 0 && pixel_shape.den > 0) {
+            width = width * (F64)pixel_shape.num / (F64)pixel_shape.den;
+         }
+         info_out->size = V2S32(Max((S32)(width + 0.5), 1), Max((S32)(height + 0.5), 1));
+
+         AVRational rate = av_guess_frame_rate(format, stream, 0);
+         if (rate.num > 0 && rate.den > 0) {
+            info_out->rate_num = rate.num;
+            info_out->rate_den = rate.den;
+         }
+         if (stream->duration != AV_NOPTS_VALUE && stream->duration > 0) {
+            info_out->duration_s = (F64)stream->duration * av_q2d(stream->time_base);
+         } else if (format->duration != AV_NOPTS_VALUE && format->duration > 0) {
+            info_out->duration_s = (F64)format->duration / (F64)AV_TIME_BASE;
+         }
+
+         int sound_idx = av_find_best_stream(format, AVMEDIA_TYPE_AUDIO, -1, stream_idx, 0, 0);
+         if (sound_idx >= 0) {
+            AVCodecParameters* sound = format->streams[sound_idx]->codecpar;
+            info_out->has_sound = 1;
+            info_out->sound_rate = sound->sample_rate;
+            info_out->sound_channels = sound->ch_layout.nb_channels;
+         }
+
+         // The timecode: the file's own, the video's, or that of a stream
+         // that is only there to hold it (a .mov's tmcd).
+         AVDictionaryEntry* timecode = av_dict_get(format->metadata, "timecode", 0, 0);
+         if (timecode == 0) {
+            timecode = av_dict_get(stream->metadata, "timecode", 0, 0);
+         }
+         for (unsigned int i = 0; timecode == 0 && i < format->nb_streams; i += 1) {
+            timecode = av_dict_get(format->streams[i]->metadata, "timecode", 0, 0);
+         }
+         if (timecode != 0) {
+            // 01:00:00:00, or 01:00:00;00 when it is drop-frame.
+            S32   parts[4] = {0};
+            S32   count = 0;
+            B32   drops = 0;
+            B32   in_number = 0;
+            char* c = timecode->value;
+            for (; *c != 0 && count <= 4; c += 1) {
+               if (*c >= '0' && *c <= '9') {
+                  if (!in_number) {
+                     in_number = 1;
+                     count += 1;
+                  }
+                  if (count <= 4) parts[count - 1] = parts[count - 1] * 10 + (*c - '0');
+               } else {
+                  in_number = 0;
+                  drops = drops || (*c == ';');
+               }
+            }
+            if (count == 4) {
+               info_out->has_timecode = 1;
+               MemoryCopy(info_out->timecode, parts, sizeof(parts));
+               info_out->timecode_drops = drops;
+            }
+         }
+         result = 1;
+      }
+      avformat_close_input(&format);
+   }
+   ScratchEnd(scratch);
+   return result;
+}
+
 internal VID_Decoder*
 VID_DecoderOpen(Arena* arena, String8 path, S32 max_dim, S32 sound_rate, VID_DecoderInfo* info_out) {
    return _VID_DecoderOpen(arena, path, max_dim, sound_rate, info_out, 0);

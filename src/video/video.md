@@ -11,7 +11,9 @@ made here first, with J's say-so, and is to be copied back: the decoder
 gained `VID_DecoderOpenOnCard` (the video decoded by the graphics card,
 through FFmpeg's Direct3D 11 decoder, and by the processor if the card
 can't) and `VID_DecoderNextFrameFrom` (the first frame at or after a time;
-the ones before are decoded and let go without being made into pixels).
+the ones before are decoded and let go without being made into pixels),
+and `VID_DecoderMediaInfo` (what a file says of itself - its picture's
+size, frame rate, length, sound and timecode - with nothing decoded).
 What was there behaves as it did.
 
 ## Used by
@@ -20,6 +22,7 @@ What was there behaves as it did.
   `--cpu`), `VID_DecoderNextFrameFrom`, `VID_DecoderNextSound`,
   `VID_DecoderClose`, on the indexer's thread.
 - `src/thumbs`: the same and `VID_DecoderSeek`, on its thread.
+- `src/picks`: `VID_DecoderMediaInfo`, for the timeline it writes.
 - `frame.c`: the player, for the clip being played (`VID_Open`, `VID_Seek`,
   `VID_SetPlaying`, `VID_Update`, `VID_Texture`, `VID_Close`).
 

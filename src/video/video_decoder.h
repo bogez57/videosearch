@@ -63,4 +63,23 @@ internal U64 VID_DecoderNextSound(VID_Decoder* decoder, F32* samples, U64 frame_
 // it as the decoder can seek without decoding.
 internal void VID_DecoderSeek(VID_Decoder* decoder, F64 time_s);
 
+// What a file says of itself, for a program that cuts from it (the picks'
+// timeline): read from the file's start, nothing decoded.
+typedef struct VID_MediaInfo VID_MediaInfo;
+struct VID_MediaInfo {
+   Vec2S32 size;           // the picture's own, with pixels that are not square made so
+   S32     rate_num;       // frames a second, as rate_num over rate_den (24000 over 1001). 0: not known
+   S32     rate_den;
+   F64     duration_s;     // 0: not known
+   B32     has_sound;
+   S32     sound_rate;     // samples a second
+   S32     sound_channels;
+   B32     has_timecode;   // the file says what its first frame's timecode is
+   S32     timecode[4];    // hours, minutes, seconds, frames
+   B32     timecode_drops; // it is drop-frame: written with a ; before the frames
+};
+
+// 0 if the file could not be opened as a video. Nothing is logged.
+internal B32 VID_DecoderMediaInfo(String8 path, VID_MediaInfo* info_out);
+
 #endif // VIDEO_DECODER_H

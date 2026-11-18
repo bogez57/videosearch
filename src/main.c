@@ -51,6 +51,7 @@
 #include "indexer/indexer.h"
 #include "search/search.h"
 #include "thumbs/thumbs.h"
+#include "picks/picks.h"
 #include "app_state.h"
 #include "frame.h"
 
@@ -74,6 +75,7 @@
 #include "indexer/indexer.c"
 #include "search/search.c"
 #include "thumbs/thumbs.c"
+#include "picks/picks.c"
 #include "frame.c"
 
 ////////////////////////////////
@@ -193,6 +195,11 @@ _EntryPoint(CmdLine* cmdline) {
       String8 index_folder = PushStr8F(scratch.arena, "%S\\index", FR_LocalFolder(scratch.arena));
       app_state.indexer = IDX_Alloc(index_folder, model_name, sound_model_name, app_state.model, use_gpu);
       app_state.search = SRCH_Alloc(index_folder, app_state.model);
+      ScratchEnd(scratch);
+   }
+   {
+      Temp scratch = ScratchBegin(0, 0);
+      app_state.picks = PCK_Alloc(PushStr8F(scratch.arena, "%S\\picks.txt", FR_LocalFolder(scratch.arena)));
       ScratchEnd(scratch);
    }
    FR_LoadFolders(&app_state);

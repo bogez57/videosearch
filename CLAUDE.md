@@ -124,6 +124,15 @@ videos and the models are.
   154 (`_FR_SEARCH_PAUSE_US`, `_SRCH_Dot`), and the status line says how far
   the indexing is as h:mm:ss and in MB, with a guess of the MB in all
   (`IDX_Status`).
+- Search, collect, send (for cutting in DaVinci Resolve): the player has
+  the whole video as a line under the picture, with the clip, the search's
+  other clips and where it is, and a click on it seeks; a hit is picked
+  with its row's Pick button or P while it plays, and trimmed with I and O;
+  the picks (`src/picks`, kept in `bin\local\picks.txt`) have a panel of
+  their own, and "Send to Resolve..." writes them as an FCPXML timeline
+  that points at the videos themselves (`PCK_Export`,
+  `VID_DecoderMediaInfo`). Not done: dragging a row into Resolve, and
+  Resolve's scripting for a live link.
 - Next: new videos found while it runs, speech search (whisper.cpp), or
   more speed: the decoder is now the longest part (22 s of those 39), then
   the picture model (20 s), and loading the models at each start (6 s). For
