@@ -82,11 +82,14 @@ struct App_State {
 
    // The clip being played, in place of the list: a hit that was clicked.
    // 0: none. play_hit is a copy - the results can be searched again under
-   // it - and play_name is on play_arena.
+   // it - and play_name and play_path are on play_arena. play_to_end: the
+   // clip's end stops it, once; played again or sought, it goes on past it.
    VID_Video* play_video;
    Arena*     play_arena;
    SRCH_Hit   play_hit;
    String8    play_name;
+   String8    play_path;
+   B32        play_to_end;
 
    // A line of text shown for a few seconds: a folder added, a folder
    // refused. Always a string that lasts (a literal).

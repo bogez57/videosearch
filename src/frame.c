@@ -254,6 +254,8 @@ _FR_PlayHit(App_State* app_state, SRCH_Hit* hit) {
       ArenaClear(app_state->play_arena);
       app_state->play_hit = *hit;
       app_state->play_name = PushStr8Copy(app_state->play_arena, video->name);
+      app_state->play_path = PushStr8Copy(app_state->play_arena, video->path);
+      app_state->play_to_end = (hit->end_s > hit->start_s);
       if (hit->start_s > 0) {
          VID_Seek(app_state->play_video, hit->start_s);
       }
@@ -268,10 +270,9 @@ _FR_UpdatePlaying(App_State* app_state) {
    VID_Video* video = app_state->play_video;
    if (video != 0) {
       VID_Update(video);
-      SRCH_Hit* hit = &app_state->play_hit;
-      if (hit->end_s > hit->start_s && VID_IsPlaying(video) && VID_Position(video) >= hit->end_s) {
+      if (app_state->play_to_end && VID_IsPlaying(video) && VID_Position(video) >= app_state->play_hit.end_s) {
          VID_SetPlaying(video, 0);
-         hit->end_s = 0;
+         app_state->play_to_end = 0;
       }
    }
 }
@@ -325,7 +326,7 @@ _FR_Input(App_State* app_state) {
       while (Core_WM_KeyPress(events, window, 0, WM_Key_Right)) seek_s += 5.0;
       if (seek_s != 0) {
          VID_Seek(video, Max(VID_Position(video) + seek_s, 0.0));
-         app_state->play_hit.end_s = 0;
+         app_state->play_to_end = 0;
       }
       if (Core_WM_KeyPress(events, window, 0, WM_Key_Esc)) {
          _FR_StopPlaying(app_state);
@@ -517,6 +518,10 @@ _FR_BeginUI(App_State* app_state, UI_EventList* ui_events, Vec2F32 window_dim) {
        {"button", UI_ColorSlot_Border, {{1.00f, 1.00f, 1.00f, 0.16f}}},
        {"button hot", UI_ColorSlot_Background, {{0.30f, 0.38f, 0.55f, 1.00f}}},
        {"video", UI_ColorSlot_Text, {{1.00f, 0.80f, 0.40f, 1.00f}}},           // a hit's file name
+       {"timeline", UI_ColorSlot_Background, {{1.00f, 1.00f, 1.00f, 0.14f}}},  // the player's: the whole video
+       {"timeline_clip", UI_ColorSlot_Background, {{0.35f, 0.55f, 0.95f, 1.00f}}}, // the clip played
+       {"timeline_other", UI_ColorSlot_Background, {{1.00f, 0.80f, 0.40f, 0.70f}}}, // the search's other clips in it
+       {"timeline_now", UI_ColorSlot_Background, {{1.00f, 1.00f, 1.00f, 1.00f}}},  // where it is
    };
    static UI_Theme theme = {theme_patterns, ArrayCount(theme_patterns)};
 
@@ -839,15 +844,17 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
       if (app_state->play_video != 0) {
          VID_Video* video = app_state->play_video;
          Vec2S32    size = VID_Size(video);
-         F32        scale = Min(window_dim.x / (F32)size.x, rows_h / (F32)size.y);
+         F32        timeline_h = (F32)(S32)(36.0f * ui);
+         F32        picture_h = Max(rows_h - timeline_h, 1.0f);
+         F32        scale = Min(window_dim.x / (F32)size.x, picture_h / (F32)size.y);
          Vec2F32    dim = V2F32((F32)(S32)((F32)size.x * scale), (F32)(S32)((F32)size.y * scale));
 
          UI_SetNextPrefWidth(UI_Px(window_dim.x, 1));
-         UI_SetNextPrefHeight(UI_Px(rows_h, 1));
+         UI_SetNextPrefHeight(UI_Px(picture_h, 1));
          UI_SetNextChildLayoutAxis(Axis2_Y);
          UI_Box* player = UI_BuildBoxFromStringf(UI_BoxFlag_Clickable, "###player");
          UI_Parent(player) {
-            UI_Spacer(UI_Px((rows_h - dim.y) * 0.5f, 1));
+            UI_Spacer(UI_Px((picture_h - dim.y) * 0.5f, 1));
             UI_SetNextPrefWidth(UI_Pct(1, 0));
             UI_SetNextPrefHeight(UI_Px(dim.y, 1));
             UI_SetNextChildLayoutAxis(Axis2_X);
@@ -862,6 +869,67 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
          }
          if (UI_Clicked(UI_SignalFromBox(player))) {
             VID_SetPlaying(video, !VID_IsPlaying(video));
+         }
+
+         //- bgz: under it, the whole video as a line: the clip played on
+         // it, the search's other clips in the same video, and where it is
+         // now. A press or a drag on it goes there.
+         F64 duration_s = VID_Duration(video);
+         UI_SetNextPrefWidth(UI_Px(window_dim.x, 1));
+         UI_SetNextPrefHeight(UI_Px(timeline_h, 1));
+         UI_Box* timeline = UI_BuildBoxFromStringf(UI_BoxFlag_Clickable, "###timeline");
+         F32     line_w = Max(window_dim.x - pad * 2.0f, 1.0f);
+         if (duration_s > 0) {
+            F32 line_h = (F32)(S32)(6.0f * ui);
+            F32 clip_h = (F32)(S32)(14.0f * ui);
+            F32 mid = (F32)(S32)(timeline_h * 0.5f);
+            F32 per_s = line_w / (F32)duration_s;
+            UI_Parent(timeline) {
+               UI_SetNextRect(R2F32P(pad, mid - line_h * 0.5f, pad + line_w, mid + line_h * 0.5f));
+               UI_SetNextColorTag(Str8Lit("timeline"));
+               UI_BuildBoxFromStringf(UI_BoxFlag_Floating | UI_BoxFlag_DrawBackground, "###timeline_line");
+
+               if (app_state->results_library_gen == library->generation) {
+                  for (U64 i = 0; i < results->count; i += 1) {
+                     SRCH_Hit* other = &results->v[i];
+                     if (other->end_s > other->start_s &&
+                         Str8Match(library->videos[other->video_idx].path, app_state->play_path, 0)) {
+                        F32 x0 = pad + (F32)Min(other->start_s, duration_s) * per_s;
+                        F32 x1 = Max(pad + (F32)Min(other->end_s, duration_s) * per_s, x0 + 2.0f);
+                        UI_SetNextRect(R2F32P(x0, mid - line_h * 0.5f, x1, mid + line_h * 0.5f));
+                        UI_SetNextColorTag(Str8Lit("timeline_other"));
+                        UI_BuildBoxFromStringf(UI_BoxFlag_Floating | UI_BoxFlag_DrawBackground, "###timeline_other %llu",
+                                               (unsigned long long)i);
+                     }
+                  }
+               }
+
+               SRCH_Hit* hit = &app_state->play_hit;
+               if (hit->end_s > hit->start_s) {
+                  F32 x0 = pad + (F32)Min(hit->start_s, duration_s) * per_s;
+                  F32 x1 = Max(pad + (F32)Min(hit->end_s, duration_s) * per_s, x0 + 3.0f);
+                  UI_SetNextRect(R2F32P(x0, mid - clip_h * 0.5f, x1, mid + clip_h * 0.5f));
+                  UI_SetNextColorTag(Str8Lit("timeline_clip"));
+                  UI_BuildBoxFromStringf(UI_BoxFlag_Floating | UI_BoxFlag_DrawBackground, "###timeline_clip");
+               }
+
+               F32 now_x = pad + (F32)Clamp(0.0, VID_Position(video), duration_s) * per_s;
+               F32 now_w = Max((F32)(S32)(2.0f * ui), 2.0f);
+               UI_SetNextRect(R2F32P(now_x - now_w * 0.5f, (F32)(S32)(5.0f * ui), now_x + now_w * 0.5f,
+                                     timeline_h - (F32)(S32)(5.0f * ui)));
+               UI_SetNextColorTag(Str8Lit("timeline_now"));
+               UI_BuildBoxFromStringf(UI_BoxFlag_Floating | UI_BoxFlag_DrawBackground, "###timeline_now");
+            }
+         }
+         UI_Signal timeline_signal = UI_SignalFromBox(timeline);
+         if (duration_s > 0 && (UI_Pressed(timeline_signal) || UI_Dragging(timeline_signal))) {
+            // Not sought again for a mouse that has not moved: a seek throws
+            // away what the player has decoded.
+            F64 to_s = Clamp(0.0, (F64)((UI_Mouse().x - pad) / line_w), 1.0) * duration_s;
+            if (UI_Pressed(timeline_signal) || fabs(to_s - VID_Position(video)) > 0.5) {
+               VID_Seek(video, to_s);
+               app_state->play_to_end = 0;
+            }
          }
       }
 
@@ -1039,7 +1107,7 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
       //- bgz: the foot: what can be done
       _FR_BuildBar(R2F32P(0, 0, window_dim.x, bar_h), pad, Str8Lit("dim"),
                    (app_state->play_video != 0)
-                       ? Str8Lit("Space or a click pauses and plays. Left and Right go 5 seconds. Esc goes back to the hits.")
+                       ? Str8Lit("Space or a click pauses and plays. Left and Right go 5 seconds, a click on the line anywhere. Esc goes back.")
                        : folders_shown
                              ? Str8Lit("Add a folder to search its videos, or Remove one. Esc or the Folders button goes back.")
                              : Str8Lit("Type to search. Click a hit to play it. Esc empties the search. Folders adds videos."),

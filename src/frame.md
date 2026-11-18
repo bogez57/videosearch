@@ -9,7 +9,7 @@ played, and the foot - built with the UI layer and drawn. `frame.h` has what `ma
 All in `App_State` (app_state.h): the query (`query`, `query_size`), the
 results and what they were found for (`results_arena`, `results_query`,
 `results_library_gen`, `results`, `results_scroll`), the clip being played
-(`play_video`, `play_hit`, `play_name`), the notice, the log, and the UI
+(`play_video`, `play_hit`, `play_name`, `play_path`, `play_to_end`), the notice, the log, and the UI
 layer's state.
 
 ## Functions
@@ -25,9 +25,12 @@ layer's state.
   sound match" when by both), its folder. A click plays it.
 - Playing: `_FR_PlayHit` opens the hit's video with the player (`src/video`)
   in the list's place, from the clip's start; `_FR_UpdatePlaying` stops it
-  at the clip's end, once; `_FR_StopPlaying`. While a clip is open the keys
-  are the player's: Space (or a click) pauses and plays, Left and Right go 5
-  seconds, Esc goes back to the hits.
+  at the clip's end, once (`play_to_end`); `_FR_StopPlaying`. While a clip
+  is open the keys are the player's: Space (or a click) pauses and plays,
+  Left and Right go 5 seconds, Esc goes back to the hits. Under the picture
+  is the whole video as a line (`###timeline`, its pieces floating boxes at
+  their places): the clip played on it, the search's other clips in the
+  same video, and where it is now. A press or a drag on it seeks there.
 - The Folders panel, in the list's place when `folders_open` is set (the
   Folders button beside the search bar) or there are no folders: each
   folder with how many videos it has and a Remove button, and "Add a
@@ -51,4 +54,4 @@ layer's state.
   it either way.
 - The search bar has no cursor to move, no selection and no paste: typing
   adds at the end, Backspace takes off the last character.
-- The player has no bar to seek with and no volume.
+- The player has no volume.
