@@ -4,7 +4,10 @@
 # plan for it), for each file given. With more than one file, how near each one's vectors are to the
 # first's for the same pictures (a half-precision file against the full one).
 #
-#   python speed.py FILE.onnx [FILE.onnx ...] [--cpu] [--batches 4,16,32] [--seconds 3]
+#   python speed.py FILE.onnx [FILE.onnx ...] [--cpu] [--batches 4,16,32] [--seconds 3] [--card WHICH]
+#
+# WHICH is the card DirectML is to use on a PC with two: fast (the default, and what the program
+# asks for), any (DirectML's own first choice), or its number, 0 or 1.
 #
 # The pictures are noise: only the time is of interest, and whether two files agree.
 import sys
@@ -17,6 +20,9 @@ import onnxruntime as ort
 SIZES = {"pixel_values": [3, 224, 224], "input_features": [1, 1001, 64]}
 
 
+CARD = "fast"
+
+
 def session(path, cpu, fixed):
     """fixed: {name of a size: number} or None."""
     so = ort.SessionOptions()
@@ -26,7 +32,8 @@ def session(path, cpu, fixed):
     if not cpu and "DmlExecutionProvider" in ort.get_available_providers():
         so.enable_mem_pattern = False
         so.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
-        providers = ["DmlExecutionProvider", "CPUExecutionProvider"]
+        how = {"performance_preference": "high_performance"} if CARD == "fast" else {} if CARD == "any" else {"device_id": CARD}
+        providers = [("DmlExecutionProvider", how), "CPUExecutionProvider"]
     return ort.InferenceSession(path, so, providers=providers)
 
 
@@ -43,6 +50,7 @@ def shape_of(inp, batch):
 
 
 def main():
+    global CARD
     args = sys.argv[1:]
     cpu = "--cpu" in args
     batches = [4, 16, 32, 64]
@@ -56,11 +64,14 @@ def main():
         elif args[i] == "--seconds":
             seconds = float(args[i + 1])
             i += 1
+        elif args[i] == "--card":
+            CARD = args[i + 1]
+            i += 1
         elif args[i] != "--cpu":
             files.append(args[i])
         i += 1
 
-    print("onnxruntime %s, providers: %s" % (ort.__version__, ", ".join(ort.get_available_providers())))
+    print("onnxruntime %s, providers: %s, card: %s" % (ort.__version__, ", ".join(ort.get_available_providers()), CARD))
     rng = np.random.default_rng(0)
     first = None
     for path in files:
