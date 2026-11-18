@@ -95,6 +95,7 @@ struct SRCH_Results {
    U64       count;
    B32       by_name;     // matched by file name, not by what is in the frames
    F32       about_sound; // how much the query is about sound (SRCH_SOUND_WORDS), for the log
+   F32       words_ms;    // how long the models took to read the query, for the log
 };
 
 typedef struct SRCH_Search SRCH_Search;

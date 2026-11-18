@@ -59,6 +59,8 @@ struct App_State {
    // The search bar: what is typed, as UTF-8.
    U8  query[APP_QUERY_CAP];
    U64 query_size;
+   U64 query_hash;       // of what was typed as of the last frame
+   U64 query_changed_us; // when it last became something else
 
    // The search bar is where the user is: it was clicked or typed into last,
    // and shows a blinking caret. Typing goes to it either way. caret_us is

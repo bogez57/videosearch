@@ -353,12 +353,27 @@ _FR_Input(App_State* app_state) {
    }
 }
 
+// How long what is typed has to stay as it is before it is searched for: a
+// search holds the window up for as long as it takes, which with many
+// videos is longer than the time between two keys.
+#define _FR_SEARCH_PAUSE_US 150000
+
 // Searches again if what was typed, or the videos, are not what the results
-// are for. A search of names is quick enough to run on every key.
+// are for.
 internal void
 _FR_UpdateResults(App_State* app_state) {
    String8 query = Str8SkipChopWhitespace(Str8(app_state->query, app_state->query_size));
    B32     same_query = Str8Match(query, app_state->results_query, 0);
+   U64     query_hash = U64HashFromStr8(query);
+   if (query_hash != app_state->query_hash) {
+      app_state->query_hash = query_hash;
+      app_state->query_changed_us = NowTimeUS();
+   }
+   // Still being typed: the results stay as they are until it stops. An
+   // emptied bar empties the list at once.
+   if (!same_query && query.size != 0 && NowTimeUS() - app_state->query_changed_us < _FR_SEARCH_PAUSE_US) {
+      return;
+   }
    B32     same_library = (app_state->results_library_gen == app_state->library->generation);
    B32     same_search = (app_state->results_search_gen == SRCH_Generation(app_state->search));
 
@@ -384,8 +399,9 @@ _FR_UpdateResults(App_State* app_state) {
          }
          StringJoin join = {0};
          join.sep = Str8Lit(", ");
-         LogInfoF("Searched \"%S\" in %.1f ms (about sound %+.2f): %S\n", query, (F64)(NowTimeUS() - begin_us) / 1000.0,
-                  results->about_sound, Str8ListJoin(scratch.arena, &best, &join));
+         LogInfoF("Searched \"%S\" in %.1f ms, %.1f of them reading the words (about sound %+.2f): %S\n", query,
+                  (F64)(NowTimeUS() - begin_us) / 1000.0, results->words_ms, results->about_sound,
+                  Str8ListJoin(scratch.arena, &best, &join));
          ScratchEnd(scratch);
       }
       // More frames found while the query stays the same keep the list where

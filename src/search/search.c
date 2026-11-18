@@ -5,8 +5,8 @@
 //
 // The loaded frames are kept per video, for the library's generation: a new
 // one empties them and they are loaded again as the indexer says each
-// video's file is up to date. The vectors stay F16, as on disk; a table
-// turns each into F32 as it is multiplied.
+// video's file is up to date. The vectors stay F16, as on disk, and are
+// turned into F32 as they are multiplied (_SRCH_Dot).
 //
 // A video's sound is kept the same way beside its frames, and searched the
 // same way with the sound model's vector of the query: there a "frame" is a
@@ -41,8 +41,25 @@ struct SRCH_Search {
    U64          sound_count; // stretches of sound
    U64          generation;
 
-   F32 f32_from_f16[1 << 16];
 };
+
+// A frame's vector, as on disk, times the query's: the processor turns F16
+// into F32 itself, eight at once (F16C, which every one that has the AVX
+// the program is built for has but the first of them, of 2011). EMB_DIM is
+// a whole number of sixteens. Written as sums of vectors, not as calls of
+// intrinsics, which in a build that is not optimised are slower than one
+// number at a time.
+__attribute__((target("avx,f16c"))) internal F32
+_SRCH_Dot(F32* q, U16* v) {
+   __m256 sum_a = {0};
+   __m256 sum_b = {0};
+   for (U64 j = 0; j < EMB_DIM; j += 16) {
+      sum_a += *(__m256_u*)(q + j) * __builtin_ia32_vcvtph2ps256((__v8hi) * (__m128i_u*)(v + j));
+      sum_b += *(__m256_u*)(q + j + 8) * __builtin_ia32_vcvtph2ps256((__v8hi) * (__m128i_u*)(v + j + 8));
+   }
+   sum_a += sum_b;
+   return ((sum_a[0] + sum_a[1]) + (sum_a[2] + sum_a[3])) + ((sum_a[4] + sum_a[5]) + (sum_a[6] + sum_a[7]));
+}
 
 internal SRCH_Search*
 SRCH_Alloc(String8 index_folder, EMB_Model* model) {
@@ -52,9 +69,6 @@ SRCH_Alloc(String8 index_folder, EMB_Model* model) {
    search->index_folder = PushStr8Copy(arena, index_folder);
    search->model = model;
    search->library_gen = max_U64;
-   for (U64 h = 0; h < ArrayCount(search->f32_from_f16); h += 1) {
-      search->f32_from_f16[h] = INX_F32FromF16((U16)h);
-   }
    return search;
 }
 
@@ -198,23 +212,27 @@ _SRCH_ByName(Arena* arena, LIB_Library* library, String8 query) {
 // picture and by sound go in one list. A clip that scores 0 or under is not
 // a hit.
 internal void
-_SRCH_Clips(SRCH_Search* search, SRCH_Hit* hits, U64* count, U64 video_idx, _SRCH_Track* track, F32* q, B32 is_sound) {
+_SRCH_Clips(SRCH_Hit* hits, U64* count, U64 video_idx, _SRCH_Track* track, F32* q, B32 is_sound) {
    Temp scratch = ScratchBegin(0, 0);
-   F32* table = search->f32_from_f16;
    F32  low = is_sound ? SRCH_SOUND_LOW : SRCH_PICTURE_LOW;
    F32  high = is_sound ? SRCH_SOUND_HIGH : SRCH_PICTURE_HIGH;
    F32  margin = is_sound ? SRCH_SOUND_MARGIN : SRCH_CLIP_MARGIN;
    F64  step = is_sound ? IDX_SOUND_SECONDS : IDX_SAMPLE_SECONDS;
 
+   // Only the frames that score over 0 can start a clip, and those are few:
+   // they alone are sorted.
    _SRCH_Frame* frames = PushArrayNoZero(scratch.arena, _SRCH_Frame, track->count);
+   U64          frames_count = 0;
+   F32*         scores = PushArrayNoZero(scratch.arena, F32, track->count);
    S64*         clip_of = PushArrayNoZero(scratch.arena, S64, track->count);
    for (U64 i = 0; i < track->count; i += 1) {
-      U16* v = track->vectors + i * EMB_DIM;
-      F32  dot = 0;
-      for (U64 j = 0; j < EMB_DIM; j += 1) dot += q[j] * table[v[j]];
-      frames[i].idx = i;
-      frames[i].score = (dot - low) / (high - low);
+      scores[i] = (_SRCH_Dot(q, track->vectors + i * EMB_DIM) - low) / (high - low);
       clip_of[i] = -1;
+      if (scores[i] > 0) {
+         frames[frames_count].idx = i;
+         frames[frames_count].score = scores[i];
+         frames_count += 1;
+      }
    }
 
    // The clips: the best frame not yet in one starts one, which takes in its
@@ -222,19 +240,17 @@ _SRCH_Clips(SRCH_Search* search, SRCH_Hit* hits, U64* count, U64 video_idx, _SRC
    // does and come straight after one another (silence is left out of the
    // sound, so its neighbours may not). So each frame is in one clip, and a
    // clip's score is its best frame's.
-   quick_sort(frames, track->count, sizeof(_SRCH_Frame), _SRCH_FrameIsWorse);
-   F32* scores = PushArrayNoZero(scratch.arena, F32, track->count);
-   for (U64 i = 0; i < track->count; i += 1) scores[frames[i].idx] = frames[i].score;
+   quick_sort(frames, frames_count, sizeof(_SRCH_Frame), _SRCH_FrameIsWorse);
    F32* times = track->times;
    F32  gap = (F32)(step * 1.5);
 
-   for (U64 k = 0; k < track->count; k += 1) {
+   for (U64 k = 0; k < frames_count; k += 1) {
       U64 best = frames[k].idx;
       F32 score = frames[k].score;
       if (clip_of[best] != -1) {
          continue;
       }
-      if (score <= 0 || (*count == SRCH_MAX_HITS && score <= hits[*count - 1].score)) {
+      if (*count == SRCH_MAX_HITS && score <= hits[*count - 1].score) {
          break; // the rest are worse still
       }
       U64 first = best;
@@ -276,10 +292,12 @@ SRCH_Run(Arena* arena, SRCH_Search* search, LIB_Library* library, String8 query)
    F32          sound_q[EMB_DIM];
    F32          about_sound = 0;
    B32          current = (search->library_gen == library->generation);
+   U64          begin_us = NowTimeUS();
    B32          by_pictures = (query.size != 0 && current && search->frame_count != 0 && EMB_QueryVector(search->model, query, q));
    // The sound only for words that are about sound.
    B32 by_sound = (query.size != 0 && current && search->sound_count != 0 &&
                    EMB_SoundQueryVector(search->model, query, sound_q, &about_sound) && about_sound >= SRCH_SOUND_WORDS);
+   F32 words_ms = (F32)(NowTimeUS() - begin_us) / 1000.0f;
    if (query.size == 0) {
       // No hits.
    } else if (!by_pictures && !by_sound) {
@@ -291,10 +309,10 @@ SRCH_Run(Arena* arena, SRCH_Search* search, LIB_Library* library, String8 query)
       for (U64 video_idx = 0; video_idx < search->video_count; video_idx += 1) {
          _SRCH_Video* video = &search->videos[video_idx];
          if (by_pictures && video->pictures.count != 0) {
-            _SRCH_Clips(search, found, &found_count, video_idx, &video->pictures, q, 0);
+            _SRCH_Clips(found, &found_count, video_idx, &video->pictures, q, 0);
          }
          if (by_sound && video->sound.count != 0) {
-            _SRCH_Clips(search, found, &found_count, video_idx, &video->sound, sound_q, 1);
+            _SRCH_Clips(found, &found_count, video_idx, &video->sound, sound_q, 1);
          }
       }
 
@@ -350,5 +368,6 @@ SRCH_Run(Arena* arena, SRCH_Search* search, LIB_Library* library, String8 query)
       result.count = count;
    }
    result.about_sound = about_sound;
+   result.words_ms = words_ms;
    return result;
 }

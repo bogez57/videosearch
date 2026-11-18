@@ -16,7 +16,6 @@ and shows the `SRCH_Hit`s, and knows nothing of how they were found.
   them all.
 - `generation`: goes up when a file is loaded or a model finishes
   loading, so `_FR_UpdateResults` searches again.
-- A table from every F16 to its F32, for the dot products.
 
 `App_State` keeps the last results and what they were for (`results_query`,
 `results_library_gen`, `results_search_gen`).
@@ -113,9 +112,13 @@ when a word of the query is in its name, and the hit is the whole video.
 - "a crowd cheering" is not searched for in the sound: `about_sound` puts
   it with the words about pictures, next to "a crowd of people". "A man
   shouting" and "a person sneezing" are just under the line too.
-- The query's vectors are made on the main thread on every key: the text
-  halves read it seven times (five for the pictures, two for the sound),
-  and a search of twelve videos is 48 ms on J's PC.
+- A search is on the main thread, and the window waits for it:
+  `_FR_UpdateResults` searches once what is typed has stayed the same for
+  `_FR_SEARCH_PAUSE_US`, not on every key. Its time is the text halves
+  reading the query seven times (five for the pictures, two for the
+  sound; `words_ms` in the results, for the log), and then every frame's
+  dot product (`_SRCH_Dot`, sixteen numbers at a step) and the sorting of
+  those that score over 0, which grow with the library.
 
 ## Used by
 
