@@ -99,10 +99,11 @@ _IDX_Encode(IDX_Indexer* indexer, Arena* arena, F32* images, F32* times, U64 cou
 }
 
 // A stretch of sound through the sound model, and its time and vector (as
-// F16) onto the lists. One too quiet to be anything is left out.
+// F16) onto the lists. One too quiet to be anything is left out. ready_us
+// has how long making it into what the model reads took added to it.
 internal B32
 _IDX_EncodeSound(IDX_Indexer* indexer, Arena* arena, F32* samples, U64 count, F32 time_s, F32* features, String8List* times_out,
-                 String8List* vectors_out) {
+                 String8List* vectors_out, U64* ready_us) {
    B32 ok = 1;
    F32 peak = 0;
    for (U64 i = 0; i < count; i += 1) {
@@ -110,7 +111,9 @@ _IDX_EncodeSound(IDX_Indexer* indexer, Arena* arena, F32* samples, U64 count, F3
    }
    if (peak >= IDX_SOUND_SILENCE) {
       F32 vector[EMB_DIM];
+      U64 t = NowTimeUS();
       EMB_SoundFeatures(samples, count, features);
+      *ready_us += NowTimeUS() - t;
       ok = EMB_SoundVector(indexer->model, features, vector);
       if (ok) {
          U16 v[EMB_DIM];
@@ -217,9 +220,12 @@ _IDX_ThreadEntry(void* p) {
             F64 time_s = 0;
             B32 frames_more = 1;
 
-            // Where the time goes, for the log: in the two models. The rest
-            // is the decoder's.
+            // Where the time goes, for the log: making the frames and the
+            // sound into what the models read, and in the two models
+            // (sound_us has sound_ready_us in it). The rest is the decoder's.
+            U64 ready_us = 0;
             U64 pictures_us = 0;
+            U64 sound_ready_us = 0;
             U64 sound_us = 0;
             U64 t = 0;
             while (ok && !InsAtomicU64Eval(&indexer->cancel) && (frames_more || sound_more)) {
@@ -235,11 +241,13 @@ _IDX_ThreadEntry(void* p) {
                   }
                   batch_times[batch_count] = (F32)time_s;
                   batch_count += 1;
+                  ready_us += NowTimeUS() - t;
                   if (batch_count == IDX_BATCH) {
+                     t = NowTimeUS();
                      ok = _IDX_Encode(indexer, arena, images, batch_times, batch_count, vectors, &times, &vector_list);
+                     pictures_us += NowTimeUS() - t;
                      batch_count = 0;
                   }
-                  pictures_us += NowTimeUS() - t;
                }
 
                // The sound up to this frame, or all the rest of it once the
@@ -257,7 +265,7 @@ _IDX_ThreadEntry(void* p) {
                      if (stretch_count == IDX_SOUND_SAMPLES) {
                         t = NowTimeUS();
                         ok = _IDX_EncodeSound(indexer, arena, stretch, stretch_count, stretch_s, features, &sound_times,
-                                              &sound_vectors);
+                                              &sound_vectors, &sound_ready_us);
                         sound_us += NowTimeUS() - t;
                         stretch_count = 0;
                      }
@@ -265,11 +273,16 @@ _IDX_ThreadEntry(void* p) {
                }
             }
             if (ok && batch_count != 0) {
+               t = NowTimeUS();
                ok = _IDX_Encode(indexer, arena, images, batch_times, batch_count, vectors, &times, &vector_list);
+               pictures_us += NowTimeUS() - t;
             }
             // What is left at the end, if it is a second or more.
             if (ok && stretch_count >= EMB_SOUND_RATE) {
-               ok = _IDX_EncodeSound(indexer, arena, stretch, stretch_count, stretch_s, features, &sound_times, &sound_vectors);
+               t = NowTimeUS();
+               ok = _IDX_EncodeSound(indexer, arena, stretch, stretch_count, stretch_s, features, &sound_times, &sound_vectors,
+                                     &sound_ready_us);
+               sound_us += NowTimeUS() - t;
             }
             VID_DecoderClose(decoder);
 
@@ -291,11 +304,12 @@ _IDX_ThreadEntry(void* p) {
                      LogUserErrorF("Could not write %S, the sound index of %S\n", sound_file_path, path);
                   }
                }
-               LogInfoF("Indexed %S: %llu frames, %llu stretches of sound in %.1f s (the picture model %.1f s, the sound "
-                        "model %.1f s)\n",
+               LogInfoF("Indexed %S: %llu frames, %llu stretches of sound in %.1f s (the frames made ready %.1f s, the "
+                        "picture model %.1f s, the sound made ready %.1f s, the sound model %.1f s)\n",
                         indexer->names[idx], (unsigned long long)(times.total_size / sizeof(F32)),
                         (unsigned long long)(sound_times.total_size / sizeof(F32)),
-                        (F64)(NowTimeUS() - begin_us) / 1000000.0, (F64)pictures_us / 1000000.0, (F64)sound_us / 1000000.0);
+                        (F64)(NowTimeUS() - begin_us) / 1000000.0, (F64)ready_us / 1000000.0, (F64)pictures_us / 1000000.0,
+                        (F64)sound_ready_us / 1000000.0, (F64)(sound_us - sound_ready_us) / 1000000.0);
             }
          }
          if (!ok) {

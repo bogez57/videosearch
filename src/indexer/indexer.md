@@ -60,7 +60,8 @@ first one at or after each whole second is made into pixels and taken
 as failed. One stopped part way (the library changed, or the program
 closed) is not written, and is read again next time. A line is logged per
 video indexed: how many frames, how many stretches of sound, how long it
-took, and how much of that was each model.
+took, and how much of that was making the frames and the sound into what
+the models read, and each model. The rest is the decoder's.
 
 The sound is asked of the decoder at 48 kHz, after each frame up to that
 frame's time and then to its end, so the decoder never holds much of the one
