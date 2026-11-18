@@ -47,6 +47,16 @@ the sound model and into the video's sound index file.
   to date): written by the threads, read by the main thread with atomics.
   A video that was up to date is the reader's to count, one that is indexed
   the run's thread's.
+- `sound`, `sound_had`: stretches of sound, as `frames` and `frames_had`
+  are of frames. `video_bytes`: the sizes of all the videos, added up by the
+  reader before it starts. `had_video_bytes` and `had_vectors` (the
+  reader's), `made_video_bytes` and `made_vectors` (the run's thread's): the
+  sizes of the videos gone through and how many vectors their index files
+  have. From these `IDX_GetStatus` gives `bytes`, what the index files so
+  far come to (1028 bytes a vector), and `bytes_in_all`, about what they
+  will when every video is done: the videos to go taken to need as much
+  for each of their bytes as those gone through did, which is a guess (a
+  video's size says little of its length) that gets better as it goes.
 - `logs`: what the threads logged (on `thread_log` and `reader_log`), under
   `log_mutex`, for `IDX_Update` to log on the main thread.
 

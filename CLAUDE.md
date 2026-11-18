@@ -119,6 +119,11 @@ videos and the models are.
   5060) the twelve test videos, 29 minutes, index in 39 s, from 107 s (35 s
   built with `build o2`), and the 224 searches come out as before. The
   log's line for each video says where its time went.
+- A large library (J's: 133 videos, 26 hours, 93,576 frames, indexed in 28
+  minutes): a search waits for a pause in the typing and takes 52 ms, from
+  154 (`_FR_SEARCH_PAUSE_US`, `_SRCH_Dot`), and the status line says how far
+  the indexing is as h:mm:ss and in MB, with a guess of the MB in all
+  (`IDX_Status`).
 - Next: new videos found while it runs, speech search (whisper.cpp), or
   more speed: the decoder is now the longest part (22 s of those 39), then
   the picture model (20 s), and loading the models at each start (6 s). For

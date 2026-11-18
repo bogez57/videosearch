@@ -113,6 +113,17 @@ struct IDX_Indexer {
    U64 up_to_date; // the reader's
    U64 frames;
    U64 frames_had; // the reader's: in the files that were up to date
+   U64 sound;      // stretches of sound, as frames and frames_had are of frames
+   U64 sound_had;
+   // For telling how large the index will be: the sizes of all the videos
+   // (0 until the reader has added them up), and of the videos gone through
+   // with how many vectors their index files have, the reader's for those
+   // that were up to date and the run's thread's for the rest.
+   U64 video_bytes;
+   U64 had_video_bytes;
+   U64 had_vectors;
+   U64 made_video_bytes;
+   U64 made_vectors;
    U64 no_model;
    U64  current; // the video under way, plus one. 0: none
    U64* indexed; // one a video, set when its index file is up to date
@@ -238,6 +249,12 @@ _IDX_ReaderEntry(void* p) {
    LogSelect(indexer->reader_log);
    B32 sound_on = EMB_SoundIsLoaded(indexer->model);
 
+   U64 video_bytes = 0;
+   for (U64 idx = 0; idx < indexer->count && !InsAtomicU64Eval(&indexer->cancel); idx += 1) {
+      video_bytes += PropertiesFromFilePath(indexer->paths[idx]).size;
+   }
+   InsAtomicU64EvalAssign(&indexer->video_bytes, video_bytes);
+
    for (U64 idx = 0; idx < indexer->count && !InsAtomicU64Eval(&indexer->cancel); idx += 1) {
       Temp temp = TempBegin(arena);
       LogScopeBegin();
@@ -256,10 +273,13 @@ _IDX_ReaderEntry(void* p) {
          InsAtomicU64EvalAssign(&indexer->indexed[idx], 1);
       }
       if (sound_on && sound_done) {
+         InsAtomicU64EvalAssign(&indexer->sound_had, InsAtomicU64Eval(&indexer->sound_had) + sound_have);
          InsAtomicU64EvalAssign(&indexer->sound_indexed[idx], 1);
       }
 
       if (pictures_done && sound_done) {
+         InsAtomicU64EvalAssign(&indexer->had_vectors, InsAtomicU64Eval(&indexer->had_vectors) + have + sound_have);
+         InsAtomicU64EvalAssign(&indexer->had_video_bytes, InsAtomicU64Eval(&indexer->had_video_bytes) + props.size);
          InsAtomicU64IncEval(&indexer->up_to_date);
          _IDX_PassOnLogs(indexer, LogScopeEnd(arena));
          InsAtomicU64IncEval(&indexer->done);
@@ -524,6 +544,7 @@ _IDX_ThreadEntry(void* p) {
                      }
                      Str8ListPush(arena, &sound_times, PushStr8Copy(arena, Str8((U8*)&piece->time_s, sizeof(piece->time_s))));
                      Str8ListPush(arena, &sound_vectors, PushStr8Copy(arena, Str8((U8*)v, sizeof(v))));
+                     InsAtomicU64IncEval(&indexer->sound);
                   }
                   sound_us += NowTimeUS() - t;
                }
@@ -562,7 +583,11 @@ _IDX_ThreadEntry(void* p) {
                }
                if (!ok) {
                   InsAtomicU64IncEval(&indexer->failed);
+               } else {
+                  InsAtomicU64EvalAssign(&indexer->made_vectors, InsAtomicU64Eval(&indexer->made_vectors) +
+                                                                     (times.total_size + sound_times.total_size) / sizeof(F32));
                }
+               InsAtomicU64EvalAssign(&indexer->made_video_bytes, InsAtomicU64Eval(&indexer->made_video_bytes) + header.video_size);
                _IDX_PassOnLogs(indexer, LogScopeEnd(arena));
                TempEnd(temp);
                in_video = 0;
@@ -680,6 +705,13 @@ IDX_Update(IDX_Indexer* indexer, LIB_Library* library) {
    indexer->up_to_date = 0;
    indexer->frames = 0;
    indexer->frames_had = 0;
+   indexer->sound = 0;
+   indexer->sound_had = 0;
+   indexer->video_bytes = 0;
+   indexer->had_video_bytes = 0;
+   indexer->had_vectors = 0;
+   indexer->made_video_bytes = 0;
+   indexer->made_vectors = 0;
    indexer->current = 0;
    indexer->started_us = NowTimeUS();
    indexer->ended_us = 0;
@@ -699,6 +731,19 @@ IDX_GetStatus(IDX_Indexer* indexer) {
    result.videos_failed = InsAtomicU64Eval(&indexer->failed);
    result.frames = InsAtomicU64Eval(&indexer->frames) + InsAtomicU64Eval(&indexer->frames_had);
    result.no_model = (B32)InsAtomicU64Eval(&indexer->no_model);
+
+   // A vector and its time, which is all but a few bytes of an index file.
+   U64 vector_bytes = EMB_DIM * sizeof(U16) + sizeof(F32);
+   result.bytes = (result.frames + InsAtomicU64Eval(&indexer->sound) + InsAtomicU64Eval(&indexer->sound_had)) * vector_bytes;
+   // The videos still to go are taken to need as much for each of their
+   // bytes as those gone through did.
+   U64 video_bytes = InsAtomicU64Eval(&indexer->video_bytes);
+   U64 through_bytes = InsAtomicU64Eval(&indexer->had_video_bytes) + InsAtomicU64Eval(&indexer->made_video_bytes);
+   U64 through_vectors = InsAtomicU64Eval(&indexer->had_vectors) + InsAtomicU64Eval(&indexer->made_vectors);
+   if (video_bytes != 0 && through_bytes != 0) {
+      F64 to_go = (F64)(video_bytes - Min(video_bytes, through_bytes)) / (F64)through_bytes;
+      result.bytes_in_all = result.bytes + (U64)(to_go * (F64)(through_vectors * vector_bytes));
+   }
    result.seconds = (F64)((indexer->ended_us != 0 ? indexer->ended_us : NowTimeUS()) - indexer->started_us) / 1000000.0;
 
    U64 current = InsAtomicU64Eval(&indexer->current);

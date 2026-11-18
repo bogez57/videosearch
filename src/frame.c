@@ -800,12 +800,21 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
          String8    reading = {0};
          if (idx.no_model) {
             reading = Str8Lit(" No image model, so nothing is indexed: see data\\models\\README.md.");
-         } else if (idx.videos_done < idx.video_count) {
-            reading = PushStr8F(scratch.arena, " Indexing: %llu of %llu videos, %llu frames (%S). %.0f s so far.",
-                                (unsigned long long)idx.videos_done, (unsigned long long)idx.video_count,
-                                (unsigned long long)idx.frames, idx.current, idx.seconds);
          } else if (idx.video_count != 0) {
-            reading = PushStr8F(scratch.arena, " %llu frames indexed in %.1f s.", (unsigned long long)idx.frames, idx.seconds);
+            U64     s = (U64)idx.seconds;
+            String8 took = PushStr8F(scratch.arena, "%llu:%02llu:%02llu", (unsigned long long)(s / 3600),
+                                     (unsigned long long)(s / 60 % 60), (unsigned long long)(s % 60));
+            F64     mb = (F64)idx.bytes / 1000000.0;
+            if (idx.videos_done < idx.video_count) {
+               String8 in_all = (idx.bytes_in_all == 0)
+                                    ? Str8Lit("")
+                                    : PushStr8F(scratch.arena, " of about %.0f", (F64)idx.bytes_in_all / 1000000.0);
+               reading = PushStr8F(scratch.arena, " Indexing: %llu of %llu videos, %llu frames, %.1f MB%S (%S). %S so far.",
+                                   (unsigned long long)idx.videos_done, (unsigned long long)idx.video_count,
+                                   (unsigned long long)idx.frames, mb, in_all, idx.current, took);
+            } else {
+               reading = PushStr8F(scratch.arena, " %llu frames indexed in %S, %.1f MB.", (unsigned long long)idx.frames, took, mb);
+            }
          }
          String8 failed = {0};
          if (idx.videos_failed != 0) {

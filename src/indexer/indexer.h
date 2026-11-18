@@ -49,6 +49,8 @@ struct IDX_Status {
    U64     videos_done; // gone through, whether or not they could be decoded
    U64     videos_failed;
    U64     frames;      // indexed, in all the videos done and the one under way
+   U64     bytes;       // what their index files, pictures and sound, come to
+   U64     bytes_in_all; // about what every video's will: a guess from the videos' sizes. 0 until one is done
    B32     no_model;    // the model could not be opened or loaded, so nothing is indexed
    F64     seconds;     // how long the run has taken so far, or took if it is over
    String8 current;     // the name of the video under way. Empty when none is. Good until the next IDX_Update

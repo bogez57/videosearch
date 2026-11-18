@@ -118,7 +118,9 @@ when a word of the query is in its name, and the hit is the whole video.
   reading the query seven times (five for the pictures, two for the
   sound; `words_ms` in the results, for the log), and then every frame's
   dot product (`_SRCH_Dot`, sixteen numbers at a step) and the sorting of
-  those that score over 0, which grow with the library.
+  those that score over 0, which grow with the library. On J's PC with
+  133 videos, 93,576 frames, a search is 52 ms (47 built with `build o2`),
+  some 40 of them the reading; before `_SRCH_Dot` it was 154 ms (70).
 
 ## Used by
 
