@@ -1,0 +1,62 @@
+diff --git a/src/frame.c b/src/frame.c
+index c50e901..fc24599 100644
+--- a/src/frame.c
++++ b/src/frame.c
+@@ -1056,6 +1056,57 @@ FrameWork(App_State* app_state) {
+    SRCH_Update(app_state->search, app_state->library, app_state->indexer);
+    _FR_UpdateResults(app_state);
+ 
++   // bench\app_check.patch, never in the program itself: once every video is
++   // indexed, each line of bin\local\check_queries.txt is searched for, and
++   // its vectors and hits logged for bench\app_check.py.
++   {
++      local_persist U64 check_frames = 0;
++      local_persist B32 check_done = 0;
++      IDX_Status        check_status = IDX_GetStatus(app_state->indexer);
++      B32               check_ready = (check_status.video_count != 0 && check_status.videos_done == check_status.video_count &&
++                         EMB_IsLoaded(app_state->model));
++      check_frames = check_ready ? check_frames + 1 : 0;
++      if (!check_done && check_frames > 120) {
++         check_done = 1;
++         Temp    scratch = ScratchBegin(0, 0);
++         String8 text = DataFromFilePath(scratch.arena, PushStr8F(scratch.arena, "%S\\check_queries.txt", FR_LocalFolder(scratch.arena)));
++         U64     pos = 0;
++         while (pos < text.size) {
++            U64 start = pos;
++            while (pos < text.size && text.str[pos] != '\n') pos += 1;
++            String8 query = Str8SkipChopWhitespace(Str8Substr(text, R1U64(start, pos)));
++            pos += 1;
++            if (query.size == 0) {
++               continue;
++            }
++            F32 v[EMB_DIM] = {0};
++            F32 sound_v[EMB_DIM] = {0};
++            F32 about_sound = 0;
++            EMB_QueryVector(app_state->model, query, v);
++            EMB_SoundQueryVector(app_state->model, query, sound_v, &about_sound);
++            String8List numbers = {0};
++            String8List sound_numbers = {0};
++            for (U64 j = 0; j < 16; j += 1) {
++               Str8ListPushF(scratch.arena, &numbers, "%.5f", v[j]);
++               Str8ListPushF(scratch.arena, &sound_numbers, "%.5f", sound_v[j]);
++            }
++            StringJoin join = {0};
++            join.sep = Str8Lit(" ");
++            SRCH_Results results = SRCH_Run(scratch.arena, app_state->search, app_state->library, query);
++            LogInfoF("CHECK query\t%S\t%llu\t%.4f\t%S\t%S\n", query, (unsigned long long)results.count, about_sound,
++                     Str8ListJoin(scratch.arena, &numbers, &join), Str8ListJoin(scratch.arena, &sound_numbers, &join));
++            for (U64 i = 0; i < Min(results.count, 10); i += 1) {
++               SRCH_Hit* hit = &results.v[i];
++               LogInfoF("CHECK hit\t%S\t%S\t%.1f\t%.1f\t%.1f\t%.3f\t%s\n", query,
++                        app_state->library->videos[hit->video_idx].name, hit->start_s, hit->end_s, hit->best_s, hit->score,
++                        hit->by_both ? "both" : hit->by_sound ? "sound" : "picture");
++            }
++         }
++         LogInfoF("CHECK done\n");
++         ScratchEnd(scratch);
++      }
++   }
++
+    // The UI tree, built after the input. UI_EndBuild lays it out; it is
+    // drawn below.
+    {

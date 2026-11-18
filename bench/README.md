@@ -29,6 +29,9 @@ the public test sets (`esc50`, `flickr1k`).
   say what should be heard. `bank_sound.txt`: words about sounds of every kind, as `bank.txt` is
   for pictures.
 - `check_index.py`: the program's own index files against the bench's vectors for the same frames.
+- `app_check.py`, `app_check.patch`: the built program against the bench, in a scratch copy of the
+  repo: the patch makes it run every search of `queries.txt` and log its vectors and hits, and the
+  script sets those against the bench's.
 
 ## What it found
 
