@@ -98,7 +98,8 @@ and the words about sound are `data\clap\sound_words.txt`
   says: repeated to ten seconds, 1024-sample Hann windows 480 apart, an FFT
   of its own, 64 Slaney mel bands from 50 Hz to 14 kHz, in decibels. Checked
   against a numpy port of Hugging Face's `ClapFeatureExtractor`: the same to
-  0.00001 dB.
+  0.00001 dB. Where the sound is a repeat, a window that lies wholly in a
+  later repeat is copied from the one a repeat before it (the same numbers).
 - `EMB_SoundTokenizerFromVocab`, `EMB_SoundTokenize`
   (embed_sound_tokenizer.c): RoBERTa's tokenizer, with the byte-pair
   encoding of embed_tokenizer.c. Checked against a Python port of GPT-2's

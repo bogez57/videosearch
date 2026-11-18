@@ -105,10 +105,21 @@ EMB_SoundFeatures(F32* samples, U64 count, F32* features_out) {
       body[EMB_SOUND_SAMPLES + i] = body[EMB_SOUND_SAMPLES - 2 - i];
    }
 
+   // A sound repeated a whole number of windows' steps on is the same there
+   // again: a window that lies wholly in a later repeat has the numbers of
+   // the one a repeat before it, and is not worked out twice.
+   U64 repeat_frames = (count != 0 && count % _EMB_HOP == 0) ? count / _EMB_HOP : 0;
+   U64 repeats_end = (count != 0) ? (EMB_SOUND_SAMPLES / count) * count : 0;
+
    F64 re[_EMB_FFT_SIZE];
    F64 im[_EMB_FFT_SIZE];
    F64 power[_EMB_FFT_BINS];
    for (U64 frame = 0; frame < EMB_SOUND_FRAMES; frame += 1) {
+      if (repeat_frames != 0 && frame * _EMB_HOP >= count + half && frame * _EMB_HOP + half <= repeats_end) {
+         MemoryCopy(features_out + frame * EMB_SOUND_MELS, features_out + (frame - repeat_frames) * EMB_SOUND_MELS,
+                    EMB_SOUND_MELS * sizeof(F32));
+         continue;
+      }
       F64* in = wave + frame * _EMB_HOP;
       for (U64 i = 0; i < _EMB_FFT_SIZE; i += 1) {
          re[_emb_fft_swap[i]] = in[i] * _emb_window[i];
