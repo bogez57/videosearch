@@ -32,6 +32,8 @@ the public test sets (`esc50`, `flickr1k`).
 - `app_check.py`, `app_check.patch`: the built program against the bench, in a scratch copy of the
   repo: the patch makes it run every search of `queries.txt` and log its vectors and hits, and the
   script sets those against the bench's.
+- `speed.py FILE.onnx...`: how many pictures (or stretches of sound) a second a model's file runs
+  at on this PC, for each size of batch, which is what indexing waits for most.
 
 ## What it found
 
