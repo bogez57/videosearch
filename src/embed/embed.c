@@ -1,53 +1,114 @@
 ////////////////////////////////
 //~ bgz: embed: getting a picture ready for the model
 //
-// See embed.h. As CLIP's own preprocessing (preprocessor_config.json in the
-// model's folder): the shorter side scaled to 224, the middle 224x224 cut
-// out, each colour made 0 to 1 and then normalized with the mean and spread
-// of the pictures CLIP was trained on.
+// See embed.h. As the model's own preprocessing (preprocessor_config.json in
+// its folder): scaled to 224 with a bilinear filter, each colour made 0 to
+// 1, and nothing more. What is scaled is the part of the frame the view
+// shows.
 //
-// CLIP scales with a bicubic filter; this is bilinear, done in the same pass
-// as the cut. The frames come from the decoder a little larger than 224 on
-// their shorter side (IDX_FRAME_DIM), so they are only scaled down a little
-// and the two come out nearly the same.
+// Where the frame is made smaller, each pixel of the square is made of all
+// the frame's pixels it covers, not only the nearest two: the filter is as
+// wide as the scale, as it is in Pillow, which the model's makers scaled
+// with. A whole 16:9 frame pressed into the square is more than halved
+// across, and without that every other column of it would be skipped.
 
-global F32 _emb_mean[3] = {0.48145466f, 0.4578275f, 0.40821073f};
-global F32 _emb_std[3] = {0.26862954f, 0.26130258f, 0.27577711f};
+// For each of the square's pixels along one side, the pixels of the frame it
+// is made of: the first, and how much of each of the taps from there (a
+// weight is 0 past the frame's edge).
+typedef struct _EMB_Taps _EMB_Taps;
+struct _EMB_Taps {
+   S32  taps;
+   S32  first[EMB_IMAGE_DIM];
+   F32* weights; // EMB_IMAGE_DIM by taps
+};
+
+// length of the frame's side, starting at from, onto the square's side. limit
+// is the whole side.
+internal _EMB_Taps
+_EMB_TapsFor(Arena* arena, F32 from, F32 length, S32 limit) {
+   _EMB_Taps result = {0};
+   F32       scale = length / (F32)EMB_IMAGE_DIM;
+   F32       reach = Max(scale, 1.0f); // how far each way the filter goes, in the frame's pixels
+   result.taps = (S32)ceilf(2.0f * reach) + 1;
+   result.weights = PushArray(arena, F32, (U64)EMB_IMAGE_DIM * (U64)result.taps);
+   for (S32 i = 0; i < EMB_IMAGE_DIM; i += 1) {
+      F32  center = from + ((F32)i + 0.5f) * scale;
+      S32  first = Max(0, (S32)floorf(center - reach + 0.5f));
+      S32  end = Min(limit, (S32)floorf(center + reach + 0.5f));
+      F32* w = result.weights + (U64)i * (U64)result.taps;
+      F32  sum = 0;
+      for (S32 k = 0; k < result.taps && first + k < end; k += 1) {
+         w[k] = Max(0.0f, 1.0f - fabsf(((F32)(first + k) + 0.5f - center) / reach));
+         sum += w[k];
+      }
+      for (S32 k = 0; k < result.taps && sum > 0; k += 1) w[k] /= sum;
+      result.first[i] = first;
+   }
+   return result;
+}
 
 internal void
-EMB_ImageFromFrame(U8* pixels, Vec2S32 size, F32* image_out) {
-   S32 side = Min(size.x, size.y);
-   F32 scale = (F32)side / (F32)EMB_IMAGE_DIM;
-   F32 off_x = (F32)(size.x - side) * 0.5f;
-   F32 off_y = (F32)(size.y - side) * 0.5f;
-   U64 plane = (U64)EMB_IMAGE_DIM * EMB_IMAGE_DIM;
+EMB_ImageFromFrame(U8* pixels, Vec2S32 size, EMB_View view, F32* image_out) {
+   Temp scratch = ScratchBegin(0, 0);
 
-   for (S32 y = 0; y < EMB_IMAGE_DIM; y += 1) {
-      // Where the middle of this pixel falls in the frame, between which rows.
-      F32 sy = off_y + ((F32)y + 0.5f) * scale - 0.5f;
-      sy = Clamp(0.0f, sy, (F32)(size.y - 1));
-      S32 y0 = (S32)sy;
-      S32 y1 = Min(y0 + 1, size.y - 1);
-      F32 fy = sy - (F32)y0;
+   // The part of the frame the view shows: all of it, or a square as high
+   // as the frame's shorter side, from one end of the longer side, its
+   // middle or its other end.
+   F32 x0 = 0;
+   F32 y0 = 0;
+   F32 w = (F32)size.x;
+   F32 h = (F32)size.y;
+   if (view != EMB_View_Whole) {
+      F32 side = Min(w, h);
+      F32 along = (view == EMB_View_Start) ? 0.0f : (view == EMB_View_Middle) ? 0.5f : 1.0f;
+      x0 = (w - side) * along;
+      y0 = (h - side) * along;
+      w = side;
+      h = side;
+   }
+   _EMB_Taps across = _EMB_TapsFor(scratch.arena, x0, w, size.x);
+   _EMB_Taps down = _EMB_TapsFor(scratch.arena, y0, h, size.y);
 
+   // Across first: each row of the frame that is used, into a row as wide
+   // as the square, red green blue.
+   S32  row0 = down.first[0];
+   S32  row1 = Min(size.y, down.first[EMB_IMAGE_DIM - 1] + down.taps);
+   F32* rows = PushArrayNoZero(scratch.arena, F32, (U64)(row1 - row0) * EMB_IMAGE_DIM * 3);
+   for (S32 y = row0; y < row1; y += 1) {
+      U8*  in = pixels + (U64)y * (U64)size.x * 4;
+      F32* out = rows + (U64)(y - row0) * EMB_IMAGE_DIM * 3;
       for (S32 x = 0; x < EMB_IMAGE_DIM; x += 1) {
-         F32 sx = off_x + ((F32)x + 0.5f) * scale - 0.5f;
-         sx = Clamp(0.0f, sx, (F32)(size.x - 1));
-         S32 x0 = (S32)sx;
-         S32 x1 = Min(x0 + 1, size.x - 1);
-         F32 fx = sx - (F32)x0;
-
-         U8* p00 = pixels + ((U64)y0 * (U64)size.x + (U64)x0) * 4;
-         U8* p01 = pixels + ((U64)y0 * (U64)size.x + (U64)x1) * 4;
-         U8* p10 = pixels + ((U64)y1 * (U64)size.x + (U64)x0) * 4;
-         U8* p11 = pixels + ((U64)y1 * (U64)size.x + (U64)x1) * 4;
-         U64 out = (U64)y * EMB_IMAGE_DIM + (U64)x;
-         for (U64 c = 0; c < 3; c += 1) {
-            F32 top = (F32)p00[c] + ((F32)p01[c] - (F32)p00[c]) * fx;
-            F32 bottom = (F32)p10[c] + ((F32)p11[c] - (F32)p10[c]) * fx;
-            F32 v = (top + (bottom - top) * fy) / 255.0f;
-            image_out[c * plane + out] = (v - _emb_mean[c]) / _emb_std[c];
+         F32* wx = across.weights + (U64)x * (U64)across.taps;
+         F32  rgb[3] = {0};
+         for (S32 k = 0; k < across.taps && across.first[x] + k < size.x; k += 1) {
+            U8* p = in + (U64)(across.first[x] + k) * 4;
+            rgb[0] += wx[k] * (F32)p[0];
+            rgb[1] += wx[k] * (F32)p[1];
+            rgb[2] += wx[k] * (F32)p[2];
          }
+         out[x * 3 + 0] = rgb[0];
+         out[x * 3 + 1] = rgb[1];
+         out[x * 3 + 2] = rgb[2];
       }
    }
+
+   // Then down, into the three planes.
+   U64 plane = (U64)EMB_IMAGE_DIM * EMB_IMAGE_DIM;
+   for (S32 y = 0; y < EMB_IMAGE_DIM; y += 1) {
+      F32* wy = down.weights + (U64)y * (U64)down.taps;
+      F32* out = image_out + (U64)y * EMB_IMAGE_DIM;
+      for (S32 x = 0; x < EMB_IMAGE_DIM; x += 1) {
+         F32 rgb[3] = {0};
+         for (S32 k = 0; k < down.taps && down.first[y] + k < row1; k += 1) {
+            F32* p = rows + ((U64)(down.first[y] + k - row0) * EMB_IMAGE_DIM + (U64)x) * 3;
+            rgb[0] += wy[k] * p[0];
+            rgb[1] += wy[k] * p[1];
+            rgb[2] += wy[k] * p[2];
+         }
+         out[x] = rgb[0] / 255.0f;
+         out[plane + x] = rgb[1] / 255.0f;
+         out[2 * plane + x] = rgb[2] / 255.0f;
+      }
+   }
+   ScratchEnd(scratch);
 }

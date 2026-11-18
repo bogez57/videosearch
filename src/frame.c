@@ -384,8 +384,8 @@ _FR_UpdateResults(App_State* app_state) {
          }
          StringJoin join = {0};
          join.sep = Str8Lit(", ");
-         LogInfoF("Searched \"%S\" in %.1f ms: %S\n", query, (F64)(NowTimeUS() - begin_us) / 1000.0,
-                  Str8ListJoin(scratch.arena, &best, &join));
+         LogInfoF("Searched \"%S\" in %.1f ms (about sound %+.2f): %S\n", query, (F64)(NowTimeUS() - begin_us) / 1000.0,
+                  results->about_sound, Str8ListJoin(scratch.arena, &best, &join));
          ScratchEnd(scratch);
       }
       // More frames found while the query stays the same keep the list where

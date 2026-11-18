@@ -16,11 +16,6 @@ and shows the `SRCH_Hit`s, and knows nothing of how they were found.
   them all.
 - `generation`: goes up when a file is loaded or a model finishes
   loading, so `_FR_UpdateResults` searches again.
-- `picture_sum`: the sum of every loaded frame's vector, so the mean frame
-  is at hand for each search.
-- `sound_base`: the mean of the sound model's vectors for ten texts that
-  say nothing about a sound (`_srch_sound_base_texts`), worked out when the
-  sound model has loaded.
 - A table from every F16 to its F32, for the dot products.
 
 `App_State` keeps the last results and what they were for (`results_query`,
@@ -36,54 +31,58 @@ and shows the `SRCH_Hit`s, and knows nothing of how they were found.
 - `SRCH_Run(arena, search, library, query)`: up to `SRCH_MAX_HITS` hits,
   best first. A hit is a video (`video_idx`), a stretch of it in seconds
   (`start_s`, `end_s`; both 0 is the whole video), when its best frame is
-  (`best_s`), a `score` (about 0 for no match to 1 for a good one) and
+  (`best_s`), a `score` (over 0, and about 1 for a good match) and
   whether it was found by its sound (`by_sound`) or by its frames and its
-  sound both (`by_both`).
+  sound both (`by_both`). The results also say how much the query was
+  about sound (`about_sound`), which `frame.c` puts in the log's line for
+  each search.
 
 ## How it searches
 
-The query goes through CLIP's text model (`EMB_TextVector`, on the main
-thread: a few milliseconds), and every loaded frame scores the dot product
-of its vector and the query's - their cosine, about 0.2 to 0.35 for CLIP.
+The query is made into a vector by `EMB_QueryVector` (on the main thread:
+the text half reads it five ways at once, some tens of milliseconds), and
+every loaded frame scores the dot product of its vector and the query's.
 Brute force over every frame: see the plan for why that is enough.
 
-Where in that range the scores are depends on the words more than on the
-frames ("a man screaming" averaged 0.229 over the test library, "a city
-skyline" 0.182), so a frame's score has half the library's average for
-those words taken from it (`SRCH_PICTURE_MEAN_SHARE`; the average is the
-query's dot product with the mean frame, from `picture_sum`). Half,
-because with all of it a frame J found a good match for "person screaming"
-(0.27, where those words average about 0.23) scored as low as the best
-frame for words in no video. In a library whose frames nearly all match the
-words, it makes them all score lower.
+That vector already has taken from it what a frame would score for any
+words (embed.md), so a frame's score is around 0 for words that have
+nothing to do with it, whatever the words and whatever the frame. Before,
+where the scores fell depended on the words more than on the frames, and
+on the library's other frames.
 
-The sound is searched the same way (`_SRCH_Clips` does both): the query
-through the sound model's text half (`EMB_SoundTextVector`), a dot product
-with every stretch of sound. The sound model gives some stretches a good
-score for any words at all, so `sound_base` is taken from the query's vector
-first: a stretch's score is then what it scores for the query less what it
-scores for words that say nothing.
+The sound is searched the same way (`_SRCH_Clips` does both), with
+`EMB_SoundQueryVector`'s vector and every stretch of sound - but only if
+the query is about sound: `about_sound` at least `SRCH_SOUND_WORDS`
+(-0.07). The sound model was only ever shown words about sound, and gives
+some stretches as good a score for "a hockey game" or "a dark room" as for
+a sound that is there; a picture is the frames' to find. On the bench the
+line lets through 31 of 32 searches for a sound, 2 of 30 for something only
+seen, and a quarter of the 224 searches for pictures, most of them of what
+is heard as well ("a man screaming", "a helicopter", "an explosion").
 
 So that clips found by picture and by sound can be in one list, a score is
 the model's own stretched over its band: `SRCH_PICTURE_LOW` to
-`SRCH_PICTURE_HIGH` (0.12 to 0.20, of what is left) becomes 0 to 1, and
-`SRCH_SOUND_LOW` to `SRCH_SOUND_HIGH` (0.20 to 0.50) likewise. Both bands
-are from 58 test searches on five film trailers. The best frame for words
-in none of them was left with about 0.14, for words that were in them 0.20
-to 0.22. For the sound: sound that matched the words was left with
-0.3 to 0.5 ("music", "gunfire and explosions", "people cheering"), sound
-under words about something seen mostly with less than 0.3, but up to 0.4
-("a soldier in a trench", "fire", "a monkey"). The sound model's scores
-don't tell the two kinds of words apart, so the band can only put such rows
-below good picture rows, not leave them out.
+`SRCH_PICTURE_HIGH` (0.122 to 0.192) becomes 0 to 1, and `SRCH_SOUND_LOW`
+to `SRCH_SOUND_HIGH` (0.28 to 0.50) likewise. The numbers are from the test
+bench (`bench/README.md`): twelve videos, every frame labelled, searched 224
+ways. The picture's high end is what the best right frame scores, the
+middle one of the searches. Its low end is a choice: at 0.122, 3 in 100
+searches with something to find list nothing, and 4 in 10 of those with
+nothing to find list a row of what is not there, with a low match; at
+0.158 those are 12 in 100 and 1 in 20. The sound's low end is what three in
+four searches for a sound in no video stay under; a sound mixed into a
+video's own as loud as it is scores 0.32, the middle one, and at three
+times as loud 0.45.
 
 Then, per video, the frames become clips: the best frame not yet in a clip
 starts one, which takes in its neighbours each side for as long as they
-score within `SRCH_CLIP_MARGIN` (0.02) of it. Every frame ends up in one
-clip, and a clip scores as its best frame. Neighbours must also follow
-straight on in time (silence is left out of the sound index). A clip runs
-from its first frame to the end of its last, padded by a second each side;
-a clip of sound is not padded (`SRCH_SOUND_MARGIN` is its margin).
+score within `SRCH_CLIP_MARGIN` (0.3, of a hit's score) of it. Every frame
+that scores over 0 ends up in one clip, and a clip scores as its best
+frame; a clip whose best frame scores 0 or under is not a hit. Neighbours
+must also follow straight on in time (silence is left out of the sound
+index). A clip runs from its first frame to the end of its last, padded by
+a second each side; a clip of sound is not padded (`SRCH_SOUND_MARGIN` is
+its margin).
 
 Last, in `SRCH_Run`, a clip of frames and a clip of sound of the same video
 that overlap in time and both score `SRCH_BOTH_FLOOR` (0.35) or more become
@@ -102,8 +101,16 @@ when a word of the query is in its name, and the hit is the whole video.
 
 ## Not done yet
 
-- A score below which nothing is a hit at all: the best clip is always
-  shown, however poor.
+- One low end for every query. Plain words score lower for their right
+  frames than longer ones do ("a woman" 0.14 at best, "soldiers in a trench"
+  0.25), and some words in no video score as high ("a telescope" 0.16), so
+  no one line parts them.
+- Words the picture model is weak at on the test videos: "a cat" (small
+  and in the dark), "a monster", "an oil lamp", "a person climbing".
+- "a crowd cheering" is not searched for in the sound: `about_sound` puts
+  it with the words about pictures, next to "a crowd of people".
+- The query's vectors are made on the main thread on every key: the text
+  halves read it seven times (five for the pictures, two for the sound).
 
 ## Used by
 

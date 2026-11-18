@@ -9,9 +9,10 @@
 // and each frame scores the dot product of its vector and the query's. A run
 // of neighbouring frames that score nearly as well as the best of them is a
 // clip, and the clips that score highest are the hits. The videos' sound is
-// searched the same way with the sound model, where there is one, and its
-// clips are hits in the same list. A clip of frames and a clip of sound that
-// both match well, at the same time in the same video, are one hit.
+// searched the same way with the sound model, where there is one and the
+// query is about sound, and its clips are hits in the same list. A clip of
+// frames and a clip of sound that both match well, at the same time in the
+// same video, are one hit.
 // Until there are frames to search, or if there is no model, it matches
 // file names instead (search.md).
 //
@@ -23,38 +24,46 @@
 // The most hits a search gives.
 #define SRCH_MAX_HITS 500
 
-// A model's own score for a picture (or a sound) and words is in a narrow
-// band, and where the band is depends on the words: CLIP gives a frame
-// about 0.19 to 0.23 for words it has nothing to do with, and only some
-// 0.03 to 0.10 more than that for words it matches. So a frame's score has
-// taken from it half of what the library's frames score for the query on
-// average (SRCH_PICTURE_MEAN_SHARE), and a hit's score is what is left,
-// stretched so the band's low end is 0 and its high end 1 - CLIP's and the
-// sound model's each by its own, which is what makes the two comparable.
-// Half, not all: with all of it a frame of someone screaming, which J found
-// a good match for "person screaming", scored as low as the best frame for
-// words that were in no video. The picture's band is from the same 58 test
-// searches as the sound's: the best frame for words in no video ("a cat")
-// is left with about 0.14, for words that were ("a desert", "a soldier in a
-// trench") with 0.20 to 0.22.
+// A frame's own score for a query is its vector's dot product with the
+// query's (EMB_QueryVector): around 0 for words that have nothing to do with
+// it, and some 0.1 to 0.25 for words that say what is in it. A stretch of
+// sound's is the same with the sound model's (EMB_SoundQueryVector). A hit's
+// score is that stretched so that LOW is 0 and HIGH is 1 - the picture's and
+// the sound's each by its own, which is what makes the two comparable - and
+// a clip that scores 0 or under is not a hit.
 //
-// The sound model gives some stretches of sound a good score for any words
-// at all, so a stretch's score has taken from it what it scores for words
-// that say nothing ("a sound", "something", ...: search.c). The sound's band
-// is for what is left, and is from 58 test searches on five film trailers:
-// sound that matched the words was left with 0.3 to 0.5, and sound for words
-// about something seen, not heard, mostly with under 0.3 - though up to 0.4:
-// the sound model can't tell them apart well.
-#define SRCH_PICTURE_LOW  0.12f
-#define SRCH_PICTURE_HIGH 0.20f
-#define SRCH_PICTURE_MEAN_SHARE 0.5
-#define SRCH_SOUND_LOW    0.20f
+// The numbers are from the test bench (bench\README.md), where twelve videos
+// whose every frame is labelled were searched 224 ways. PICTURE_HIGH is what
+// the best right frame scores for a search with something to find, the
+// middle one of them. PICTURE_LOW is a choice between two wrongs. At 0.122,
+// 3 in 100 searches with something to find list nothing, and 4 in 10 of
+// those with nothing to find ("a telescope") list a row of what is not
+// there, with a low match. Higher, and fewer of those do, but plain words
+// whose right frames score only 0.14 ("a woman", "a guitar") list nothing:
+// at 0.158, which leaves 19 in 20 of the searches with nothing to find
+// empty, so are 12 in 100 of those with something.
+//
+// SOUND_LOW is what three in four searches for a sound that is in no video
+// stay under with their best stretch. A sound mixed into a video's own as
+// loud as it is scores 0.32, the middle one, and at three times as loud
+// 0.45; singing where the labels say someone sings, 0.25 to 0.45.
+#define SRCH_PICTURE_LOW  0.122f
+#define SRCH_PICTURE_HIGH 0.192f
+#define SRCH_SOUND_LOW    0.28f
 #define SRCH_SOUND_HIGH   0.50f
 
-// How far below a clip's best frame its other frames may score, in the
-// model's own score.
-#define SRCH_CLIP_MARGIN  0.02f
-#define SRCH_SOUND_MARGIN 0.05f
+// The sound is searched only for a query that is at least this much about
+// sound (EMB_SoundQueryVector's about_sound). On the bench that is 31 of 32
+// searches for a sound ("a crowd cheering" is the one kept out), 2 of 30
+// for something only seen ("a man wearing a hat"), and a quarter of the
+// searches for pictures, most of them of what is heard as well ("a man
+// screaming", "a helicopter", "an explosion").
+#define SRCH_SOUND_WORDS -0.07f
+
+// How far below a clip's best frame its other frames may score, in a hit's
+// score.
+#define SRCH_CLIP_MARGIN  0.30f
+#define SRCH_SOUND_MARGIN 0.17f
 
 // A clip of frames and a clip of sound become one hit when both score at
 // least this. The hit scores as the better of the two, and this much of the
@@ -85,7 +94,8 @@ typedef struct SRCH_Results SRCH_Results;
 struct SRCH_Results {
    SRCH_Hit* v;
    U64       count;
-   B32       by_name; // matched by file name, not by what is in the frames
+   B32       by_name;     // matched by file name, not by what is in the frames
+   F32       about_sound; // how much the query is about sound (SRCH_SOUND_WORDS), for the log
 };
 
 typedef struct SRCH_Search SRCH_Search;

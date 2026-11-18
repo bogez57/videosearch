@@ -14,6 +14,11 @@ Where it is going: `Claude outputs/clip_search_plan.md`, the plan for finding
 clips by what is in them (frames sampled with FFmpeg, a CLIP-style model run
 through ONNX Runtime, vectors on disk) in five steps.
 
+How well it finds things is measured, not guessed: `bench/` (`bench/README.md`).
+A change to the model, to how a frame or a query is made into a vector, or
+to `search.h`'s numbers is tried there first, on J's PC, where the test
+videos and the models are.
+
 ## How J works
 
 - J and Claude both work on `main` of `bogez57/videosearch` on GitHub, no
@@ -58,8 +63,8 @@ through ONNX Runtime, vectors on disk) in five steps.
 - Step 1 of the plan, frames: the indexer (`src/indexer`) reads a frame a
   second from every video with the slideshow's decoder (`src/video`).
 - Step 2, image vectors: ONNX Runtime (`src/third_party/onnxruntime`) runs
-  CLIP ViT-B/32's image half (`src/embed`, the model in `data/models`, see
-  its README) on each frame, and the vectors go to one file per video in
+  the picture model's image half (`src/embed`, the model in `data/models`,
+  see its README) on each frame, and the vectors go to one file per video in
   `bin\local\index` (`src/index`).
 - Step 3, real search: CLIP's tokenizer (`src/embed/embed_tokenizer.c`,
   merges in `data/clip`) and text half put the query into a vector;
@@ -80,16 +85,23 @@ through ONNX Runtime, vectors on disk) in five steps.
   five seconds at a time in the same pass, into a second index file per
   video (`.vsa`); the search finds clips of sound as it does clips of
   frames, in one list ("sound match").
-- Ranking: a stretch of sound's score has taken from it what it scores for
-  words that say nothing, and the sound's band in `search.h` is set from 58
-  test searches on J's five trailers; a clip that matches by picture and by
-  sound at once is one row ("picture and sound match"). A frame's score
-  has half the library's average for the query taken from it, and clips under
-  half the score of the best of their kind (picture, sound, both) are left
-  out. The sound model
-  still can't tell words about something seen from words about something
-  heard, so a weak "sound match" under a search for a picture is to be
-  expected.
+- Ranking, measured: `bench/` (Python, not part of the program; its README
+  has what it found) scores ways of searching against twelve test videos
+  whose every frame is labelled by eye, 224 searches. From it: the picture
+  model is MobileCLIP-B (`data/models/mobileclip_blt`; it was CLIP
+  ViT-B/32), each frame is shown to it four ways and the four vectors
+  averaged (`EMB_View`, the indexer), the query is read five ways and has
+  the average of words that could be about anything taken from it
+  (`EMB_QueryVector`, `data/clip/any_words.txt`), and the bands, the
+  margins and what is kept in `search.h` are set from its numbers. The
+  first hit is right for 8 searches in 10, from 6.
+- Sound's ranking: the query as "This is a sound of ...", less the average
+  of words about sound (`data/clap/sound_words.txt`), and the sound is only
+  searched when the words are about sound (`EMB_SoundQueryVector`,
+  `SRCH_SOUND_WORDS`): the sound model itself can't tell words about
+  something seen from words about something heard. A clip that matches by
+  picture and by sound at once is one row ("picture and sound match").
+  Each search's line in the log says how much about sound the words were.
 - The GPU: the picture and sound models run on the graphics card through
   DirectML (ONNX Runtime's DirectML build), and the indexer decodes on the
   card too (`VID_DecoderOpenOnCard`, `VID_DecoderNextFrameFrom`: added to
@@ -97,4 +109,7 @@ through ONNX Runtime, vectors on disk) in five steps.
   off. On J's PC (RTX 5060), 13 minutes of video index in 27 s, from 43 s:
   about half of it decoding, a third the sound model.
 - Next: new videos found while it runs, speech search (whisper.cpp), or
-  more speed (longer stretches of sound, a quicker spectrogram).
+  more speed (longer stretches of sound, a quicker spectrogram). For better
+  matches still: SigLIP 2 beside MobileCLIP-B (the bench has both added at
+  9 in 10 searches kept, from 8.5; it needs a SentencePiece tokenizer), and
+  a low end of the band of its own for each query (`search.md`).

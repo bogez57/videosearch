@@ -1,0 +1,210 @@
+# Words that could be about anything: what a frame scores for these on average, it scores
+# for any words, whatever is in it. One a line.
+a photo
+a picture
+an image
+a video frame
+a scene from a movie
+something
+a thing
+a place
+a person
+people
+a man
+a woman
+a child
+a baby
+an old man
+a group of friends
+a crowd
+a face
+a hand
+a family at home
+a person walking
+a person running
+a person sitting at a desk
+two people talking
+a man speaking into a microphone
+a woman laughing
+a child playing
+people dancing
+people eating dinner
+a person sleeping
+a person cooking in a kitchen
+a person reading a book
+a person using a computer
+a person driving a car
+a person riding a bicycle
+a person swimming
+a person climbing a mountain
+a football match
+a basketball game
+a tennis player
+a boxing match
+a runner on a track
+a dog
+a cat
+a horse
+a bird flying
+a fish underwater
+a cow in a field
+an elephant
+a lion
+a spider
+a butterfly on a flower
+a tree
+a forest
+a mountain
+a beach
+the ocean
+a river
+a lake
+a waterfall
+a desert
+a field of grass
+a garden with flowers
+snow on the ground
+rain on a window
+a storm with lightning
+a sunset
+a blue sky with clouds
+the moon at night
+stars in the night sky
+a city street
+a tall building
+a bridge
+a house
+a church
+a castle
+a farm
+a factory
+a school classroom
+an office
+a hospital room
+a shop
+a restaurant
+a bar
+a bedroom
+a bathroom
+a kitchen
+a living room
+a library
+a museum
+a train station
+an airport
+a parking lot
+a highway with traffic
+a car
+a truck
+a bus
+a train
+an airplane
+a helicopter
+a boat
+a ship at sea
+a motorcycle
+a rocket launch
+a spaceship
+a robot
+a computer screen
+a mobile phone
+a television
+a camera
+a clock
+a book
+a newspaper
+a letter
+a map
+money
+a table and chairs
+a bed
+a door
+a window
+a staircase
+a wall
+a floor
+a plate of food
+a cup of coffee
+a glass of wine
+fruit and vegetables
+a birthday cake
+a pizza
+a guitar
+a piano
+a drum kit
+an orchestra
+a singer on a stage
+a concert crowd
+a painting
+a statue
+a drawing
+a cartoon
+an animation
+a video game
+a diagram
+a chart
+a map of the world
+text on a screen
+a title card
+a logo
+subtitles
+a black screen
+a white background
+a blurry image
+a close-up
+a wide shot of a landscape
+an aerial view
+a dark room
+a bright light
+smoke
+fire
+water
+ice
+mud
+dust
+a shadow
+a reflection in a mirror
+a soldier
+a police officer
+a doctor
+a teacher
+a chef
+a farmer
+a king
+a monster
+an alien
+a ghost
+a superhero
+a wedding
+a funeral
+a party
+a parade
+a protest
+a battle
+an explosion
+a car chase
+a fight
+a kiss
+a hug
+a handshake
+someone crying
+someone smiling
+someone shouting
+someone afraid
+an empty road
+a tunnel
+a cave
+ruins
+a village
+a market
+a palace
+the inside of a car
+the inside of a plane
+a ship's deck
+a laboratory
+a courtroom
+a prison cell
+a theatre stage
+a film set
+a news studio
+a sports stadium

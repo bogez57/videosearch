@@ -2,8 +2,9 @@
 
 A plan for turning the stand-in search (file names, `src/search/search.c`)
 into one that finds "a man screaming" or "a car driving down a highway" in
-the videos themselves. Steps 1 to 4 are built; the model chosen is OpenAI's
-CLIP ViT-B/32, exported to ONNX (`data/models/README.md`).
+the videos themselves. Steps 1 to 4 are built; the model was OpenAI's CLIP
+ViT-B/32 and is now Apple's MobileCLIP-B, exported to ONNX
+(`data/models/README.md`; "Ranking, as measured" below says why).
 
 ## The idea
 
@@ -143,15 +144,16 @@ they are wanted:
   sound are found as clips of frames are, and both go in one list. Each
   model's score is stretched over its own band so they compare; a row found
   by sound says "sound match".
-- Ranking: what a stretch of sound scores for words that say nothing ("a
-  sound", "something", ...) is taken from its score, since CLAP gives some
-  stretches a good score for any words; the sound's band is set from 58
-  test searches on five trailers. A clip of frames and a clip of sound that
-  both match well at the same time are one hit ("picture and sound match").
-- What the test searches showed: CLAP scores words about something seen
-  ("a soldier in a trench", "fire") nearly as high as words about something
-  heard, so its scores alone can't keep sound rows out of a search for a
-  picture; the band only puts them below good picture rows.
+- Ranking: the query goes to CLAP as "This is a sound of ...", and what a
+  stretch of sound scores for words about sound of every kind is taken from
+  its score, since CLAP gives some stretches a good score for any words. A
+  clip of frames and a clip of sound that both match well at the same time
+  are one hit ("picture and sound match").
+- CLAP scores words about something seen ("a soldier in a trench", "a
+  hockey game") as high as words about something heard, so its scores
+  can't keep sound rows out of a search for a picture. The words can: the
+  sound is only searched when CLAP's text half puts the query nearer to
+  words about sound than to words that could be about anything.
 
 ## The GPU, as built
 
@@ -172,3 +174,32 @@ minutes: 27.4 s on the card, 34.5 s with `--cpu` (from 36.0 and 42.6). Of
 the 25 s in the videos themselves on the card: the picture model 2.8 s, the
 sound model with its spectrogram 9.0 s, the rest (decoding picture and
 sound) about 13 s.
+
+## Ranking, as measured
+
+J's ask: really hammer down getting good matches. So a test bench
+(`bench/`, Python, on J's PC, not part of the program): twelve videos, a
+frame a second labelled by eye, 224 searches, and every way of searching
+scored against the labels. `bench/README.md` has the numbers. What came of
+it, all in C in the program:
+
+- The picture model: MobileCLIP-B for CLIP ViT-B/32. It reads words with
+  the same tokenizer, and a picture takes it three times as long.
+- A frame is shown to the model four ways - the whole frame pressed into
+  the square, and three squares cut from it - and its vector is the average
+  of the four.
+- The query is read five ways (as it is, and in four sentences) and the
+  five vectors averaged; then the average vector of 208 phrases that could
+  be about anything is taken from it, so a frame's score is around 0 for
+  words that have nothing to do with it, whatever the words.
+- One line under which nothing is a hit, set where 3 in 100 searches with
+  something to find list nothing.
+- The sound is searched only for words about sound.
+
+On the bench the first hit is right for 81 searches in 100, from 59; with
+one line that keeps 95 in 100 searches for what is in no video empty, 85 in
+100 searches still show a right frame, from 30.
+
+Not taken, for later: SigLIP 2 (as good alone, better added to MobileCLIP-B,
+but another tokenizer and a 1.1 GB text half), and a line of its own for
+each query.

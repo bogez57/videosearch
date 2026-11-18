@@ -1,10 +1,13 @@
 # indexer
 
 Goes through the library's videos on a thread of its own: decodes each with
-the decoder (`src/video`) at `IDX_FRAME_DIM` (400 px on the longer side),
+the decoder (`src/video`) at `IDX_FRAME_DIM` (512 px on the longer side),
 takes a frame every `IDX_SAMPLE_SECONDS` (1 s), runs those through the image
-model (`src/embed`) `IDX_BATCH` (8) at a time, and writes the vectors and
-the frames' times to the video's index file (`src/index`). A video whose
+model (`src/embed`) `IDX_BATCH` (4) at a time, and writes the vectors and
+the frames' times to the video's index file (`src/index`). The model is
+shown each frame four ways (`EMB_View`: the whole frame, and its left,
+middle and right squares) and the frame's vector is the average of the four
+vectors, made length one, so a batch is sixteen pictures. A video whose
 index file is up to date is not read again.
 
 With the sound model loaded, the video's sound goes the same way in the same

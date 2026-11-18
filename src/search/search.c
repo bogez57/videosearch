@@ -12,22 +12,6 @@
 // same way with the sound model's vector of the query: there a "frame" is a
 // stretch of sound.
 
-// Words that say nothing about a sound. What a stretch of sound scores for
-// them, it scores for anything, and that is taken from its score
-// (sound_base, search.h).
-read_only global String8 _srch_sound_base_texts[] = {
-    Str8LitComp("a sound"),
-    Str8LitComp("audio"),
-    Str8LitComp("a recording"),
-    Str8LitComp("something"),
-    Str8LitComp("a video"),
-    Str8LitComp("a"),
-    Str8LitComp("the"),
-    Str8LitComp("noise"),
-    Str8LitComp("a photo of something"),
-    Str8LitComp("this is a sound"),
-};
-
 // One index file, loaded: a video's frames, or its stretches of sound.
 typedef struct _SRCH_Track _SRCH_Track;
 struct _SRCH_Track {
@@ -49,14 +33,12 @@ struct SRCH_Search {
    EMB_Model* model;
    B32        model_loaded;
    B32        sound_model_loaded;
-   F32        sound_base[EMB_DIM]; // the mean of _srch_sound_base_texts' vectors
 
    U64          library_gen;
    _SRCH_Video* videos;
    U64          video_count;
    U64          frame_count;
    U64          sound_count; // stretches of sound
-   F64          picture_sum[EMB_DIM]; // of every loaded frame's vector
    U64          generation;
 
    F32 f32_from_f16[1 << 16];
@@ -84,7 +66,6 @@ SRCH_Update(SRCH_Search* search, LIB_Library* library, IDX_Indexer* indexer) {
       search->video_count = library->video_count;
       search->videos = PushArray(search->arena, _SRCH_Video, search->video_count);
       search->frame_count = 0;
-      MemoryZeroArray(search->picture_sum);
       search->sound_count = 0;
       search->generation += 1;
    }
@@ -97,13 +78,6 @@ SRCH_Update(SRCH_Search* search, LIB_Library* library, IDX_Indexer* indexer) {
    if (!search->sound_model_loaded && EMB_SoundIsLoaded(search->model)) {
       search->sound_model_loaded = 1;
       search->generation += 1;
-      MemoryZeroArray(search->sound_base);
-      for (U64 i = 0; i < ArrayCount(_srch_sound_base_texts); i += 1) {
-         F32 v[EMB_DIM];
-         if (EMB_SoundTextVector(search->model, _srch_sound_base_texts[i], v)) {
-            for (U64 j = 0; j < EMB_DIM; j += 1) search->sound_base[j] += v[j] / (F32)ArrayCount(_srch_sound_base_texts);
-         }
-      }
    }
 
    for (U64 idx = 0; idx < search->video_count; idx += 1) {
@@ -121,9 +95,6 @@ SRCH_Update(SRCH_Search* search, LIB_Library* library, IDX_Indexer* indexer) {
             track->loaded = 1;
             if (INX_Read(search->arena, path, &track->count, &track->times, &track->vectors)) {
                *(is_sound ? &search->sound_count : &search->frame_count) += track->count;
-               for (U64 i = 0; !is_sound && i < track->count * EMB_DIM; i += 1) {
-                  search->picture_sum[i % EMB_DIM] += search->f32_from_f16[track->vectors[i]];
-               }
                search->generation += 1;
             } else {
                LogUserErrorF("Could not read %S, the index of %S\n", path, library->videos[idx].path);
@@ -222,16 +193,17 @@ _SRCH_ByName(Arena* arena, LIB_Library* library, String8 query) {
 }
 
 // The clips of one video's frames, or of its stretches of sound, that match
-// q, into hits. base is taken from each one's dot product with q. A score is the dot product stretched so that 0 is no match
-// and 1 a good one (search.h), which is what lets clips found by picture and
-// by sound go in one list.
+// q, into hits. A score is the dot product with q stretched so that 0 is no
+// match and 1 a good one (search.h), which is what lets clips found by
+// picture and by sound go in one list. A clip that scores 0 or under is not
+// a hit.
 internal void
-_SRCH_Clips(SRCH_Search* search, SRCH_Hit* hits, U64* count, U64 video_idx, _SRCH_Track* track, F32* q, F32 base, B32 is_sound) {
+_SRCH_Clips(SRCH_Search* search, SRCH_Hit* hits, U64* count, U64 video_idx, _SRCH_Track* track, F32* q, B32 is_sound) {
    Temp scratch = ScratchBegin(0, 0);
    F32* table = search->f32_from_f16;
    F32  low = is_sound ? SRCH_SOUND_LOW : SRCH_PICTURE_LOW;
    F32  high = is_sound ? SRCH_SOUND_HIGH : SRCH_PICTURE_HIGH;
-   F32  margin = (is_sound ? SRCH_SOUND_MARGIN : SRCH_CLIP_MARGIN) / (high - low);
+   F32  margin = is_sound ? SRCH_SOUND_MARGIN : SRCH_CLIP_MARGIN;
    F64  step = is_sound ? IDX_SOUND_SECONDS : IDX_SAMPLE_SECONDS;
 
    _SRCH_Frame* frames = PushArrayNoZero(scratch.arena, _SRCH_Frame, track->count);
@@ -241,7 +213,7 @@ _SRCH_Clips(SRCH_Search* search, SRCH_Hit* hits, U64* count, U64 video_idx, _SRC
       F32  dot = 0;
       for (U64 j = 0; j < EMB_DIM; j += 1) dot += q[j] * table[v[j]];
       frames[i].idx = i;
-      frames[i].score = (dot - base - low) / (high - low);
+      frames[i].score = (dot - low) / (high - low);
       clip_of[i] = -1;
    }
 
@@ -262,7 +234,7 @@ _SRCH_Clips(SRCH_Search* search, SRCH_Hit* hits, U64* count, U64 video_idx, _SRC
       if (clip_of[best] != -1) {
          continue;
       }
-      if (*count == SRCH_MAX_HITS && score <= hits[*count - 1].score) {
+      if (score <= 0 || (*count == SRCH_MAX_HITS && score <= hits[*count - 1].score)) {
          break; // the rest are worse still
       }
       U64 first = best;
@@ -302,10 +274,12 @@ SRCH_Run(Arena* arena, SRCH_Search* search, LIB_Library* library, String8 query)
    SRCH_Results result = {0};
    F32          q[EMB_DIM];
    F32          sound_q[EMB_DIM];
+   F32          about_sound = 0;
    B32          current = (search->library_gen == library->generation);
-   B32          by_pictures = (query.size != 0 && current && search->frame_count != 0 && EMB_TextVector(search->model, query, q));
-   B32          by_sound =
-       (query.size != 0 && current && search->sound_count != 0 && EMB_SoundTextVector(search->model, query, sound_q));
+   B32          by_pictures = (query.size != 0 && current && search->frame_count != 0 && EMB_QueryVector(search->model, query, q));
+   // The sound only for words that are about sound.
+   B32 by_sound = (query.size != 0 && current && search->sound_count != 0 &&
+                   EMB_SoundQueryVector(search->model, query, sound_q, &about_sound) && about_sound >= SRCH_SOUND_WORDS);
    if (query.size == 0) {
       // No hits.
    } else if (!by_pictures && !by_sound) {
@@ -314,19 +288,13 @@ SRCH_Run(Arena* arena, SRCH_Search* search, LIB_Library* library, String8 query)
       Temp      scratch = ScratchBegin(&arena, 1);
       SRCH_Hit* found = PushArray(scratch.arena, SRCH_Hit, SRCH_MAX_HITS);
       U64       found_count = 0;
-      for (U64 j = 0; j < EMB_DIM; j += 1) sound_q[j] -= search->sound_base[j];
-      // What the frames score for the query on average: its dot product
-      // with their mean.
-      F64 mean = 0;
-      for (U64 j = 0; by_pictures && j < EMB_DIM; j += 1) mean += q[j] * search->picture_sum[j] / (F64)search->frame_count;
-      F32 picture_base = (F32)(SRCH_PICTURE_MEAN_SHARE * mean);
       for (U64 video_idx = 0; video_idx < search->video_count; video_idx += 1) {
          _SRCH_Video* video = &search->videos[video_idx];
          if (by_pictures && video->pictures.count != 0) {
-            _SRCH_Clips(search, found, &found_count, video_idx, &video->pictures, q, picture_base, 0);
+            _SRCH_Clips(search, found, &found_count, video_idx, &video->pictures, q, 0);
          }
          if (by_sound && video->sound.count != 0) {
-            _SRCH_Clips(search, found, &found_count, video_idx, &video->sound, sound_q, 0, 1);
+            _SRCH_Clips(search, found, &found_count, video_idx, &video->sound, sound_q, 1);
          }
       }
 
@@ -381,5 +349,6 @@ SRCH_Run(Arena* arena, SRCH_Search* search, LIB_Library* library, String8 query)
       result.v = hits;
       result.count = count;
    }
+   result.about_sound = about_sound;
    return result;
 }

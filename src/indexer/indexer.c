@@ -65,20 +65,32 @@ _IDX_PassOnLogs(IDX_Indexer* indexer, LogScopeResult logs) {
    MutexDrop(indexer->log_mutex);
 }
 
-// The batch's frames through the model, and their times and vectors (as F16)
-// onto the lists.
+// The batch's frames through the model - images holds EMB_View_COUNT
+// pictures of each, one frame's after another's - and their times and
+// vectors (as F16) onto the lists. A frame's vector is the average of its
+// views' vectors, made length one.
 internal B32
 _IDX_Encode(IDX_Indexer* indexer, Arena* arena, F32* images, F32* times, U64 count, F32* vectors, String8List* times_out,
             String8List* vectors_out) {
-   B32 ok = EMB_ImageVectors(indexer->model, images, count, vectors);
+   B32 ok = EMB_ImageVectors(indexer->model, images, count * EMB_View_COUNT, vectors);
    if (ok) {
       F32* t = PushArrayNoZero(arena, F32, count);
       MemoryCopy(t, times, count * sizeof(F32));
       Str8ListPush(arena, times_out, Str8((U8*)t, count * sizeof(F32)));
 
       U16* v = PushArrayNoZero(arena, U16, count * EMB_DIM);
-      for (U64 i = 0; i < count * EMB_DIM; i += 1) {
-         v[i] = INX_F16FromF32(vectors[i]);
+      for (U64 i = 0; i < count; i += 1) {
+         F32  mean[EMB_DIM] = {0};
+         F32* views = vectors + i * EMB_View_COUNT * EMB_DIM;
+         F32  sum = 0;
+         for (U64 j = 0; j < EMB_DIM; j += 1) {
+            for (U64 view = 0; view < EMB_View_COUNT; view += 1) mean[j] += views[view * EMB_DIM + j];
+            sum += mean[j] * mean[j];
+         }
+         F32 inv = (sum > 0) ? 1.0f / sqrtf(sum) : 0;
+         for (U64 j = 0; j < EMB_DIM; j += 1) {
+            v[i * EMB_DIM + j] = INX_F16FromF32(mean[j] * inv);
+         }
       }
       Str8ListPush(arena, vectors_out, Str8((U8*)v, count * EMB_DIM * sizeof(U16)));
       InsAtomicU64EvalAssign(&indexer->frames, InsAtomicU64Eval(&indexer->frames) + count);
@@ -176,8 +188,8 @@ _IDX_ThreadEntry(void* p) {
          B32             ok = (decoder != 0);
          if (ok) {
             U8*         pixels = PushArrayNoZero(arena, U8, (U64)info.size.x * (U64)info.size.y * 4);
-            F32*        images = PushArrayNoZero(arena, F32, IDX_BATCH * EMB_IMAGE_FLOATS);
-            F32*        vectors = PushArrayNoZero(arena, F32, IDX_BATCH * EMB_DIM);
+            F32*        images = PushArrayNoZero(arena, F32, IDX_BATCH * EMB_View_COUNT * EMB_IMAGE_FLOATS);
+            F32*        vectors = PushArrayNoZero(arena, F32, IDX_BATCH * EMB_View_COUNT * EMB_DIM);
             F32         batch_times[IDX_BATCH];
             U64         batch_count = 0;
             String8List times = {0};
@@ -217,7 +229,10 @@ _IDX_ThreadEntry(void* p) {
                }
                if (frames_more && !pictures_done) {
                   t = NowTimeUS();
-                  EMB_ImageFromFrame(pixels, info.size, images + batch_count * EMB_IMAGE_FLOATS);
+                  for (U64 view = 0; view < EMB_View_COUNT; view += 1) {
+                     EMB_ImageFromFrame(pixels, info.size, (EMB_View)view,
+                                        images + (batch_count * EMB_View_COUNT + view) * EMB_IMAGE_FLOATS);
+                  }
                   batch_times[batch_count] = (F32)time_s;
                   batch_count += 1;
                   if (batch_count == IDX_BATCH) {

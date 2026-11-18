@@ -180,14 +180,16 @@ _EntryPoint(CmdLine* cmdline) {
    {
       Temp    scratch = ScratchBegin(0, 0);
       String8 data = PushStr8F(scratch.arena, "%S\\..\\data", GetProcessInfo()->binary_path);
-      String8 model_name = Str8Lit("clip-vit-base-patch32");
+      String8 model_name = Str8Lit("mobileclip_blt");
       B32     use_gpu = !CmdLineHasFlag(cmdline, Str8Lit("cpu"));
       app_state.model = EMB_Open(PushStr8F(scratch.arena, "%S\\models\\%S", data, model_name),
-                                 PushStr8F(scratch.arena, "%S\\clip\\bpe_merges.txt", data), use_gpu);
+                                 PushStr8F(scratch.arena, "%S\\clip\\bpe_merges.txt", data),
+                                 PushStr8F(scratch.arena, "%S\\clip\\any_words.txt", data), use_gpu);
       String8 sound_model_name = Str8Lit("clap-htsat-unfused");
       EMB_OpenSound(app_state.model, PushStr8F(scratch.arena, "%S\\models\\%S", data, sound_model_name),
                     PushStr8F(scratch.arena, "%S\\clap\\vocab.json", data),
-                    PushStr8F(scratch.arena, "%S\\clap\\merges.txt", data));
+                    PushStr8F(scratch.arena, "%S\\clap\\merges.txt", data),
+                    PushStr8F(scratch.arena, "%S\\clap\\sound_words.txt", data));
       String8 index_folder = PushStr8F(scratch.arena, "%S\\index", FR_LocalFolder(scratch.arena));
       app_state.indexer = IDX_Alloc(index_folder, model_name, sound_model_name, app_state.model, use_gpu);
       app_state.search = SRCH_Alloc(index_folder, app_state.model);

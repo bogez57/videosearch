@@ -4,7 +4,9 @@
 // Goes through the library's videos on a thread of its own, decoding each,
 // taking a frame every IDX_SAMPLE_SECONDS, running those through the image
 // model (embed.h) and writing what it makes of them to the video's index
-// file (index.h). A video whose file is up to date is not read again.
+// file (index.h). The model is shown each frame every way it can be
+// (EMB_View), and the frame's vector is the average of what it makes of
+// them. A video whose file is up to date is not read again.
 //
 // With the sound model there (embed.h), the video's sound goes the same way
 // in the same pass: IDX_SOUND_SECONDS of it at a time, one stretch after
@@ -20,13 +22,13 @@
 // How far apart in a video the frames taken are, in seconds.
 #define IDX_SAMPLE_SECONDS 1.0
 
-// The longest side frames are decoded at. The model looks at the middle
-// square of a frame scaled to 224 (EMB_IMAGE_DIM): at 400 a 16:9 frame is
-// 225 high, so it is only scaled down, and by little.
-#define IDX_FRAME_DIM 400
+// The longest side frames are decoded at. The model looks at squares of a
+// frame as high as the frame, scaled to 224 (EMB_IMAGE_DIM): at 512 a 16:9
+// frame is 288 high and one of 2.39:1 is 214, so they are scaled little.
+#define IDX_FRAME_DIM 512
 
-// Frames run through the model at once.
-#define IDX_BATCH 8
+// Frames run through the model at once: EMB_View_COUNT pictures each.
+#define IDX_BATCH 4
 
 // How long a stretch of sound is, in seconds and in samples. The sound model
 // takes ten seconds and a shorter sound repeated; at five, a hit says where

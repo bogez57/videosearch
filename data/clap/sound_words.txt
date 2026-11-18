@@ -1,0 +1,97 @@
+# Words about sounds of every kind, one a line. What a stretch of sound scores for these on
+# average, it scores for any words about sound (EMB_SoundQueryVector).
+a dog barking
+a cat meowing
+birds singing
+a rooster crowing
+a horse galloping
+a cow mooing
+insects buzzing
+a lion roaring
+rain falling
+thunder
+wind blowing
+waves on a beach
+a river flowing
+fire crackling
+footsteps on gravel
+a door closing
+a door creaking
+knocking on a door
+glass breaking
+a phone ringing
+an alarm clock
+a clock ticking
+keys jingling
+typing on a keyboard
+a vacuum cleaner
+a washing machine
+water running from a tap
+a toilet flushing
+dishes clattering
+a kettle boiling
+a car engine starting
+a car passing by
+a car horn
+tires screeching
+a motorcycle
+a truck reversing
+a train passing
+a train whistle
+an airplane flying overhead
+a helicopter
+a siren
+a bicycle bell
+a gunshot
+machine gun fire
+an explosion
+fireworks
+a sword fight
+a crowd cheering
+applause
+people talking
+a man speaking
+a woman speaking
+a child laughing
+a baby crying
+someone screaming
+someone whispering
+someone coughing
+someone breathing heavily
+laughter
+a person singing
+a choir
+a piano playing
+a guitar playing
+a violin
+drums
+a trumpet
+an orchestra
+electronic music
+rock music
+a church bell
+a school bell
+a whistle
+a drill
+a hammer
+a chainsaw
+a lawn mower
+an engine idling
+a ship horn
+silence
+static
+a beep
+a heartbeat
+a creaking floor
+a zipper
+paper rustling
+a camera shutter
+a coin dropping
+a ball bouncing
+a splash
+bubbles
+an echo in a cave
+a roar
+a growl
+a howl
+a squeak
