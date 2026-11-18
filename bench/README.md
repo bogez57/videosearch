@@ -80,23 +80,35 @@ first, kept), now 0.68 / 0.80 / 0.84, SigLIP 2 0.69 / 0.83 / 0.91.
   `cent`): the same ranking, and fewer searches kept.
 
 The list a search shows (`clips.py`), with the low end of the picture's band at 0.122 and the
-rest as `search.h` has it: 10 rows on average, 66 in 100 of them right, the first row right for 80
-in 100 searches, 3 in 100 searches with something to find list nothing, and 60 in 100 with nothing
-to find list nothing (the rest a row, with a low match). Before: 7 rows, 57 right, the first right
-for 41, and 39 in 100 searches with something to find listed nothing. `--scan` has the other
-places the line could be.
+rest as `search.h` has it: 12 rows on average, 64 in 100 of them right, the first row right for 80
+in 100 searches, 63 in 100 of the stretches that match have a row, 3 in 100 searches with something
+to find list nothing, and 60 in 100 with nothing to find list nothing (the rest a row, with a low
+match). Before: 7 rows, 57 right, the first right for 41, 27 of the stretches, and 39 in 100
+searches with something to find listed nothing. `--scan` has the other places the line could be,
+and `--scancap` how much of the best row's score a row must have.
 
 What it is still poor at, of the searches tried: "a cat" (small, in the dark), "a monster", "an oil
 lamp", "yellow flowers", "a person climbing", "a palace", "a flag".
 
-Sound (`sound.py`). CLAP `clap-htsat-unfused` stays: the two larger CLAPs name ESC-50's sounds a
-little more often (0.94 and 0.93 mAP against 0.91) but are no better at the videos' own sound.
-"This is a sound of X." for a query, less the average of 95 phrases about sounds of every kind
-(`bank_sound.txt`), does better than the plain words less ten words that say nothing, as the
-program had it: a sound mixed into a video's own at the same loudness is ranked 0.69 mAP (from
-0.63), at three times as loud 0.84 (from 0.78). No score
-of CLAP's tells a search for a picture from one for a sound ("a hockey game" scores 0.60 at best
-on these videos, singing where there is singing 0.42), so the words themselves are asked: how
-much nearer its text half puts them to the phrases about sound than to `bank.txt`'s (`sound.py
-words`). The line at -0.07 lets through 31 of 32 searches for a sound and a quarter of the searches
+Sound (`sound.py`). "This is a sound of X." for a query, less the average of 95 phrases about
+sounds of every kind (`bank_sound.txt`), does better than the plain words less ten words that say
+nothing, as the program had it: ESC-50's sounds are ranked 0.91 mAP by their names, from 0.84. A
+sound mixed into a video's own at the same loudness is ranked 0.69, at three times as loud 0.84.
+
+CLAP `clap-htsat-unfused` stays. Of the two larger CLAPs the general one is better at ESC-50's
+kind of sound (0.94 by name, and 0.79 mixed in at the same loudness), but both are worse at the
+videos' own sound where the labels say what should be heard, singing mostly (0.20 and 0.22 mAP
+against 0.30).
+
+No score of CLAP's tells a search for a picture from one for a sound ("a hockey game" scores 0.61
+at best on these videos, singing where there is singing 0.41), so the words themselves are asked:
+how much nearer its text half puts them to the phrases about sound than to `bank.txt`'s (`sound.py
+words`). The line at -0.07 lets through 29 of 32 searches for a sound and a quarter of the searches
 for pictures.
+
+The text half is run on one text at a time, as the program runs it. In a batch the shorter texts
+are padded, and these ONNX exports then give them other vectors (`sound.py pad`: "desert" alone
+and in a batch of 32, cosine 0.65), which the bench did at first and `app_check.py` caught.
+
+The program itself is checked against all of this in a scratch copy (`app_check.py`): its picture
+and sound vectors for the 224 searches are the bench's to the last digit logged.

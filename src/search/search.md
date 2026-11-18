@@ -56,7 +56,7 @@ the query is about sound: `about_sound` at least `SRCH_SOUND_WORDS`
 (-0.07). The sound model was only ever shown words about sound, and gives
 some stretches as good a score for "a hockey game" or "a dark room" as for
 a sound that is there; a picture is the frames' to find. On the bench the
-line lets through 31 of 32 searches for a sound, 2 of 30 for something only
+line lets through 29 of 32 searches for a sound, 2 of 30 for something only
 seen, and a quarter of the 224 searches for pictures, most of them of what
 is heard as well ("a man screaming", "a helicopter", "an explosion").
 
@@ -91,9 +91,12 @@ kind it overlaps. It runs from the start of the first to the end of the
 last, its best moment is the frames', and it scores as the better of the
 two plus `SRCH_BOTH_SHARE` (a quarter) of the other.
 
-A clip that scores under `SRCH_KEEP` (half) of what the best found the same
-way does is left out - by frames, by sound and by both each against their
-own best, so a good clip of sound does not put out the best of the frames.
+A clip that scores under `SRCH_KEEP` (three tenths) of what the best found
+the same way does is left out - by frames, by sound and by both each against
+their own best, so a good clip of sound does not put out the best of the
+frames. On the bench that is 12 rows a search, 64 in 100 of them right, and
+63 in 100 of the stretches that match have a row; at half of the best it is
+7 rows, 71 right, and 53 of the stretches.
 
 Until there are frames or sound loaded, or if no model could be loaded, it
 matches file names instead (`by_name` in the results): a video is a hit
@@ -108,7 +111,8 @@ when a word of the query is in its name, and the hit is the whole video.
 - Words the picture model is weak at on the test videos: "a cat" (small
   and in the dark), "a monster", "an oil lamp", "a person climbing".
 - "a crowd cheering" is not searched for in the sound: `about_sound` puts
-  it with the words about pictures, next to "a crowd of people".
+  it with the words about pictures, next to "a crowd of people". "A man
+  shouting" and "a person sneezing" are just under the line too.
 - The query's vectors are made on the main thread on every key: the text
   halves read it seven times (five for the pictures, two for the sound).
 

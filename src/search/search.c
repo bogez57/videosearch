@@ -341,7 +341,7 @@ SRCH_Run(Arena* arena, SRCH_Search* search, LIB_Library* library, String8 query)
             has_best[way] = 1;
             best[way] = hits[i].score;
          }
-         if (hits[i].score >= SRCH_KEEP * Min(best[way], 1.0f)) {
+         if (hits[i].score >= SRCH_KEEP * best[way]) {
             hits[kept++] = hits[i];
          }
       }
