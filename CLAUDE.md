@@ -106,10 +106,20 @@ videos and the models are.
   DirectML (ONNX Runtime's DirectML build), and the indexer decodes on the
   card too (`VID_DecoderOpenOnCard`, `VID_DecoderNextFrameFrom`: added to
   the decoder here, for J to copy back to the slideshow). `--cpu` turns both
-  off. On J's PC (RTX 5060), 13 minutes of video index in 27 s, from 43 s:
-  about half of it decoding, a third the sound model.
+  off.
+- Indexing speed, measured (`indexer.md` has where the time goes): the
+  indexer has two threads a run, one reading the video and making frames
+  and sound ready, one running the models; the picture model is run in
+  half precision on the card (`vision_model_fp16.onnx`, optional, the same
+  vectors to four places); and both models are told the sizes of what is
+  coming before they load (`EMB_IMAGE_BATCH`, `_EMB_Size`). On J's PC (RTX
+  5060) the twelve test videos, 29 minutes, index in 39 s, from 107 s (35 s
+  built with `build o2`), and the 224 searches come out as before. The
+  log's line for each video says where its time went.
 - Next: new videos found while it runs, speech search (whisper.cpp), or
-  more speed (longer stretches of sound, a quicker spectrogram). For better
-  matches still: SigLIP 2 beside MobileCLIP-B (the bench has both added at
-  9 in 10 searches kept, from 8.5; it needs a SentencePiece tokenizer), and
-  a low end of the band of its own for each query (`search.md`).
+  more speed: the decoder is now the longest part (22 s of those 39), then
+  the picture model (20 s), and loading the models at each start (6 s). For
+  better matches still: SigLIP 2 beside MobileCLIP-B (the bench has both
+  added at 9 in 10 searches kept, from 8.5; it needs a SentencePiece
+  tokenizer), and a low end of the band of its own for each query
+  (`search.md`).

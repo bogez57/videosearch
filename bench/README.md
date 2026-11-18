@@ -118,3 +118,14 @@ vectors for the 224 searches are the bench's to the last digit logged. Of its li
 is right for 84 in 100 searches with something to find (a row is right there if a frame within a
 second of its best moment matches), 3 in 100 list nothing, and 59 in 100 with nothing to find list
 nothing. A search takes 48 ms.
+
+Speed (`speed.py`, J's RTX 5060 through DirectML). The picture model's file in half precision
+(`vision_model_fp16.onnx`) runs at 1.8 ms a picture against 4.5, and finds the same: its vectors
+for the 1764 frames are within 0.9999 of the whole model's but for a handful (the least 0.991),
+and `eval.py` and `clips.py` give the same numbers to the third place. Told how many pictures
+are coming before it loads, it is nearly twice as fast again than left open (1.8 ms against 3.4
+at sixteen); more than sixteen at once gains nothing. CLAP's sound half told its sizes: 19 ms a
+stretch against 31. The card that is not the fast one, on a PC with two, is thirty times slower.
+With these in the program and the reading of a video on a thread of its own, the twelve videos
+index in 39 s, from 107 s, and `app_check.py` gives what it gave: the first row right for 84 in
+100.

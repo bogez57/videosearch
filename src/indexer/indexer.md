@@ -70,6 +70,23 @@ the sound model and into the video's sound index file.
 - `IDX_Stop`: cancels and joins, at the end of the program. The run's thread
   joins its reader.
 
+## Where the time goes
+
+On J's PC (RTX 5060, built with `build`), the twelve test videos, 1760
+seconds of them: 38.7 s in all, from 107.1 s with one thread, the whole
+picture model and the models' sizes left open. Of that, loading the models
+is 5.7 s. The reader then takes 33 s (the decoder 22 s, making the frames
+ready 7.5 s, the sound 3.1 s) and the models, at the same time, 27 s (the
+picture model 20 s, the sound model 7 s), so the two are about even. Built
+with `build o2` it is 35.3 s: making ready is a quarter of that (2.8 s), and
+the decoder is what is waited for. One of the twelve, a Blu-ray's H.264 at
+a high bit rate, takes three times as long to decode a second of as the
+rest.
+
+The index files come out as they did: the sound's vectors the same, the
+pictures' within 0.9999 of what the whole model made (`bench/check_index.py
+--same`), and the bench's 224 searches as before (`bench/app_check.py`).
+
 ## How a video is read
 
 Every frame is decoded (a codec can't skip to the next second without

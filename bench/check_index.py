@@ -34,7 +34,7 @@ def read_index(path):
     return video, model, times, vecs
 
 
-def same(a, b):
+def same_folders(a, b):
     """Each index file of folder a, pictures' and sound's, against the one of that name in b."""
     worst = 1.0
     for f in sorted(os.listdir(a)):
@@ -60,7 +60,7 @@ def same(a, b):
 
 def main():
     if len(sys.argv) > 3 and sys.argv[1] == "--same":
-        return same(sys.argv[2], sys.argv[3])
+        return same_folders(sys.argv[2], sys.argv[3])
     folder = sys.argv[1] if len(sys.argv) > 1 else os.path.join(REPO, "bin", "local", "index")
     names = {}
     for line in open(os.path.join(BENCH, "videos.txt"), encoding="utf-8"):
