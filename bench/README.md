@@ -121,8 +121,8 @@ nothing. A search takes 48 ms.
 
 Speed (`speed.py`, J's RTX 5060 through DirectML). The picture model's file in half precision
 (`vision_model_fp16.onnx`) runs at 1.8 ms a picture against 4.5, and finds the same: its vectors
-for the 1764 frames are within 0.9999 of the whole model's but for a handful (the least 0.991),
-and `eval.py` and `clips.py` give the same numbers to the third place. Told how many pictures
+for the 1764 frames are within 0.9998 of the whole model's for 99 in 100 (the least 0.991), and
+`eval.py` and `clips.py` give the same numbers to the third place. Told how many pictures
 are coming before it loads, it is nearly twice as fast again than left open (1.8 ms against 3.4
 at sixteen); more than sixteen at once gains nothing. CLAP's sound half told its sizes: 19 ms a
 stretch against 31. The card that is not the fast one, on a PC with two, is thirty times slower.

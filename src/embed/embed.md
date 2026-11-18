@@ -19,8 +19,8 @@ either way.
 Two things make the card quicker at it (`bench/speed.py` has the numbers,
 on J's RTX 5060). The image half is run in half precision if that file is
 there (`vision_model_fp16.onnx`): 1.8 ms a picture against 4.5, and its
-vectors are the whole one's to four places, so an index made with either is
-searched the same. And ONNX Runtime is told the sizes of what is coming
+vectors are within 0.9998 of the whole one's, so an index made with either
+is searched the same. And ONNX Runtime is told the sizes of what is coming
 before a model is loaded (`_EMB_Size`), which lets DirectML plan for them:
 the image half always gets `EMB_IMAGE_BATCH` (16) pictures, and is nearly
 twice as fast for it in half precision (1.8 ms a picture against 3.4); the

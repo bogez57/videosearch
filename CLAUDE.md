@@ -110,8 +110,8 @@ videos and the models are.
 - Indexing speed, measured (`indexer.md` has where the time goes): the
   indexer has two threads a run, one reading the video and making frames
   and sound ready, one running the models; the picture model is run in
-  half precision on the card (`vision_model_fp16.onnx`, optional, the same
-  vectors to four places); and both models are told the sizes of what is
+  half precision on the card (`vision_model_fp16.onnx`, optional, very
+  nearly the same vectors); and both models are told the sizes of what is
   coming before they load (`EMB_IMAGE_BATCH`, `_EMB_Size`). On J's PC (RTX
   5060) the twelve test videos, 29 minutes, index in 39 s, from 107 s (35 s
   built with `build o2`), and the 224 searches come out as before. The

@@ -84,7 +84,7 @@ a high bit rate, takes three times as long to decode a second of as the
 rest.
 
 The index files come out as they did: the sound's vectors the same, the
-pictures' within 0.9999 of what the whole model made (`bench/check_index.py
+pictures' within 0.9998 of what the whole model made (`bench/check_index.py
 --same`), and the bench's 224 searches as before (`bench/app_check.py`).
 
 ## How a video is read

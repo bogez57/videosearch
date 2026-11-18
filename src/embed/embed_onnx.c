@@ -422,7 +422,7 @@ EMB_Load(EMB_Model* model) {
 
    // The image half in half precision, if that file is there and the
    // graphics card is used: the card runs it more than twice as fast, and
-   // its vectors are the same to four places. Not for the processor, which
+   // its vectors are very nearly the same. Not for the processor, which
    // would run it slower than the whole one.
    B32 ok = 0;
    if (model->use_gpu && FilePathExists(PushStr8F(scratch.arena, "%S\\vision_model_fp16.onnx", model->folder))) {
