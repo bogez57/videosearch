@@ -936,9 +936,24 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
             F32 mid = (F32)(S32)(timeline_h * 0.5f);
             F32 per_s = line_w / (F32)duration_s;
             UI_Parent(timeline) {
-               UI_SetNextRect(R2F32P(pad, mid - line_h * 0.5f, pad + line_w, mid + line_h * 0.5f));
-               UI_SetNextColorTag(Str8Lit("timeline"));
-               UI_BuildBoxFromStringf(UI_BoxFlag_Floating | UI_BoxFlag_DrawBackground, "###timeline_line");
+               // The last built is drawn first (_FR_DrawUITree), so what is
+               // on top is built first: where it is now, the clip, the
+               // other clips, the line.
+               F32 now_x = pad + (F32)Clamp(0.0, VID_Position(video), duration_s) * per_s;
+               F32 now_w = Max((F32)(S32)(2.0f * ui), 2.0f);
+               UI_SetNextRect(R2F32P(now_x - now_w * 0.5f, (F32)(S32)(5.0f * ui), now_x + now_w * 0.5f,
+                                     timeline_h - (F32)(S32)(5.0f * ui)));
+               UI_SetNextColorTag(Str8Lit("timeline_now"));
+               UI_BuildBoxFromStringf(UI_BoxFlag_Floating | UI_BoxFlag_DrawBackground, "###timeline_now");
+
+               SRCH_Hit* hit = &app_state->play_hit;
+               if (hit->end_s > hit->start_s) {
+                  F32 x0 = pad + (F32)Min(hit->start_s, duration_s) * per_s;
+                  F32 x1 = Max(pad + (F32)Min(hit->end_s, duration_s) * per_s, x0 + (F32)(S32)(6.0f * ui));
+                  UI_SetNextRect(R2F32P(x0, mid - clip_h * 0.5f, x1, mid + clip_h * 0.5f));
+                  UI_SetNextColorTag(Str8Lit("timeline_clip"));
+                  UI_BuildBoxFromStringf(UI_BoxFlag_Floating | UI_BoxFlag_DrawBackground, "###timeline_clip");
+               }
 
                if (app_state->results_library_gen == library->generation) {
                   for (U64 i = 0; i < results->count; i += 1) {
@@ -956,21 +971,9 @@ _FR_BuildScreen(App_State* app_state, Vec2F32 window_dim) {
                   }
                }
 
-               SRCH_Hit* hit = &app_state->play_hit;
-               if (hit->end_s > hit->start_s) {
-                  F32 x0 = pad + (F32)Min(hit->start_s, duration_s) * per_s;
-                  F32 x1 = Max(pad + (F32)Min(hit->end_s, duration_s) * per_s, x0 + (F32)(S32)(6.0f * ui));
-                  UI_SetNextRect(R2F32P(x0, mid - clip_h * 0.5f, x1, mid + clip_h * 0.5f));
-                  UI_SetNextColorTag(Str8Lit("timeline_clip"));
-                  UI_BuildBoxFromStringf(UI_BoxFlag_Floating | UI_BoxFlag_DrawBackground, "###timeline_clip");
-               }
-
-               F32 now_x = pad + (F32)Clamp(0.0, VID_Position(video), duration_s) * per_s;
-               F32 now_w = Max((F32)(S32)(2.0f * ui), 2.0f);
-               UI_SetNextRect(R2F32P(now_x - now_w * 0.5f, (F32)(S32)(5.0f * ui), now_x + now_w * 0.5f,
-                                     timeline_h - (F32)(S32)(5.0f * ui)));
-               UI_SetNextColorTag(Str8Lit("timeline_now"));
-               UI_BuildBoxFromStringf(UI_BoxFlag_Floating | UI_BoxFlag_DrawBackground, "###timeline_now");
+               UI_SetNextRect(R2F32P(pad, mid - line_h * 0.5f, pad + line_w, mid + line_h * 0.5f));
+               UI_SetNextColorTag(Str8Lit("timeline"));
+               UI_BuildBoxFromStringf(UI_BoxFlag_Floating | UI_BoxFlag_DrawBackground, "###timeline_line");
             }
          }
          UI_Signal timeline_signal = UI_SignalFromBox(timeline);

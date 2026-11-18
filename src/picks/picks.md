@@ -33,8 +33,9 @@ are to be cut together, and the timeline of them an editing program reads.
   - every time is a whole number of frames written as a fraction of
     seconds (`_PCK_Time`): a clip's `start` in its video's frames, its
     `offset` and `duration` in the timeline's;
-  - the timeline has the frame rate and size of the first clip's video.
-    A clip from a video of another frame rate is as long on it in seconds
+  - the timeline has the frame rate most of the picks' videos have, and
+    is as wide as the widest of them and 16 by 9 (higher if one of them
+    is). A clip from a video of another frame rate is as long on it in seconds
     as it is in its video; how it is fitted is the editing program's;
   - a pick whose video can't be read is left out, and counted.
 

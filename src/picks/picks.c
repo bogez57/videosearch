@@ -242,7 +242,7 @@ PCK_Export(PCK_Picks* picks, String8 file_path) {
    //- bgz: the videos, each once, and the formats they have between them
    _PCK_Media*  media = PushArray(arena, _PCK_Media, picks->count + 1);
    U64          media_count = 0;
-   _PCK_Format* formats = PushArray(arena, _PCK_Format, picks->count + 1);
+   _PCK_Format* formats = PushArray(arena, _PCK_Format, picks->count + 2);
    U64          format_count = 0;
    U64*         media_of = PushArray(arena, U64, picks->count + 1);
    for (U64 i = 0; i < picks->count; i += 1) {
@@ -308,14 +308,53 @@ PCK_Export(PCK_Picks* picks, String8 file_path) {
       one->format = f;
    }
 
-   //- bgz: the clips. The timeline has the frame rate and size of the first
-   // clip's video. A clip is as long on it as it is in its video, to the
-   // timeline's nearest frame.
+   //- bgz: the timeline's own format. Its frame rate is the one most of
+   // the picks' videos have (the earliest of them, of two that as many
+   // have). It is as wide as the widest of them and 16 by 9, or higher if
+   // one of them is: a trailer of 1920 by 804 goes into 1920 by 1080.
+   U64     timeline_num = 0;
+   U64     timeline_den = 0;
+   U64     timeline_format = 0;
+   B32     timeline_drops = 0;
+   Vec2S32 timeline_size = {0};
+   U64     most = 0;
+   for (U64 i = 0; i < picks->count; i += 1) {
+      _PCK_Media* one = &media[media_of[i]];
+      if (!one->ok) {
+         continue;
+      }
+      U64 same = 0;
+      for (U64 k = 0; k < picks->count; k += 1) {
+         _PCK_Media* other = &media[media_of[k]];
+         same += (other->ok && other->rate_num == one->rate_num && other->rate_den == one->rate_den);
+      }
+      if (same > most) {
+         most = same;
+         timeline_num = one->rate_num;
+         timeline_den = one->rate_den;
+         timeline_drops = one->info.timecode_drops;
+      }
+      timeline_size.x = Max(timeline_size.x, one->info.size.x);
+      timeline_size.y = Max(timeline_size.y, one->info.size.y);
+   }
+   timeline_size.y = Max(timeline_size.y, (timeline_size.x * 9 + 8) / 16);
+   if (most != 0) {
+      while (timeline_format < format_count &&
+             !(formats[timeline_format].rate_num == timeline_num && formats[timeline_format].rate_den == timeline_den &&
+               formats[timeline_format].size.x == timeline_size.x && formats[timeline_format].size.y == timeline_size.y)) {
+         timeline_format += 1;
+      }
+      if (timeline_format == format_count) {
+         formats[format_count].rate_num = timeline_num;
+         formats[format_count].rate_den = timeline_den;
+         formats[format_count].size = timeline_size;
+         format_count += 1;
+      }
+   }
+
+   //- bgz: the clips. A clip is as long on the timeline as it is in its
+   // video, to the timeline's nearest frame.
    String8List clips = {0};
-   U64         timeline_num = 0;
-   U64         timeline_den = 0;
-   U64         timeline_format = 0;
-   B32         timeline_drops = 0;
    U64         timeline_frames = 0;
    for (U64 i = 0; i < picks->count; i += 1) {
       PCK_Pick*   pick = &picks->v[i];
@@ -334,12 +373,6 @@ PCK_Export(PCK_Picks* picks, String8 file_path) {
       if (opl <= first) {
          result.left_out += 1;
          continue;
-      }
-      if (timeline_num == 0) {
-         timeline_num = one->rate_num;
-         timeline_den = one->rate_den;
-         timeline_format = one->format;
-         timeline_drops = one->info.timecode_drops;
       }
       F64 seconds = (F64)(opl - first) / rate;
       U64 frames = Max((U64)(seconds * (F64)timeline_num / (F64)timeline_den + 0.5), 1);
