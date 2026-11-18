@@ -7,6 +7,7 @@
 #                                           (--all: every search's number, for choosing where to cut)
 #   python sound.py band MODEL              where scores fall as the program scores sound: for sound
 #                                           that is there, sound that is not, and words about pictures
+#   python sound.py pad MODEL               whether a text's vector changes with what it is batched with
 #   python sound.py real MODEL              the test videos' own sound, searched for what the labels
 #                                           say can be seen where a sound goes with it (singing, ...)
 #
@@ -92,7 +93,9 @@ class SoundModel:
             out.append(self.audio.run(["audio_embeds"], feeds)[0])
         return _unit(np.concatenate(out).astype(np.float32))
 
-    def embed_texts(self, texts, batch=32):
+    def embed_texts(self, texts, batch=1):
+        """One text at a time, as the program runs them. In a batch the shorter texts are padded to
+        the longest ("pad" below measures whether that changes their vectors)."""
         if self.text is None:
             from transformers import AutoTokenizer
 
@@ -106,10 +109,10 @@ class SoundModel:
         return _unit(np.concatenate(out).astype(np.float32))
 
     def texts(self, texts):
-        """As embed_texts, kept in BENCH/emb/<name>/sound_texts.* between runs."""
+        """As embed_texts, kept in BENCH/emb/<name>/sound_texts1.* between runs."""
         d = os.path.join(BENCH, "emb", self.name)
         os.makedirs(d, exist_ok=True)
-        keys_path, vec_path = os.path.join(d, "sound_texts.json"), os.path.join(d, "sound_texts.npy")
+        keys_path, vec_path = os.path.join(d, "sound_texts1.json"), os.path.join(d, "sound_texts1.npy")
         keys, vecs = [], None
         if os.path.exists(keys_path) and os.path.exists(vec_path):
             keys = json.load(open(keys_path, encoding="utf-8"))
@@ -448,6 +451,29 @@ def words(name, everything=False):
         print("   %+.2f  " % cut + "  ".join("%s %.2f" % (g, (sc >= cut).mean()) for g, sc in scores.items()))
 
 
+def pad(name):
+    """The text half on each text alone and on the same texts 32 at a time, the shorter ones padded:
+    the two vectors of a text should be the same (1.000)."""
+    m = SoundModel(name, True)
+    ws = _picture_queries() + list(MIX.values()) + [w for w, _ in REAL]
+    ws = ws + [TEMPLATES["this_is"].format(w) for w in ws]
+    alone = m.embed_texts(ws, 1)
+    together = m.embed_texts(ws, 32)
+    cos = (alone * together).sum(1)
+    count = np.array([len(m.tok(w)["input_ids"]) for w in ws])
+    print(name, "- %d texts alone and 32 at a time: their vectors' cosine p1/p10/p50 %.3f %.3f %.3f, least %.3f" % (len(ws), *np.percentile(cos, [1, 10, 50]), cos.min()))
+    for lo, hi in ((0, 5), (5, 7), (7, 10), (10, 99)):
+        k = (count >= lo) & (count < hi)
+        if k.any():
+            print("   texts of %d to %d numbers (%d): cosine p10 %.3f p50 %.3f" % (lo, min(hi, count.max() + 1) - 1, k.sum(), *np.percentile(cos[k], [10, 50])))
+    for i in np.argsort(cos)[:8]:
+        print("   %.3f  %s" % (cos[i], ws[i]))
+    for w in ("at night", "a man screaming", "This is a sound of a dog barking."):
+        print("   the numbers of \"%s\": %s" % (w, " ".join(str(x) for x in m.tok(w)["input_ids"])))
+        v = m.embed_texts([w], 1)[0]
+        print("      its vector alone starts: " + " ".join("%.5f" % x for x in v[:8]))
+
+
 def band(name):
     """Scores as the program makes them ("This is a sound of X.", less the sound bank's mean), for
     setting the band in search.h: what a search with nothing to find scores at best, and what sound
@@ -562,6 +588,8 @@ def main():
         words(name, "--all" in sys.argv)
     elif cmd == "band":
         band(name)
+    elif cmd == "pad":
+        pad(name)
     elif cmd == "real":
         real(name)
 
