@@ -114,7 +114,8 @@ when a word of the query is in its name, and the hit is the whole video.
   it with the words about pictures, next to "a crowd of people". "A man
   shouting" and "a person sneezing" are just under the line too.
 - The query's vectors are made on the main thread on every key: the text
-  halves read it seven times (five for the pictures, two for the sound).
+  halves read it seven times (five for the pictures, two for the sound),
+  and a search of twelve videos is 48 ms on J's PC.
 
 ## Used by
 

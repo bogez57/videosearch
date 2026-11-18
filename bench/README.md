@@ -110,5 +110,9 @@ The text half is run on one text at a time, as the program runs it. In a batch t
 are padded, and these ONNX exports then give them other vectors (`sound.py pad`: "desert" alone
 and in a batch of 32, cosine 0.65), which the bench did at first and `app_check.py` caught.
 
-The program itself is checked against all of this in a scratch copy (`app_check.py`): its picture
-and sound vectors for the 224 searches are the bench's to the last digit logged.
+The program itself is checked against all of this in a scratch copy (`app_check.py`, with
+`VS_BENCH` set, as the scratch copy is not beside the bench's folder): its picture and sound
+vectors for the 224 searches are the bench's to the last digit logged. Of its lists the first row
+is right for 84 in 100 searches with something to find (a row is right there if a frame within a
+second of its best moment matches), 3 in 100 list nothing, and 59 in 100 with nothing to find list
+nothing. A search takes 48 ms.
